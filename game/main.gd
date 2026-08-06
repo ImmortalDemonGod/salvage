@@ -340,7 +340,7 @@ func _build_ui() -> void:
 	step_panel.add_child(ui_step)
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
-	log_panel.size = Vector2(1232, 68)
+	log_panel.size = Vector2(1232, 40)
 	log_panel.position = Vector2(24, 718)
 	var lst := StyleBoxFlat.new()
 	lst.bg_color = Color(0.03, 0.09, 0.14, 0.92)
@@ -392,7 +392,7 @@ func _recent() -> void:
 		for l in run.puzzle.log_lines:
 			src.append(l)
 	var keep: Array = []
-	for i in range(max(0, src.size() - 2), src.size()):
+	for i in range(max(0, src.size() - 1), src.size()):
 		keep.append(String(src[i]))
 	# on a story beat the scene panel IS the content, and the log would sit
 	# on top of it
@@ -825,7 +825,13 @@ func _refresh() -> void:
 	ui_scene.get_parent().visible = false
 	var step := _next_step()
 	ui_step.text = step
-	ui_step.get_parent().visible = step != ""
+	# only interrupt when there is a decision to make; a narrator on every
+	# routine turn teaches the player to stop reading the one line that
+	# sometimes matters
+	var urgent := step.find("about to be hit") >= 0 or step.find("go down soon") >= 0 \
+		or step.find("tank is empty") >= 0 or step.find("read the") >= 0 \
+		or step.find("Nothing to hit") >= 0 or combat == null
+	ui_step.get_parent().visible = step != "" and urgent
 	ui_air.get_parent().visible = true
 	# the bottles: full ones lit brass, spent ones dark, ones cut off by a
 	# severed line crossed out in red
@@ -838,7 +844,7 @@ func _refresh() -> void:
 			t.color = Color(0.20, 0.19, 0.16)
 		else:
 			t.color = Color(0.42, 0.16, 0.13)
-	ui_legend.get_parent().visible = true
+	ui_legend.get_parent().visible = false
 	ui_goal.get_parent().visible = true
 	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
 	ui_legend.get_parent().visible = true
@@ -892,9 +898,9 @@ func _refresh() -> void:
 			var read := ""
 			if combat.known(lb):
 				var tr := combat.trait_of(lb)
-				read = "   %s" % tr.to_upper() if tr != "" else "   read: ordinary"
+				read = ""   # the trait is drawn on the limb itself now
 			else:
-				read = "   unread [A, 1 air]"
+				read = "   [A]?"
 			lbl.text = "%s  [%s]%s%s\n%s %d/%d%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
 				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, read]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
@@ -916,10 +922,8 @@ func _refresh() -> void:
 		if tr9 != "":
 			told = "%s  ·  %s" % [String(combat.LIMB_NAMES[lb9]).to_upper(), String(Combat.TRAITS[tr9])]
 			break
-	if told != "":
-		ui_goal.text = told
-	else:
-		ui_goal.text = "%d of %d limbs working   ·   press A to read one" % [live, combat.limb_broken.size()]
+	ui_goal.get_parent().visible = told != ""
+	ui_goal.text = told
 	var all_it: Array = combat.intents()
 	if all_it.is_empty():
 		ui_intent.text = "%s   spent" % run.state_line()
@@ -934,7 +938,13 @@ func _refresh() -> void:
 				parts.append("%s: SHUT DOWN, it does not swing this turn" % String(combat.LIMB_NAMES[int(it.limb)]))
 			else:
 				parts.append("%s %s %s for %d" % [String(combat.LIMB_NAMES[int(it.limb)]), it.name, "/".join(where), int(it.dmg)])
-		ui_intent.text = "%s   NEXT: %s" % [run.state_line(), "   ".join(parts)]
+		# the arcs and discs on the board are the announcement; the words
+		# only carry what drawing cannot: a shut limb's reprieve
+		var told_shut := ""
+		for pt in parts:
+			if String(pt).find("SHUT DOWN") >= 0:
+				told_shut = "   ·   " + String(pt)
+		ui_intent.text = run.state_line() + told_shut
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third
 	# card, which the as-played capture caught on its first frame.
@@ -1534,11 +1544,40 @@ func _click(at: Vector2) -> void:
 	# anywhere on the creature means hit what you are standing next to
 	player_ability(0)
 
-func here_free(st: int) -> String:
-	for d in combat.divers:
-		if not d.down and int(d.station) == st:
-			return "  ·  taken"
+func here_free(_st: int) -> String:
 	return ""
+
+func _draw_traits() -> void:
+	for st in range(5):
+		if not combat.station_open(st):
+			continue
+		var lb: int = combat.STATION_LIMB[st]
+		if lb < 0 or combat.limb_broken[lb] or not combat.known(lb):
+			continue
+		var at: Vector2 = place(st) + Vector2(0, -26)
+		match combat.trait_of(lb):
+			"brittle":
+				# cracks: three jagged lines across the limb
+				for k in range(3):
+					var o := Vector2(-26.0 + float(k) * 22.0, -8.0 + float(k % 2) * 10.0)
+					draw_line(at + o, at + o + Vector2(9, 13), Color(0.95, 0.97, 1.0, 0.85), 2.0)
+					draw_line(at + o + Vector2(9, 13), at + o + Vector2(4, 24), Color(0.95, 0.97, 1.0, 0.85), 2.0)
+			"plated":
+				# a bolted plate sitting proud of the limb
+				draw_rect(Rect2(at + Vector2(-24, -10), Vector2(48, 26)), Color(0.42, 0.46, 0.52, 0.92))
+				draw_rect(Rect2(at + Vector2(-24, -10), Vector2(48, 26)), Color(0.72, 0.78, 0.84), false, 2.0)
+				for k in range(3):
+					draw_circle(at + Vector2(-14.0 + float(k) * 14.0, 3.0), 2.4, Color(0.80, 0.84, 0.88))
+			"leaking":
+				# bubbles streaming up, on the clock so they rise
+				for k in range(5):
+					var yy: float = fmod(_clock * 34.0 + float(k) * 17.0, 60.0)
+					draw_circle(at + Vector2(-8.0 + float(k % 3) * 9.0, -yy), 2.6 + float(k % 2), Color(0.72, 0.92, 1.0, 0.8 - yy / 90.0))
+			"pressurised":
+				# a hot pulse under the shell
+				var th: float = 0.5 + 0.5 * sin(_clock * 3.4)
+				draw_circle(at, 17.0 + 4.0 * th, Color(0.98, 0.70, 0.30, 0.18 + 0.20 * th))
+				draw_circle(at, 8.0, Color(0.98, 0.78, 0.40, 0.55 + 0.30 * th))
 
 func _draw_bars() -> void:
 	# The limb bars used to be painted on the board, and the station tags
@@ -1665,6 +1704,7 @@ func _draw() -> void:
 		if d.down:
 			continue
 		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
+	_draw_traits()
 	_draw_windup()
 	_draw_bars()
 	_draw_fx()
