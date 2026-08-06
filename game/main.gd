@@ -94,7 +94,7 @@ func diver_rect(d) -> Rect2:
 # Controls off it. A drawing is not a Control, so nothing was stopping a
 # panel from being laid straight over the puzzle.
 const LOCK_RECT := Rect2(280, 268, 700, 320)
-const LOCK_TOP := 322.0
+const LOCK_TOP := 340.0
 const LOCK_TALL := 168.0
 const LOCK_DROP := 84.0   # valves sit this far under the tank
 const SCENE_PANEL_AT := Vector2(190, 220)
@@ -911,7 +911,7 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 	# above the tank, clear of the pipes that run below it
 	# under the tank, where nothing else is written
 	# clear of the pipes, which run from the tank floor down to the valves
-	draw_string(f, at + Vector2(0, tall + 122), "%s  %d of %d" % [name, filled, cap],
+	draw_string(f, at + Vector2(0, -12), "%s  %d of %d" % [name, filled, cap],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
 
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
@@ -928,7 +928,7 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 		var x0: float = at.x + wide * float(i) / 16.0
 		draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
 			Color(0.86, 0.78, 0.42, 0.75), 2.0)
-	draw_string(f, at + Vector2(0, -46), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
+	draw_string(f, at + Vector2(0, -74), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.86, 0.78, 0.42))
 
 func _valve_pos(i: int) -> Vector2:
@@ -1016,9 +1016,6 @@ func _draw_lock(p) -> void:
 		_valve_dot(_valve_pos(0), "1", p.valve[0], true)
 		_valve_dot(_valve_pos(1), "2", p.valve[1], true)
 		_valve_dot(_valve_pos(2), "3", p.valve[2], true)
-		var f2: Font = ThemeDB.fallback_font
-		draw_string(f2, Vector2(ax + 30, top + tall + 110), "1 and 2 feed A", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
-		draw_string(f2, Vector2(bx + 60, top + tall + 110), "3 feeds B", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
 		return
 	var x := 430.0
 	var wide := 420.0
