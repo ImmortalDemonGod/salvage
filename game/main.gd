@@ -35,6 +35,7 @@ var ui_air: Label
 var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
+var ui_legend: Label
 var refusal := ""
 
 func _ready() -> void:
@@ -50,7 +51,7 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(150, 46)
+		m.size = Vector2(184, 66)
 		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 54)
 		add_child(m)
 		var l := Label.new()
@@ -59,8 +60,8 @@ func _build_ui() -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		l.set_anchors_preset(Control.PRESET_FULL_RECT)
-		l.offset_left = 8; l.offset_right = -8
-		l.offset_top = 6; l.offset_bottom = -6
+		l.offset_left = 12; l.offset_right = -12
+		l.offset_top = 10; l.offset_bottom = -10
 		m.add_child(l)
 		ui_stations.append(m)
 
@@ -68,14 +69,14 @@ func _build_ui() -> void:
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(250, 74)
-		p.position = Vector2(30 + i * 262, 624)
+		p.size = Vector2(330, 92)
+		p.position = Vector2(30 + i * 344, 606)
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
 		l.set_anchors_preset(Control.PRESET_FULL_RECT)
-		l.offset_left = 10; l.offset_right = -10
-		l.offset_top = 8; l.offset_bottom = -8
+		l.offset_left = 14; l.offset_right = -14
+		l.offset_top = 12; l.offset_bottom = -12
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		p.add_child(l)
 		ui_divers.append(p)
@@ -118,6 +119,18 @@ func _build_ui() -> void:
 	ui_scene.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	scene_panel.add_child(ui_scene)
 
+	var legend_panel := Panel.new()
+	legend_panel.name = "legend_panel"
+	legend_panel.size = Vector2(640, 42)
+	legend_panel.position = Vector2(30, 96)
+	add_child(legend_panel)
+	ui_legend = Label.new()
+	ui_legend.name = "label"
+	ui_legend.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_legend.offset_left = 14; ui_legend.offset_right = -14
+	ui_legend.offset_top = 11; ui_legend.offset_bottom = -11
+	legend_panel.add_child(ui_legend)
+
 	var help_panel := Panel.new()
 	help_panel.name = "help_panel"
 	help_panel.size = Vector2(1220, 40)
@@ -141,6 +154,7 @@ func _refresh() -> void:
 	if run.puzzle != null:
 		# The lock, drawn as its own state: a water line and three valves.
 		ui_air.get_parent().visible = false
+		ui_legend.get_parent().visible = false
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
@@ -156,6 +170,7 @@ func _refresh() -> void:
 		# who you are, what stands in the way, what you want, and what the
 		# buttons do (SPEC 3.3).
 		ui_air.get_parent().visible = false
+		ui_legend.get_parent().visible = false
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
@@ -177,15 +192,32 @@ func _refresh() -> void:
 		return
 	ui_scene.get_parent().visible = false
 	ui_air.get_parent().visible = true
+	ui_legend.get_parent().visible = true
+	ui_legend.text = "red ring = a limb that can still hit you    ·    blue ring = safe to stand"
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
+		if not combat.station_open(i):
+			continue
+		# The limb IS the position, so the marker has to SAY the limb and
+		# how much of it is left. A blind reviewer found no enemy health
+		# readout anywhere on screen, which made the whole limb system
+		# invisible.
+		var lb: int = combat.STATION_LIMB[i]
+		var lbl: Label = ui_stations[i].get_node("label")
+		if lb < 0:
+			lbl.text = "%s\nno limb here" % Combat.STATION_NAMES[i]
+		elif combat.limb_broken[lb]:
+			lbl.text = "%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper()]
+		else:
+			var stun := "  SHUT" if int(combat.limb_stun[lb]) > 0 else ""
+			lbl.text = "%s\n%s %d hp%s" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), stun]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
 	if combat.air_penalty > 0:
-		ui_air.text = "AIR  %d / %d   (%d line cut)" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
+		ui_air.text = "AIR  %d of %d left this turn   (%d line cut)" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
 	else:
-		ui_air.text = "AIR  %d / %d" % [combat.air, combat.air_this_turn()]
+		ui_air.text = "AIR  %d of %d left this turn" % [combat.air, combat.air_this_turn()]
 	var it: Dictionary = combat.intent()
 	if it.is_empty():
 		ui_intent.text = "%s   spent" % run.state_line()
@@ -193,7 +225,7 @@ func _refresh() -> void:
 		var where: Array = []
 		for s in it.stations:
 			where.append(Combat.STATION_NAMES[s])
-		ui_intent.text = "%s   NEXT: the %s %s %s for %d" % [run.state_line(), combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
+		ui_intent.text = "%s   NEXT: the %s %s %s for %d damage" % [run.state_line(), combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third
 	# card, which the as-played capture caught on its first frame.
@@ -206,9 +238,15 @@ func _refresh() -> void:
 		var d = combat.divers[i]
 		var mark := ">" if i == selected else " "
 		var state := "DOWN" if d.down else "%s  %d HP" % [Combat.STATION_NAMES[d.station], d.hp]
-		card.get_node("label").text = "%s%d %s  (%d air)\n%s" % [mark, i + 1, d.dname, d.cost, state]
+		var afford := "" if combat.air >= d.cost else "   cannot afford"
+		card.get_node("label").text = "%s%d %s  costs %d air to act%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, state]
 	ui_help.text = (refusal + "        ") if refusal != "" else ""
-	ui_help.text += "1-3 pick a diver  ·  Q W E R T move to a station  ·  SPACE attack from where you stand  ·  ENTER end turn"
+	var keys := ["Q", "W", "E", "R", "T"]
+	var moves: Array = []
+	for i in range(5):
+		if combat.station_open(i):
+			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
+	ui_help.text += "1-%d pick a diver  ·  move: %s  ·  SPACE attack from where you stand  ·  ENTER end turn" % [combat.divers.size(), "  ".join(moves)]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------

@@ -12,13 +12,18 @@ extends SceneTree
 const PAD := 6.0
 var frames := 0
 var findings: Array = []
+var walked := 0
 
 func fail(s: String) -> void:
 	if not (s in findings):
 		findings.append(s)
 
+var scene: Control
+var beat_idx := 0
+
 func _initialize() -> void:
-	root.add_child(load("res://game/main.tscn").instantiate())
+	scene = load("res://game/main.tscn").instantiate()
+	root.add_child(scene)
 
 func collect(n: Node, out: Array) -> void:
 	# is_visible_in_tree(), not visible: a child Label of a hidden Panel
@@ -52,6 +57,39 @@ func _process(_d: float) -> bool:
 	if frames < 3:   # let layout settle
 		return false
 
+	# Walk EVERY beat, not just the first. This checked only the opening
+	# scene and reported clean while a diver card visibly overflowed in
+	# combat: the run starts on a scene beat, so combat layout was never
+	# looked at once.
+	check_current()
+	if advance_to_next_beat():
+		frames = 0
+		return false
+	report()
+	return true
+
+func advance_to_next_beat() -> bool:
+	beat_idx += 1
+	var r = scene.run
+	if r.finished:
+		return false
+	# force the current beat complete so the run moves on
+	if r.combat != null:
+		for lb in range(r.combat.limb_hp.size()):
+			r.combat.limb_hp[lb] = 0
+			r.combat.limb_broken[lb] = true
+		r.combat.outcome = "victory"
+	elif r.puzzle != null:
+		for i in range(r.puzzle.VALVES):
+			r.puzzle.valve[i] = true
+	if not r.advance():
+		return false
+	scene.combat = r.combat
+	scene.selected = 0
+	scene._refresh()
+	return true
+
+func check_current() -> void:
 	var controls: Array = []
 	collect(root, controls)
 	var labels: Array = []
@@ -110,9 +148,11 @@ func _process(_d: float) -> bool:
 				if ov.size.x > 2.0 and ov.size.y > 2.0:
 					fail("PANELS OVERLAP: %s and %s by %dx%d" % [pa.name, pb.name, int(ov.size.x), int(ov.size.y)])
 
-	print("layout     %d Controls walked (%d labels, %d panels)" % [controls.size(), labels.size(), panels.size()])
+	walked += controls.size()
+
+func report() -> void:
+	print("layout     %d beats walked, %d Controls total" % [beat_idx, walked])
 	for f in findings:
 		print("FINDING  " + f)
 	print("LAYOUT: clean" if findings.is_empty() else "LAYOUT: %d finding(s)" % findings.size())
 	quit(0 if findings.is_empty() else 1)
-	return true
