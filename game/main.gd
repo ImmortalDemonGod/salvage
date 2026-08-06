@@ -129,7 +129,13 @@ func _refresh() -> void:
 		return
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
-	ui_air.text = "AIR  %d / %d" % [combat.air, combat.air_this_turn()]
+	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
+	# umbilical rule fired, so the pool and its ceiling shrank together and
+	# the player could not tell anything had been taken from them.
+	if combat.air_penalty > 0:
+		ui_air.text = "AIR  %d / %d   (%d line cut)" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
+	else:
+		ui_air.text = "AIR  %d / %d" % [combat.air, combat.air_this_turn()]
 	var it: Dictionary = combat.intent()
 	if it.is_empty():
 		ui_intent.text = "%s   spent" % run.state_line()
