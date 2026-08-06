@@ -339,11 +339,12 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G7 AUDIO** | GREEN (musical quality permanently UNVERIFIED) | 12 of 12 named events classify from REAL sim lines across 10,539 lines of played output, every encounter and the lock, both policies. Wired into the scene: `main.gd` drains the sim log into the voice each refresh, because classification is not wiring. Voices are procedural tones with no assets; whether they sound good is a human call and cannot be closed here |
 | **G8 FIDELITY** | GREEN on the HIGHs, MED and LOW open | An adversarial round briefed "prove this does NOT match the spec" returned **13 HIGH, 9 MED, 4 LOW**. Every HIGH is fixed or ruled; see below. The reviewer also positively verified determinism (zero RNG anywhere in `sim/` or `content/`), the parking lot (no stamina, song, verse, relic, inventory, banking or mid-dive healing), and a dozen decided rules |
 | **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
-| **G10 LEGIBILITY** | GREEN on the diff | Three blind cold reads. First: 6 of 7 combat questions CANNOT TELL, no enemy HP anywhere on screen. Third: win condition, move cost, diver damage, limb maxima and occupancy all TOLD. Scored on the diff, per protocol |
+| **G10 LEGIBILITY** | GREEN on the diff | Five blind cold reads. First: 6 of 7 combat questions CANNOT TELL, no enemy HP anywhere on screen. Fourth, run against the six-ability build, closed with one sentence: *"there is nothing on screen indicating a second or alternate attack for either character."* It was right, and the defect was real: only slot 0 was bound to a key. Fifth, after the fix: both abilities per diver named with their keys, effects and costs, all TOLD; air stated as shared and non-banking; diver HP now shows a maximum. Scored on the diff, per protocol |
 | **G11 TAUGHT LINE** | GREEN, and now EXACT | Two measurements. Comparative: taught 100% win / 14.0 HP lost vs naive 0% win. And the one SPEC 4.1 actually asks for, which a fidelity round found missing: the taught line's **distance from optimal**, measured against the depth-limited search over 156 reachable states, mean **1.43**, worst 9.00, against a threshold of 2.0 |
 | **G12 BYPASS** | GREEN | 8 built beats, 0 skippable without completing them. A ruling, not a deferral |
 | **G13 PILLAR** | GREEN | Generated matrix over 4 combat beats. Two mechanics introduced in the final beat are NOTED as unable to escalate in a slice this short: ruled, not deferred |
 | **G14 HARNESS FIDELITY** | GREEN | sim is `RefCounted` with no Node; differential drives one script down the bot path and the keyboard path with identical state, every commit |
+| **G14-DOOR** | GREEN | `verify/door.gd` reads the key map as text and holds it against the content: every ability slot any diver owns must be bound to a key, every bound key must call a function that exists, no key may point at a mechanic whose enable const is false, and any verifier claiming to drive the player must drive a bound door. Mutation-tested three ways, control clean. `tools/keypath.gd` extends this to the screen: it derives a key sequence per beat by playing the run with the judge bots, and fails if any beat is unreachable from the keyboard. **9 of 9 reachable** |
 | **G-TEACH** | GREEN | 8 beats, 12 mechanics, each taught exactly once, cross-checked against what the sim actually builds |
 
 ### Logged, not fixed
@@ -355,8 +356,24 @@ HUD column; `Prototype1` reads as a debug identifier beside "Scuba"; the
 crab's eyes read as detached artifacts; `(placeholder)` repeated at the
 head of every opening line destroys the left-edge scan.
 
-From the G10 rounds: "beat 3/8" is never explained; diver HP has no
-maximum shown; the word "act" is not defined against the specific verbs.
+From the G10 rounds, still open after five: "beat 3/9" is never
+explained; the rule that you attack the limb at your own station is
+never stated, only implied by adjacency; nothing says what happens when
+a telegraphed attack lands on an empty station (it cuts an air line, and
+the screen only says so after it happens); "shuts the limb" and the
+crab's name are unlabelled; limbs read "hp" and divers read "HP"; no
+down-and-out rule is shown. Closed by the fixes above: the second
+ability, the shared-pool statement, diver maxima, the undefined word
+"act" (now "N air per ability, 1 to move", which also resolved a real
+contradiction with the flat move cost), and "then step" (now "then move
+free"). `Dual Palm` read as *missing* a damage number rather than having
+none; it now says "no damage".
+
+A judge limit found while deriving the keypath, logged not fixed: the
+greedy bot never presses F. It cannot value a free reposition or a
+second shut turn, so it ties and takes slot 0. This is the fifth judge
+modelling gap, not a dead ability: the G4 dominance search over 400
+states finds each of the 11 actions uniquely optimal somewhere.
 
 ### G8 findings and what happened to each
 

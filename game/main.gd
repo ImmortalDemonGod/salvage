@@ -56,14 +56,16 @@ func _ready() -> void:
 	_refresh()
 
 # where this encounter puts a station, falling back to the default ring
+const BOARD_LIFT := Vector2(0, -46)
+
 func place(i: int) -> Vector2:
 	if combat != null:
 		var places: Dictionary = combat.enc.get("places", {})
 		var key := str(i)
 		if places.has(key):
 			var xy: Array = places[key]
-			return Vector2(float(xy[0]), float(xy[1]))
-	return STATION_POS[i]
+			return Vector2(float(xy[0]), float(xy[1])) + BOARD_LIFT
+	return STATION_POS[i] + BOARD_LIFT
 
 func _build_ui() -> void:
 	# station markers: one Control each, so the invariants can assert they
@@ -89,8 +91,8 @@ func _build_ui() -> void:
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(392, 146)
-		p.position = Vector2(24 + i * 406, 566)
+		p.size = Vector2(392, 190)
+		p.position = Vector2(24 + i * 406, 522)
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
@@ -245,7 +247,7 @@ func _refresh() -> void:
 	ui_air.get_parent().visible = true
 	ui_legend.get_parent().visible = true
 	ui_goal.get_parent().visible = true
-	ui_legend.text = "red ring = a limb that can still hit you    ·    blue ring = safe to stand"
+	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
 		if not combat.station_open(i):
@@ -314,11 +316,11 @@ func _refresh() -> void:
 			var what := ""
 			match String(ab.kind):
 				"hit": what = "%d dmg" % int(ab.dmg)
-				"hit_and_step": what = "%d dmg, then step" % int(ab.dmg)
+				"hit_and_step": what = "%d dmg, then move free" % int(ab.dmg)
 				"hit_wide": what = "%d dmg here and either side" % int(ab.dmg)
-				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "") + "shuts the limb for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
+				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "no damage, ") + "the limb cannot attack for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
 			lines.append("%s %s: %s" % [key, String(ab.name), what])
-		card.get_node("label").text = "%s%d %s  %d air per action%s\n%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, "\n".join(lines), state]
+		card.get_node("label").text = "%s%d %s  %d air per ability%s\n%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, "\n".join(lines), state]
 	ui_help.text = (refusal + "        ") if refusal != "" else ""
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []
@@ -449,9 +451,9 @@ func _draw() -> void:
 	for i in range(5):
 		if not combat.station_open(i):
 			continue
-		var limb: int = combat.STATION_LIMB[i]
-		var safe: bool = limb < 0 or combat.limb_broken[limb]
-		var col := Color(0.25, 0.55, 0.6) if safe else Color(0.85, 0.35, 0.25)
+		var col := Color(0.25, 0.55, 0.6)
+		if i in combat.threatened_stations():
+			col = Color(0.85, 0.35, 0.25)
 		draw_arc(place(i), 46, 0, TAU, 40, col, 2.0)
 	# scale is PIXELS PER BODY UNIT, not a multiplier. Passing 1.6 made the
 	# crab under two pixels tall, its foot triangles sub-pixel, and the

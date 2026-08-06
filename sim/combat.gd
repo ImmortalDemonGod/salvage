@@ -161,6 +161,23 @@ func live_attacks() -> Array:
 # The telegraph. Deterministic, shown at the START of the player's turn,
 # and it is exactly what will happen (SPEC 2.11).
 # the whole announced turn
+# Every station an announced attack will land on this turn, read off the
+# locked intents. Lives here rather than in the scene so that the ring the
+# player sees, the words the telegraph prints and the invariant the fuzz
+# checks are all one function. The presentation drew "safe to stand" at any
+# station with no limb standing on it, which is a different question: a
+# limb's arc reaches stations it does not occupy, so BACKLINE was drawn
+# safe while the same screen announced 3 damage landing there.
+func threatened_stations() -> Array:
+	var out: Array = []
+	for it in intents():
+		if int(limb_stun[int(it.limb)]) > 0:
+			continue          # shut down: prevented, and the telegraph says so
+		for st in it.stations:
+			if not (int(st) in out):
+				out.append(int(st))
+	return out
+
 func intents() -> Array:
 	return locked
 
@@ -187,8 +204,13 @@ func can_attack(d) -> bool:
 	# whatever is winding up, wherever it is. That is what makes standing
 	# at range a decision rather than a retreat, and it is why BACKLINE and
 	# conditions are one idea rather than two (SPEC 2.7 parts).
+	# "there is something announced" is not the same as "there is something
+	# I can shut". can_attack said yes on any announcement while target_limb
+	# skipped limbs already shut or broken, so act_ability took the yes and
+	# then refused on the -1. The bots offered the action, the UI offered
+	# the key, and the press did nothing. Ask the same question both do.
 	if d.disables and d.station == BACKLINE:
-		return not locked.is_empty()
+		return target_limb(d) >= 0
 	return STATION_LIMB[d.station] >= 0 and not limb_broken[STATION_LIMB[d.station]]
 
 # which limb this diver would hit from where it stands

@@ -91,6 +91,19 @@ func expect_attack(c: Combat, i: int) -> bool:
 		return false
 	if c.air < int(d.cost):
 		return false
+	# A disabler standing at BACKLINE reaches whatever is winding up, with
+	# no limb at its own station. Modelled independently of can_attack on
+	# purpose: this function's job is to disagree with the sim when the sim
+	# is wrong, so it must not simply call it. It DID lack this rule, and
+	# reported 234 legal attacks as illegal the first time BACKLINE opened.
+	if d.disables and int(d.station) == Combat.BACKLINE:
+		# and "something is announced" is not "something can still be shut":
+		# a limb already shut down or already broken is not a target. Stated
+		# here as the rule, not delegated to the sim's own answer.
+		for it in c.intents():
+			if int(c.limb_stun[int(it.limb)]) <= 0 and not bool(c.limb_broken[int(it.limb)]):
+				return true
+		return false
 	var limb: int = c.STATION_LIMB[int(d.station)]
 	if limb < 0:
 		return false
@@ -148,7 +161,10 @@ func check(c: Combat, pre: Dictionary, kind: String) -> void:
 	air_peak = max(air_peak, c.air)
 	air_floor = min(air_floor, c.air)
 
-	for i in range(3):
+	# The limb count is CONTENT, not three. The descent has one limb, and
+	# this loop indexed past the end of its array the moment the fuzz stopped
+	# running only the crab. Standing rule 3: measure, never assume.
+	for i in range(c.limb_hp.size()):
 		if int(c.limb_hp[i]) < 0:
 			fail("limb-negative", "LIMB HP NEGATIVE: %s at %d after %s"
 				% [c.LIMB_NAMES[i], c.limb_hp[i], kind])
@@ -165,11 +181,24 @@ func check(c: Combat, pre: Dictionary, kind: String) -> void:
 		fail("outcome-reopened", "A FINISHED FIGHT REOPENED: '%s' -> 'ongoing' after %s"
 			% [pre_outcome, kind])
 
+# The hostile loop used to call Combat.new() with no argument every time,
+# which is the crab and only ever the crab. 71 fights, one encounter, so
+# three of four encounters were never fuzzed at all and BACKLINE -- closed
+# on the crab -- was never once open. A new invariant about who can be hit
+# where sampled nothing and survived deliberate sabotage. Rotate.
+var enc_turn := 0
+
+func next_encounter() -> Combat:
+	var ids: Array = Encounters.ALL.keys()
+	var id := String(ids[enc_turn % ids.size()])
+	enc_turn += 1
+	return Combat.new(id)
+
 # ---- the hostile loop --------------------------------------------------
 func fuzz() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260805
-	var c := Combat.new()
+	var c := next_encounter()
 	air_max = c.air_this_turn() + 1
 	bump("fights")
 	var post_over := 0
@@ -263,7 +292,25 @@ func fuzz() -> void:
 				bump("ill_end_repeat")
 			if over_before:
 				bump("end_after_over")
+			# The ring is a PROMISE: red means an announced attack lands on
+			# that station this turn, blue means none does. Check it end to
+			# end -- anyone standing on an unthreatened station must come
+			# through the enemy's turn without losing a point. The screen
+			# drew "safe to stand" wherever no limb STOOD, which is a
+			# different question from where an arc REACHES, so BACKLINE was
+			# blue while 3 damage was announced against it.
+			var threat: Array = c.threatened_stations()
+			var before_hp: Dictionary = {}
+			for dd in c.divers:
+				if not dd.down and not (int(dd.station) in threat):
+					before_hp[dd.id] = int(dd.hp)
 			c.end_turn()
+			for did in before_hp.keys():
+				var now := int(c.divers[did].hp)
+				if now < int(before_hp[did]):
+					fail("blue_ring_lied", "BLUE RING LIED: %s stood on %s, which no announced attack named, and lost %d HP anyway" % [
+						c.divers[did].dname, Combat.STATION_NAMES[int(c.divers[did].station)],
+						int(before_hp[did]) - now])
 			od_used = false
 			expected = true
 			accepted = true
@@ -310,14 +357,14 @@ func fuzz() -> void:
 		if c.outcome != "ongoing":
 			post_over += 1
 			if post_over >= POST_OVER_ACTIONS:
-				c = Combat.new()
+				c = next_encounter()
 				bump("fights")
 				post_over = 0
 				last_was_end = false
 				od_used = false
 		elif c.turn > FIGHT_CAP:
 			bump("capped")
-			c = Combat.new()
+			c = next_encounter()
 			bump("fights")
 			post_over = 0
 			last_was_end = false
