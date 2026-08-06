@@ -87,19 +87,59 @@ static func draw_diver(ci: CanvasItem, tier: int, pos: Vector2, scale: float, fa
 
 # limb_broken: [jaw, claw, tail] of bools, as Combat.limb_broken.
 # The crab always faces left; the divers ring it.
+# A VENT WORM: no legs, a segmented tube, and the vents it is named for.
+static func _worm_body(ci: CanvasItem, xf: Transform2D) -> void:
+	for i in range(7):
+		var t: float = -0.34 + float(i) * 0.115
+		var r: float = 0.115 - abs(float(i) - 3.0) * 0.012
+		_dot(ci, xf, Vector2(t, -0.30), r, SHELL_DK if i % 2 == 0 else SHELL)
+	# vent nozzles along the back, which is the thing it sprays from
+	for i in range(4):
+		var vx: float = -0.22 + float(i) * 0.135
+		_box(ci, xf, vx - 0.018, -0.455, vx + 0.018, -0.395, CHITIN)
+		_dot(ci, xf, Vector2(vx, -0.462), 0.026, GOLD_DK)
+	# a soft underside instead of legs
+	_poly(ci, xf, [
+		Vector2(-0.36, -0.205), Vector2(0.34, -0.205),
+		Vector2(0.27, -0.145), Vector2(-0.30, -0.145)], BELLY_DK)
+
+# A DREDGE: a machine. Boxy hull, a stack, a winch drum, and struts rather
+# than legs, so it does not read as another animal.
+static func _dredge_body(ci: CanvasItem, xf: Transform2D) -> void:
+	_box(ci, xf, -0.36, -0.415, 0.33, -0.205, PLATE_DK)
+	_box(ci, xf, -0.34, -0.395, 0.31, -0.300, SHELL_DK)
+	# rivet line along the hull
+	for i in range(9):
+		_dot(ci, xf, Vector2(-0.31 + float(i) * 0.079, -0.238), 0.012, GOLD_DK)
+	# the stack it vents from
+	_box(ci, xf, -0.10, -0.560, -0.020, -0.410, PLATE)
+	_box(ci, xf, -0.118, -0.585, -0.002, -0.545, GOLD_DK)
+	# the winch drum
+	_dot(ci, xf, Vector2(0.215, -0.305), 0.072, PLATE_LT)
+	_dot(ci, xf, Vector2(0.215, -0.305), 0.032, PLATE_DK)
+	# struts down to the floor
+	for sx in [-0.27, -0.05, 0.19]:
+		_tube(ci, xf, Vector2(sx, -0.205), Vector2(sx + 0.05, -0.020), 0.030, 0.020, PLATE_DK)
+
 static func draw_crab(ci: CanvasItem, pos: Vector2, scale: float, limb_broken: Array) -> void:
 	var xf := _xf(pos, scale, 1)
 	var jaw_gone := _broken(limb_broken, JAW)
 	var claw_gone := _broken(limb_broken, CLAW)
 	var tail_gone := _broken(limb_broken, TAIL)
-	_crab_legs_far(ci, xf)
+	if kind == "crab":
+		_crab_legs_far(ci, xf)
 	if tail_gone:
 		_crab_tail_broken(ci, xf)
 	else:
 		_crab_tail(ci, xf)
 	_crab_shell(ci, xf)
 	_crab_belly(ci, xf)
-	_crab_legs_near(ci, xf)
+	if kind == "worm":
+		_worm_body(ci, xf)
+	elif kind == "dredge":
+		_dredge_body(ci, xf)
+	else:
+		_crab_legs_near(ci, xf)
 	if jaw_gone:
 		_crab_jaw_broken(ci, xf)
 	else:
@@ -141,6 +181,7 @@ static var bad_polys := 0
 # which is the thing the station design is being tested against.
 static var tint := Color(1, 1, 1)
 static var rim := Color(0.72, 0.88, 0.96, 0.17)
+static var kind := "crab"     # crab | worm | dredge
 
 # the upward-facing edges of a shape, lit. Cheap, and it is what turns a
 # flat fill into something with a top and a bottom.
