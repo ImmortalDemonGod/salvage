@@ -565,6 +565,139 @@ not a gate. The deploy now publishes its source commit at /build.txt
 beside the site, so which build is being served is observable from any
 browser, and the deploy ends by reading it back.
 
+## The third human playtest (Aug 6, evening): the fun pass, judged
+
+The first human contact the fun pass has ever had. He replayed
+reluctantly ("I'm being told that I actually did not play the absolute
+latest fun build"), quit after beat 5 of 9 in about seven minutes with
+three separate quit statements, and closed with the verdict that binds:
+**"It doesn't meaningfully change the feedback that I gave in the first
+playthrough at four... this is hurting my soul to play."** He never
+reached the vent worm, the second lock, the boat2 interlude or the
+dredge. Primary document: docs/playtests/2026-08-06-3-evening.txt.
+
+What LANDED, in his words: the centred boxes and ENTER button, the
+lamp cones ("light cone. That's interesting. Oh, cool." twice), the
+jaw reticle ("I do like how it's targeting at the jaw"), the fx layer
+("I do like the lights and the little flashing things"), and located
+damage ("the damage comes from the locations... kind of interesting").
+The cosmetic half of the fun pass reads.
+
+What REGRESSED: the board is now occluded by its own teaching. "I
+legitimately cannot even see the thing I'm supposed to be fighting...
+I can't even see my prototype one character because it's covered in
+text." Measured from the geometry: worst-case panel union is 47-50% of
+the canvas by area, and HUD rows occupy 62.5% of screen HEIGHT, leaving
+only y252-522 clear, which is why it feels like 80% to a person. The
+second diver card ("now we have two boxes down here") added 16.5% of
+the canvas at the exact moment he already felt buried. And the worst
+line of the session: "At least I can click space to make this go away."
+There is no dismiss. Every dismissal was an attack he paid air for.
+
+What did not move: the tedium. "I'm not even bothering to read anymore
+because it's just click space and click enter sometimes." The fun
+pass's core mechanics (analyze, traits, tiers, the F ability, the
+damage preview) were served, reachable, and appear NOWHERE in seven
+minutes of think-aloud. The cosmetics landed; the mechanics were never
+touched. Teaching text the player has stopped reading teaches nothing.
+
+NEW findings: the ENTER button's rivets made him unsure it was a button
+at all ("is that a button or is that just a bolt?"). Prototype1 fights
+in fight1 one beat BEFORE boat1 introduces it, while _draw_rig has
+shown all three divers on deck since beat 0, so both boat introductions
+are doubly after the fact ("why am I now getting a person here?").
+Movement refusals render in a help line he had stopped reading, so
+moves read as broken ("I can't move. I can't move either."). And the
+expectation that names the fix: "I can't move one player to the flank
+and another player to the rear and then attack them both in one turn...
+like Baldur's Gate."
+
+That turn is not undiscovered; it is illegal. Move both plus attack
+with both costs 5 air against a 4-air tank in every two-diver fight,
+and on the dredge all-three-attack costs 6, so the full party can never
+act in one turn except by paying desperation HP. He quit wanting a
+thing the game priced out of existence.
+
+## What the machines measured, once the humans forced the question
+
+A masher policy (never move, never analyze, attack with slot 0 until
+the air is gone, end turn) was run against every encounter, 200 runs
+each, alongside the casual bot on the same seeds. The sim has no RNG,
+so the masher runs are single deterministic trajectories.
+
+    pure mash:      0% wins on crab, spitter, dredge. ZERO deaths.
+                    Every fight becomes a 40-turn stalemate: the masher
+                    breaks the one limb it can reach or stun-locks the
+                    enemy (Prototype1's shut from BACKLINE re-shuts
+                    every announced limb within the air budget), and
+                    then nothing can hurt anyone, forever.
+    mash + move:    add one rule (move when stuck) and it WINS crab in
+                    6 turns and the dredge in 7, deterministically,
+                    versus the casual bot's 16-17 turns at 55-76%.
+    the sentence:   mashing removes all threat and never ends the
+                    fight. Unlosable, unwinnable. That is the measured
+                    shape of "tedious, and I feel like I'm being
+                    punished for playing it."
+
+The G3 band and G4 dominance proofs were green through all of this,
+because they measure bots that already play properly. Nothing measured
+the policy a bored human actually converges to. A masher gate joins
+the suite in the block below.
+
+The audit from the playtester's agent was verified claim by claim
+(docs/playtests/2026-08-06-ai-audit.txt): the continuity bug, the
+missing sprite numbers, the monotonically relaxing board, the salvage
+never existing on screen, the choiceless ability ladder, and the G3/G4
+pin values are all CONFIRMED against source. Two corrections: its ~61%
+panel figure double-counts panels that never co-occur (true worst case
+is just under 50% by area), and SPEC 2.2 killed a second resource POOL
+("stamina never bound"), never per-diver action caps, so the economy
+ruling below contradicts nothing the docs litigated.
+
+## The overnight block: rulings and order
+
+The user ruled, explicitly, on Aug 6 evening:
+
+1. **Economy: free move + shared air.** Each diver gets one free move
+   per turn; the shared 4-air tank pays for abilities only. This makes
+   the Baldur's Gate turn legal, keeps the one-tank identity, and
+   deletes the experiment tax. Bands stay pinned and are re-paid in
+   content. New gate: the mash-plus-move policy must LOSE at least one
+   fight, and the stalemate class (unlosable, unwinnable) must be
+   impossible or bounded everywhere.
+2. **Mouse first is a hard requirement, with a gate.** In his words,
+   from the answer: "i dont want to be forced to use the keyboard.
+   having buttons on screen would replace the need of the keyboard and
+   make it visually obvious what to do." He raised it in playtest 2
+   ("can we have buttons?") and is worried it was not internalized.
+   It is: every action the sim permits (abilities, analyze, end turn,
+   diver select) gets an on-screen button; keyboard becomes optional
+   shortcuts; a mouse-door gate (the click twin of door.gd) fails any
+   sim-legal action with no click path. Prompts speak click-first.
+3. **The rig: bake it, with a fallback.** Timeboxed attempt to bake
+   the FBX clips (idle, attacks, damaged, all three divers) into
+   sprite frames. If the pipeline does not yield in the timebox, fall
+   back to readable placeholder names plus code art, and log why.
+4. **Timebox: overnight, until done.** Stop condition: the findings
+   ledger from all three playtests and the audit is empty or
+   explicitly deferred, the fast set and gates are green, and deep
+   passes come up dry. G5-HUMAN stays open; only a person closes it.
+
+Build order: (P0) economy rebuild with masher and stalemate gates, on-
+screen buttons and full mouse parity, occlusion diet with a HUD-area
+budget gate (panel union must stay under a ceiling and the creature
+must be visibly unoccluded). (P1) the rig bake; undo (Combat.clone
+exists; restore-to-turn-start until an ability or read locks the turn);
+the teach-by-play tutorial fight he designed; win moments and
+transitions that hold and explain (a transitions row finally exists in
+this ledger); the boat teaching moment (try the new ability where it is
+granted); copy truth pass (boat2's three-air lie, the introduction
+order, the hook POV) marked placeholder in source. (P2, if the night
+allows) displacement per SPEC 2.9, an escalating break per SPEC 2.4's
+open question, the salvage on the board, valve flow causality drawn.
+Standing rules 26-32 bind throughout; deploys only through
+tools/deploy.sh, which now proves what it serves.
+
 ## The presentation pass
 
 The run met its stopping condition at 04:54 and the very next commit was
