@@ -550,7 +550,7 @@ func _draw_ending() -> void:
 	draw_string(f, Vector2(cx, y + 46), "placeholder copy, for Marc",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
 	var rows: Array = [
-		"beats cleared        %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
+		"dives cleared        %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
 		"salvage lost         %d" % lost,
 		"the squad came back  %s" % ("whole" if lost == 0 else "lighter than it went down"),
 	]
@@ -656,6 +656,8 @@ func _lock_step(p) -> String:
 	return "Valve 3 is open. Turn the rest to fill the chamber to the line."
 
 func _refresh() -> void:
+	if _dive <= 0.0:
+		_hud(true)
 	_auto_select()
 	_stamp_title()
 	_voice()
@@ -744,7 +746,7 @@ func _refresh() -> void:
 		sp3.position = Vector2(200, 366)
 		sp3.size = Vector2(880, 292)
 		var hp3: Control = ui_help.get_parent()
-		var bw: float = 300.0 if ui_help.text.length() < 24 else 660.0
+		var bw: float = 300.0 if controls.length() < 24 else 660.0
 		hp3.position = Vector2(640.0 - bw * 0.5, 664)
 		hp3.size = Vector2(bw, 52)
 		ui_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
