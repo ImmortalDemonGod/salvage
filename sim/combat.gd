@@ -41,6 +41,7 @@ class Diver extends RefCounted:
 	var dname: String
 	var cost: int
 	var disables: bool = false
+	var kit: Array = []
 	var max_hp: int
 	var hp: int
 	var dmg: int
@@ -115,6 +116,22 @@ func _init(encounter := "crab") -> void:
 	var hp: Array = TUNE.diver_hp
 	var dm: Array = TUNE.diver_dmg
 	var roster := [["Scuba", 1, false], ["Prototype1", 2, false], ["Proto5", 3, false]]
+	# Two abilities per diver, named for the clips that actually exist in
+	# the rig (standing rule: ability names come FROM the animation list).
+	# SPEC 2.9 gives each diver one verb expressed twice.
+	var kits := [
+		# Double Knee trades nothing for the step: at 1 damage against Axe
+		# Kick's 2 it was strictly worse whenever you did not want to move.
+		[{"name": "Axe Kick", "dmg": 2, "kind": "hit"},
+		 {"name": "Double Knee", "dmg": 2, "kind": "hit_and_step"}],
+		[{"name": "Palm Strike", "dmg": 2, "kind": "shut", "turns": 1},
+		 {"name": "Dual Palm", "dmg": 0, "kind": "shut", "turns": 2}],
+		# Attck2 spills onto every neighbouring station, so 5 became 10+ per
+		# action and cleared the dredge in 2 turns against a teaching floor
+		# of 6. The crowd answer trades per-target damage for reach.
+		[{"name": "Attck1", "dmg": 8, "kind": "hit"},
+		 {"name": "Attck2", "dmg": 3, "kind": "hit_wide"}],
+	]
 	var starts: Array = enc.get("starts", [])
 	divers = []
 	var n: int = min(int(enc.party), roster.size())
@@ -122,6 +139,7 @@ func _init(encounter := "crab") -> void:
 		var start: int = int(starts[i]) if i < starts.size() else int(OPEN_STATIONS[i % OPEN_STATIONS.size()])
 		var dv := Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start)
 		dv.disables = String(roster[i][0]) == "Prototype1" and bool(enc.get("drum", false))
+		dv.kit = (kits[i] as Array).duplicate(true)
 		divers.append(dv)
 	air = int(TUNE.air)
 	_lock_intent()
@@ -187,9 +205,72 @@ func target_limb(d) -> int:
 func afford(cost: int) -> bool:
 	return air >= cost
 
-func act_attack(i: int) -> bool:
+# which stations sit next to this one, for the abilities that step or spill
+func neighbours(station: int) -> Array:
+	var out: Array = []
+	var order: Array = OPEN_STATIONS
+	var at := order.find(station)
+	if at < 0:
+		return out
+	if at > 0:
+		out.append(int(order[at - 1]))
+	if at < order.size() - 1:
+		out.append(int(order[at + 1]))
+	return out
+
+func act_ability(i: int, slot: int) -> bool:
 	if i < 0 or i >= divers.size():
 		return false
+	var d = divers[i]
+	if slot < 0 or slot >= d.kit.size():
+		return false
+	var ab: Dictionary = d.kit[slot]
+	if outcome != "ongoing" or d.down or not afford(d.cost) or not can_attack(d):
+		return false
+	var limb: int = target_limb(d)
+	if limb < 0:
+		return false
+	air -= d.cost
+	var at_range: bool = d.disables and d.station == BACKLINE
+	var dmg: int = 0 if at_range else int(ab.dmg)
+	if dmg > 0:
+		limb_hp[limb] -= dmg
+		log_lines.append("%s: %s hits the %s for %d" % [d.dname, String(ab.name), LIMB_NAMES[limb], dmg])
+	else:
+		log_lines.append("%s: %s on the %s" % [d.dname, String(ab.name), LIMB_NAMES[limb]])
+	match String(ab.kind):
+		"shut":
+			if not limb_broken[limb]:
+				limb_stun[limb] = int(ab.get("turns", 1))
+				log_lines.append("the %s is shut down" % LIMB_NAMES[limb])
+		"hit_and_step":
+			var n: Array = neighbours(d.station)
+			if not n.is_empty():
+				d.station = int(n[0])
+				log_lines.append("%s steps to %s" % [d.dname, STATION_NAMES[d.station]])
+		"hit_wide":
+			for st in neighbours(d.station):
+				var lb2: int = STATION_LIMB[int(st)]
+				if lb2 >= 0 and not limb_broken[lb2]:
+					limb_hp[lb2] -= dmg
+					log_lines.append("%s spills onto the %s for %d" % [String(ab.name), LIMB_NAMES[lb2], dmg])
+					_break_if_spent(lb2)
+	_break_if_spent(limb)
+	return true
+
+func _break_if_spent(limb: int) -> void:
+	if limb < 0 or limb_broken[limb] or limb_hp[limb] > 0:
+		return
+	limb_hp[limb] = 0
+	limb_broken[limb] = true
+	log_lines.append("the %s BREAKS" % LIMB_NAMES[limb])
+	_check_victory()
+
+func act_attack(i: int) -> bool:
+	# ability slot 0, kept so every existing caller and bot still works
+	return act_ability(i, 0)
+
+func _legacy_attack(i: int) -> bool:
 	var d = divers[i]
 	if outcome != "ongoing" or d.down or not afford(d.cost) or not can_attack(d):
 		return false
@@ -320,6 +401,7 @@ func clone() -> Combat:
 		var a = divers[i]
 		var b = c.divers[i]
 		b.hp = a.hp; b.station = a.station; b.down = a.down
+		b.kit = a.kit
 	c.limb_hp = limb_hp.duplicate()
 	c.limb_broken = limb_broken.duplicate()
 	c.limb_stun = limb_stun.duplicate()

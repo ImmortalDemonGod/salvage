@@ -115,6 +115,8 @@ func rollout(c: Combat, rng: RandomNumberGenerator) -> float:
 func key(a: Dictionary) -> String:
 	if a.kind == "move":
 		return "move->%s" % Combat.STATION_NAMES[a.s]
+	if a.kind == "attack":
+		return ["Axe Kick", "Double Knee", "Palm Strike", "Dual Palm", "Attck1", "Attck2"][int(a.i) * 2 + int(a.get("slot", 0))]
 	return "%s:%s" % [a.kind, ["Scuba", "Prototype1", "Proto5"][a.i]]
 
 # ---- G4: is every action uniquely optimal somewhere? -------------------

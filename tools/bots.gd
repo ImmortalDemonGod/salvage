@@ -10,7 +10,8 @@ static func legal(c: Combat) -> Array:
 		if d.down:
 			continue
 		if c.afford(d.cost) and c.can_attack(d):
-			out.append({"kind": "attack", "i": d.id})
+			for slot in range(d.kit.size()):
+				out.append({"kind": "attack", "i": d.id, "slot": slot})
 		if Combat.OVERDRAFT_ENABLED and not c.overdrafted and d.hp > Combat.OVERDRAFT_HP:
 			out.append({"kind": "overdraft", "i": d.id})
 		if c.afford(Combat.MOVE_COST):
@@ -21,7 +22,7 @@ static func legal(c: Combat) -> Array:
 
 static func apply(c: Combat, a: Dictionary) -> bool:
 	match a.kind:
-		"attack": return c.act_attack(a.i)
+		"attack": return c.act_ability(a.i, int(a.get("slot", 0)))
 		"move": return c.act_move(a.i, a.s)
 		"overdraft": return c.act_overdraft(a.i)
 	return false
@@ -63,6 +64,14 @@ static func casual(c: Combat, rng: RandomNumberGenerator) -> Dictionary:
 	var pool: Array = moves if want_move else attacks
 	if pool.is_empty():
 		pool = opts
+	# A novice presses the FIRST button most of the time. Picking uniformly
+	# among six abilities halved the casual win rate the moment the kit
+	# doubled, which measured the bot's indecision rather than the fight.
+	# Same judge pathology as the first sweep and the overdraft.
+	if not want_move and rng.randf() < 0.7:
+		for a in pool:
+			if int(a.get("slot", 0)) == 0:
+				return a
 	return pool[rng.randi() % pool.size()]
 
 # greedy: break limbs fast, and step out of a telegraphed station when it
@@ -80,11 +89,18 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 		var d = c.divers[a.i]
 		var score := 0.0
 		if a.kind == "attack":
+			var ab: Dictionary = d.kit[int(a.get("slot", 0))]
 			var limb: int = c.target_limb(d)
 			if limb < 0:
 				continue
-			score = float(min(d.dmg, c.limb_hp[limb])) / float(d.cost)
-			if d.dmg >= c.limb_hp[limb]:
+			var adm: int = int(ab.dmg)
+			score = float(min(adm, c.limb_hp[limb])) / float(d.cost)
+			if String(ab.kind) == "hit_wide":
+				for st in c.neighbours(d.station):
+					var lb3: int = c.STATION_LIMB[int(st)]
+					if lb3 >= 0 and not c.limb_broken[lb3]:
+						score += float(min(adm, c.limb_hp[lb3])) / float(d.cost)
+			if adm >= c.limb_hp[limb]:
 				score += 3.0   # finishing a limb changes the map
 			# shutting down the limb that is ABOUT to swing is worth the
 			# damage it would have dealt. Without this the judge cannot see
@@ -92,7 +108,7 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			# purely because it cannot value what the disabler does.
 			# shutting down a limb that is ABOUT to swing is worth the damage
 			# it would have dealt to bodies actually standing in its arc
-			if d.disables and limb >= 0 and int(c.limb_stun[limb]) <= 0:
+			if String(ab.kind) == "shut" and limb >= 0 and int(c.limb_stun[limb]) <= 0:
 				for it in all_intents:
 					if int(it.limb) != limb:
 						continue
