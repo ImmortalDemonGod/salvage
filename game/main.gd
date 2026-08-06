@@ -4,6 +4,8 @@
 # deterministic and walkable headless before any content exists.
 extends Control
 
+const Art := preload("res://game/art.gd")
+
 const DESIGN := Vector2(1280, 720)
 
 # Station screen positions, side-on 2.5D: the crab faces left, divers
@@ -155,23 +157,19 @@ func _unhandled_input(e: InputEvent) -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, DESIGN), Color(0.04, 0.11, 0.16))
-	# station rings
+	# station rings: red while the limb they expose is live, teal once it is
+	# broken or absent. This is the map changing, drawn.
 	for i in range(5):
+		if not combat.station_open(i):
+			continue
 		var limb: int = Combat.STATION_LIMB[i]
 		var safe: bool = limb < 0 or combat.limb_broken[limb]
 		var col := Color(0.25, 0.55, 0.6) if safe else Color(0.85, 0.35, 0.25)
 		draw_arc(STATION_POS[i], 52, 0, TAU, 40, col, 2.0)
-	# crab body and limbs
-	draw_circle(CRAB_POS, 70, Color(0.35, 0.22, 0.28))
-	var anchors := [STATION_POS[0], STATION_POS[1], STATION_POS[3]]
-	var limbs := [Combat.JAW, Combat.CLAW, Combat.TAIL]
-	for n in range(3):
-		var broken: bool = combat.limb_broken[limbs[n]]
-		var c := Color(0.3, 0.3, 0.32) if broken else Color(0.7, 0.35, 0.3)
-		draw_line(CRAB_POS, anchors[n], c, 10.0 if not broken else 4.0)
-	# divers
-	for i in range(3):
+	Art.draw_crab(self, CRAB_POS + Vector2(0, 90), 1.6, combat.limb_broken)
+	for i in range(combat.divers.size()):
 		var d = combat.divers[i]
-		if d.down: continue
-		var p: Vector2 = STATION_POS[d.station] + Vector2(-26 + i * 26, -10)
-		draw_circle(p, 12 + d.cost * 4, Color(0.95, 0.55, 0.2))
+		if d.down:
+			continue
+		var p: Vector2 = STATION_POS[d.station] + Vector2(-24 + i * 34, 34)
+		Art.draw_diver(self, d.cost, p, 46.0, 1)
