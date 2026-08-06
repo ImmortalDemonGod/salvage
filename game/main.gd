@@ -92,7 +92,7 @@ func diver_rect(d) -> Rect2:
 # the area _draw_lock() paints, declared so verify/layout.gd can hold the
 # Controls off it. A drawing is not a Control, so nothing was stopping a
 # panel from being laid straight over the puzzle.
-const LOCK_RECT := Rect2(300, 214, 640, 370)
+const LOCK_RECT := Rect2(280, 250, 700, 340)
 const SCENE_PANEL_AT := Vector2(190, 220)
 const SCENE_PANEL_SIZE := Vector2(900, 262)
 
@@ -445,6 +445,7 @@ func _refresh() -> void:
 		ui_air.get_parent().visible = false
 		ui_legend.get_parent().visible = false
 		ui_goal.get_parent().visible = false
+		ui_intent.get_parent().visible = false
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
@@ -780,7 +781,8 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 		var y: float = at.y + tall - tall * (float(m) / float(cap))
 		draw_line(Vector2(at.x, y), Vector2(at.x + 14, y), Color(0.55, 0.66, 0.74), 1.0)
 	var f: Font = ThemeDB.fallback_font
-	draw_string(f, at + Vector2(0, tall + 26), "%s  %d of %d" % [name, filled, cap],
+	# above the tank, clear of the pipes that run below it
+	draw_string(f, at + Vector2(0, -30), "%s  %d of %d" % [name, filled, cap],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
 
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
@@ -799,7 +801,7 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 
 func _valve_pos(i: int) -> Vector2:
 	var p = run.puzzle
-	var tall := 180.0
+	var tall := 168.0
 	var top := 250.0
 	if p.stage == 2:
 		var ax := 300.0
@@ -812,8 +814,8 @@ func _valve_pos(i: int) -> Vector2:
 		if i == 1:
 			return Vector2(ax + 170.0, top + tall + 60.0)
 		return Vector2(bx + 110.0, top + tall + 60.0)
-	var x := 480.0
-	var wide1 := 300.0
+	var x := 430.0
+	var wide1 := 420.0
 	if i == 0:
 		return Vector2(x + 70.0, top + tall + 60.0)
 	if i == 1:
@@ -858,7 +860,7 @@ func _draw_lock(p) -> void:
 		var ax := 300.0
 		var bx := 700.0
 		var wide := 240.0
-		var top := 250.0   # help line ends at 206; the sentence starts at 648
+		var top := 288.0
 		_chamber(Vector2(ax, top), wide, tall, p.level_a(), 3, "chamber A")
 		_chamber(Vector2(bx, top), wide, tall, p.level_b(), 3, "chamber B")
 		_door(Vector2(ax, top - 30), wide, p.solved())
@@ -879,9 +881,9 @@ func _draw_lock(p) -> void:
 		draw_string(f2, Vector2(ax + 30, top + tall + 110), "1 and 2 feed A", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
 		draw_string(f2, Vector2(bx + 60, top + tall + 110), "3 feeds B", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
 		return
-	var x := 480.0
-	var wide := 300.0
-	var top := 250.0
+	var x := 430.0
+	var wide := 420.0
+	var top := 288.0
 	_chamber(Vector2(x, top), wide, tall, p.level(), p.VALVES, "the chamber")
 	_door(Vector2(x, top - 30), wide, p.solved())
 	# two inlets you can always reach, and the seized one down at the floor
