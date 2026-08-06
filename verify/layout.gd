@@ -185,6 +185,16 @@ func check_current() -> void:
 	for c in scene.get_children():
 		_no_swallow(c)
 
+	# everything the player is meant to read has to be ON the screen
+	if scene.combat != null:
+		for st4 in range(5):
+			if not scene.combat.station_open(st4):
+				continue
+			var px: float = scene.place(st4).x
+			if px - 160.0 < 0.0 or px + 160.0 > 1280.0:
+				fail("OFF THE SCREEN: station %s sits at x=%d, so its tag and bar run past the viewport edge" % [
+					Combat.STATION_NAMES[st4], int(px)])
+
 	# nothing may be laid over the lock drawing
 	if scene.run != null and scene.run.puzzle != null:
 		for p2 in panels:
