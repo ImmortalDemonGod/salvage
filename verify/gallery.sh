@@ -41,6 +41,6 @@ while IFS=$'\t' read -r id seq; do
   shoot "$(printf '%02d' $n)-$id" "$seq" "$id"
 done <<< "$paths"
 # and one mid-fight shot, which is the state the cold read actually reads
-shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,KeyR,Space" "fight1"
+shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,Space,Enter,KeyW,Space,Space,Enter,Space,Space,Enter" "fight1"
 if [ $rc -ne 0 ]; then echo "GALLERY: replay landed on the wrong beat"; exit 1; fi
 echo "GALLERY: $((n+1)) shots, every replay landed where it claimed"

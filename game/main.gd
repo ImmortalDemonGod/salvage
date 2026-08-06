@@ -92,7 +92,7 @@ func diver_rect(d) -> Rect2:
 # the area _draw_lock() paints, declared so verify/layout.gd can hold the
 # Controls off it. A drawing is not a Control, so nothing was stopping a
 # panel from being laid straight over the puzzle.
-const LOCK_RECT := Rect2(300, 214, 640, 400)
+const LOCK_RECT := Rect2(300, 214, 640, 370)
 const SCENE_PANEL_AT := Vector2(190, 220)
 const SCENE_PANEL_SIZE := Vector2(900, 262)
 
@@ -211,8 +211,8 @@ func _build_ui() -> void:
 	add_child(help_panel)
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
-	log_panel.size = Vector2(392, 118)
-	log_panel.position = Vector2(24, 396)
+	log_panel.size = Vector2(1232, 68)
+	log_panel.position = Vector2(24, 718)
 	var lst := StyleBoxFlat.new()
 	lst.bg_color = Color(0.03, 0.09, 0.14, 0.92)
 	lst.border_color = Color(0.34, 0.52, 0.62, 0.85)
@@ -248,14 +248,20 @@ func _recent() -> void:
 	if ui_log == null:
 		return
 	var src: Array = []
+	for l in run.log_lines:
+		src.append(l)
 	if combat != null:
-		src = combat.log_lines
+		for l in combat.log_lines:
+			src.append(l)
 	elif run.puzzle != null:
-		src = run.puzzle.log_lines
+		for l in run.puzzle.log_lines:
+			src.append(l)
 	var keep: Array = []
-	for i in range(max(0, src.size() - 4), src.size()):
+	for i in range(max(0, src.size() - 2), src.size()):
 		keep.append(String(src[i]))
-	ui_log.get_parent().visible = not keep.is_empty()
+	# on a story beat the scene panel IS the content, and the log would sit
+	# on top of it
+	ui_log.get_parent().visible = not keep.is_empty() and (combat != null or run.puzzle != null)
 	ui_log.text = "\n".join(keep)
 
 func _voice() -> void:
@@ -402,8 +408,8 @@ func _refresh() -> void:
 		sfx.set_mood(mood, _depth())
 	var scene_p: Control = ui_scene.get_parent()
 	if run.puzzle != null:
-		scene_p.position = Vector2(190, 620)
-		scene_p.size = Vector2(900, 118)
+		scene_p.position = Vector2(190, 596)
+		scene_p.size = Vector2(900, 108)
 	else:
 		scene_p.position = SCENE_PANEL_AT
 		scene_p.size = SCENE_PANEL_SIZE
@@ -738,7 +744,7 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.72, 0.74, 0.78))
 
 func _draw_lock(p) -> void:
-	var tall := 210.0
+	var tall := 180.0
 	if p.stage == 2:
 		var ax := 300.0
 		var bx := 700.0
