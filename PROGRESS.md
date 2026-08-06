@@ -347,6 +347,37 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G14-DOOR** | GREEN | `verify/door.gd` reads the key map as text and holds it against the content: every ability slot any diver owns must be bound to a key, every bound key must call a function that exists, no key may point at a mechanic whose enable const is false, and any verifier claiming to drive the player must drive a bound door. Mutation-tested three ways, control clean. `tools/keypath.gd` extends this to the screen: it derives a key sequence per beat by playing the run with the judge bots, and fails if any beat is unreachable from the keyboard. **9 of 9 reachable** |
 | **G-TEACH** | GREEN | 8 beats, 12 mechanics, each taught exactly once, cross-checked against what the sim actually builds |
 
+### What only looking could find
+
+Four defects in one session that no gate caught, every one of them found
+by putting a picture in front of a reviewer and asking a plain question.
+Recorded together because the pattern matters more than the items.
+
+1. **Half the kit was unreachable.** Six abilities in the sim, the bots
+   using all six, one key bound. Found by: "there is nothing on screen
+   indicating a second or alternate attack for either character."
+2. **The ring said the opposite of the truth** (below).
+3. **The lock was a sentence.** Beat 7 was a line of text on an empty
+   screen, on the puzzle whose entire justification in the spec was that
+   its state is readable from a still frame.
+4. **A diver was standing on the rim of its own circle** with the HUD's
+   help line painted across its chest, because every diver was offset by
+   its index in the whole party rather than among the divers sharing its
+   station.
+
+Three of the four are now machine-checkable, and each check was made to
+fail on purpose before being trusted: `verify/door.gd` for reachability,
+the blue-ring invariant in the fuzz, and `HUD_BOTTOM` plus `LOCK_RECT` in
+the layout walk. The fourth, whether a drawing communicates, stays human.
+
+The instrument itself was lying too, which is worse. Screenshots were
+named `01`..`99`,`100` and the gallery took the last by lexical sort, so
+every replay longer than 99 keys was captured at key 99 and filed under a
+beat it never reached. The build now stamps its beat id into the window
+title, the capture driver reads it back, and the gallery fails when a
+replay does not land where it claimed. It caught two desyncs on its first
+run.
+
 ### The ring said the opposite of the truth
 
 Worth its own entry, because every gate was green while it was wrong and
