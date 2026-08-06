@@ -971,11 +971,11 @@ func _draw_rig() -> void:
 	# the rig: a deck on legs, which is the thing the whole story is about
 	var dx: float = w.x * 0.5 - 190.0
 	draw_rect(Rect2(Vector2(dx, surf - 54), Vector2(380, 26)), Color(0.20, 0.22, 0.24))
-	draw_rect(Rect2(Vector2(dx + 40, surf - 104), Vector2(96, 50)), Color(0.24, 0.26, 0.28))
-	draw_rect(Rect2(Vector2(dx + 250, surf - 88), Vector2(40, 34)), Color(0.24, 0.26, 0.28))
+	draw_rect(Rect2(Vector2(dx - 16, surf - 104), Vector2(74, 50)), Color(0.24, 0.26, 0.28))
+	draw_rect(Rect2(Vector2(dx + 318, surf - 88), Vector2(44, 34)), Color(0.24, 0.26, 0.28))
 	# the failing pump, blinking
 	var lit: float = 0.35 + 0.65 * abs(sin(_clock * 2.3))
-	draw_circle(Vector2(dx + 270, surf - 96), 5.0, Color(0.92, 0.44, 0.30, lit))
+	draw_circle(Vector2(dx + 340, surf - 96), 5.0, Color(0.92, 0.44, 0.30, lit))
 	for lx in [dx + 24.0, dx + 178.0, dx + 340.0]:
 		draw_line(Vector2(lx, surf - 28), Vector2(lx + 10.0, surf + 96.0), Color(0.18, 0.20, 0.22), 7.0)
 	# the squad on the deck, the cast the copy is talking about
@@ -985,7 +985,7 @@ func _draw_rig() -> void:
 	var title := String(b.get("title", "")).to_upper()
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 84.0), title,
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.88, 0.93, 0.96))
-	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 112.0), "beat %d of %d" % [run.beat + 1, Beats.LADDER.size()],
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 112.0), "dive %d of %d" % [run.beat + 1, Beats.LADDER.size()],
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 17, Color(0.55, 0.66, 0.72))
 
 # _valve_pos and this function each kept their own copy of the tank
