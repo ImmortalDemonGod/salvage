@@ -487,7 +487,7 @@ func _refresh() -> void:
 		var b: Dictionary = run.current()
 		var lines: Array = b.get("lines", [])
 		var body: Array = []
-		var controls := "ENTER to continue"
+		var controls := "that is the whole prototype  ·  refresh the page to dive again" if run.finished else "ENTER to continue"
 		for l in lines:
 			if String(l.role) == "controls":
 				controls = String(l.text)
