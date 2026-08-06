@@ -187,17 +187,39 @@ the reason to move at all.** Rule on it, with numbers, and log the ruling.
     reported that a blanket `git add -A` here committed their in-progress
     work; one commit contains a known-bad version of the art. Isolate
     them instead of racing them.
-25. **Preload, never rely on `class_name`.** A newly added `class_name`
-    is not resolvable until the project is re-imported, and importing
-    headless can hang. This cost three round trips before it was named.
-    `const X := preload("res://path.gd")` always works.
 24. **When a capture or a human finds something the detectors missed,
     extend the detector in the SAME commit.** Measured twice: the layout
     check only ever compared station panels to station panels, so it
     passed while a marker sat on the help bar.
 
 ---
-
+25. **Preload, never rely on `class_name`.** A newly added `class_name`
+    is not resolvable until the project is re-imported, and importing
+    headless can hang. This cost three round trips before it was named.
+    `const X := preload("res://path.gd")` always works.
+26. **A gate that cannot see the screen cannot tell you the game is
+    ready.** The stop condition here is a depth-limited dominance search.
+    Three dry passes meant the harness was exhausted, not that the game
+    was finished: the very next commit after DONE was presentation work,
+    and the first human to open the link got a 404. Any future stop
+    condition needs a term the search cannot satisfy -- at minimum the
+    gallery reshot and cold-read after every commit that changes a pixel.
+27. **Assert every anchor AND check the file afterwards.** A script whose
+    third replacement asserts leaves the first two unwritten. The pump
+    housing was fixed once, lost exactly this way, and had to be found
+    again by looking at the same screenshot a second time.
+28. **Ask the artifact a question; do not announce it.** `deploy.sh`
+    printed "deployed: <url>" for weeks without the URL ever being asked
+    anything. Every file returning 200 is not proof either: a web export
+    can serve every asset and still fail to start. `verify/live.mjs`
+    presses ENTER on the real page and checks the beat changed.
+29. **A drawing and its hit test read ONE geometry.** The valve click
+    targets drifted 72px from the drawn valves because `_valve_pos` and
+    `_draw_lock` each kept their own copy of the tank layout. Same class
+    as the ring and the legend disagreeing about what "safe" meant.
+30. **Two lighteners on the same pixels is not lighting.** Rim light plus
+    a lamp pool both brightened the creature and the dredge came out pale
+    and flat. Lit from every direction is the same as unlit.
 ## The defect-class checklist
 
 Every review round confirms **absence** against this list. A round that
