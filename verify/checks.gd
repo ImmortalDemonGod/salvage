@@ -189,6 +189,56 @@ func check_telegraph(n: int) -> void:
 # reachable state. Positioning adds a real softlock risk (a diver stranded
 # where it can neither act usefully nor retreat) and only playing the whole
 # ladder catches it.
+# A2, A3, A4: the run rules, checked rather than trusted. An adversarial
+# fidelity round found all three silently absent while every gate was green,
+# because nothing looked at what happens BETWEEN fights.
+func check_run_rules() -> void:
+	var r := Run.new()
+	var g := 0
+	while (r.combat == null or r.combat.enc_id != "crab") and g < 20:
+		g += 1
+		_force(r)
+	if r.combat == null:
+		fail("A-RULES: could not reach a fight to test the run rules")
+		return
+	r.combat.divers[0].hp = 0
+	r.combat.divers[0].down = true
+	r.combat.divers[1].hp = 3
+	_force(r)
+	if not r.carried_hp.is_empty():
+		fail("A3 VIOLATED: HP carried past the boat; the dive is not the unit of attrition")
+	g = 0
+	while r.combat == null and g < 20:
+		g += 1
+		_force(r)
+	for d in r.combat.divers:
+		if d.hp <= 0 and not d.down:
+			fail("A2 VIOLATED: %s re-entered a fight at 0 HP and able to act" % d.dname)
+		if d.hp < d.max_hp:
+			fail("A3 VIOLATED: %s entered the next dive on %d of %d HP" % [d.dname, d.hp, d.max_hp])
+	var before: int = r.beat
+	for d in r.combat.divers:
+		d.hp = 0
+		d.down = true
+	r.combat.outcome = "defeat"
+	r.advance()
+	if r.beat != before:
+		fail("A4 VIOLATED: defeat moved the run from beat %d to %d instead of keeping progress" % [before, r.beat])
+	if r.salvage_lost < 1:
+		fail("A4 VIOLATED: a failed dive cost no salvage")
+	print("A-rules    A2 down stays down, A3 the boat heals, A4 defeat keeps progress and costs salvage")
+
+func _force(r) -> void:
+	if r.combat != null:
+		for i in range(r.combat.limb_hp.size()):
+			r.combat.limb_hp[i] = 0
+			r.combat.limb_broken[i] = true
+		r.combat.outcome = "victory"
+	elif r.puzzle != null:
+		for i in range(r.puzzle.VALVES):
+			r.puzzle.valve[i] = true
+	r.advance()
+
 func check_run(n: int) -> void:
 	var cleared := 0
 	var worst := 0
@@ -226,6 +276,7 @@ func _init() -> void:
 	check_station_design()
 	check_bands(1000)
 	check_run(40)
+	check_run_rules()
 	for k in Encounters.ALL.keys():
 		check_stations(300, String(k))
 	check_telegraph(300)

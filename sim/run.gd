@@ -16,6 +16,7 @@ var puzzle: Puzzle = null
 var carried_hp: Dictionary = {}    # diver name -> hp, carried across a dive
 var log_lines: Array = []
 var finished := false
+var salvage_lost := 0
 
 func _init() -> void:
 	_enter()
@@ -48,6 +49,12 @@ func _enter() -> void:
 		combat = null
 		return
 	puzzle = null
+	# A3: a scene beat IS the boat. Surfacing restores the squad fully;
+	# nothing restores mid-dive. Before this, carried_hp was written and
+	# never cleared, so 1 HP followed the squad through every later fight.
+	if String(b.get("kind", "scene")) == "scene":
+		carried_hp.clear()
+		log_lines.append("back on the rig: the squad patches up")
 	if String(b.get("kind", "scene")) == "puzzle":
 		puzzle = Puzzle.new()
 		combat = null
@@ -60,6 +67,10 @@ func _enter() -> void:
 		for d in combat.divers:
 			if carried_hp.has(d.dname):
 				d.hp = min(int(carried_hp[d.dname]), d.max_hp)
+				# A2: out for the fight, back at the boat. A diver banked at
+				# 0 HP was returning alive at 0 and could still act, which is
+				# a state no rule authorises.
+				d.down = d.hp <= 0
 		log_lines.append("%s" % String(b.title))
 	else:
 		combat = null
@@ -76,6 +87,12 @@ func advance() -> bool:
 	if finished:
 		return false
 	var b := current()
+	# A3: a scene beat IS the boat. Surfacing restores the squad fully;
+	# nothing restores mid-dive. Before this, carried_hp was written and
+	# never cleared, so 1 HP followed the squad through every later fight.
+	if String(b.get("kind", "scene")) == "scene":
+		carried_hp.clear()
+		log_lines.append("back on the rig: the squad patches up")
 	if String(b.get("kind", "scene")) == "puzzle":
 		# a puzzle beat completes when the lock is open, not on a timer
 		if puzzle == null or not puzzle.solved():
@@ -87,10 +104,12 @@ func advance() -> bool:
 		if combat == null or combat.outcome == "ongoing":
 			return false
 		if combat.outcome == "defeat":
-			# A4: the dive fails, you surface, progress is kept.
-			log_lines.append("the dive fails; the squad surfaces")
+			# A4: the dive fails, you surface, you KEEP progress and lose the
+			# salvage. Resetting to beat 0 destroyed progress, which is the
+			# opposite of the ruling. Retry this beat with a patched squad.
+			log_lines.append("the dive fails; the squad surfaces and loses the salvage")
 			carried_hp.clear()
-			beat = 0
+			salvage_lost += 1
 			_enter()
 			return true
 		_bank_hp()
