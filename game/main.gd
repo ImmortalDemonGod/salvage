@@ -639,7 +639,7 @@ var _won := ""
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
 		_won = ("THE %s IS DISABLED" % String(combat.enc.get("title", "enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
-		_hold = 1.4
+		_hold = 0.9
 		run.advance()
 		combat = run.combat
 		selected = 0
@@ -837,18 +837,18 @@ func _draw_windup() -> void:
 				var t0: float = float(i) / float(segs)
 				var t1: float = float(i + 1) / float(segs)
 				draw_line(a.lerp(b, t0), a.lerp(b, t1),
-					Color(0.92, 0.42, 0.32, 0.20 + 0.40 * pulse), 3.0)
+					Color(0.98, 0.46, 0.34, 0.55 + 0.45 * pulse), 6.0)
 			var mid: Vector2 = a.lerp(b, 0.52)
-			draw_string(f, mid + Vector2(-7, -8), str(int(it.dmg)),
-				HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(0.98, 0.62, 0.50, 0.55 + 0.45 * pulse))
+			draw_circle(mid, 15.0, Color(0.10, 0.05, 0.06, 0.92))
+			draw_arc(mid, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
+			draw_string(f, mid + Vector2(-6, 7), str(int(it.dmg)),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 
 func _draw_banner() -> void:
 	var f: Font = ThemeDB.fallback_font
 	var w: Vector2 = size.max(DESIGN)
-	var y: float = w.y * 0.36
-	draw_rect(Rect2(Vector2(0, y - 12), Vector2(w.x, 66)), Color(0.03, 0.08, 0.12, 0.80))
-	draw_string(f, Vector2(w.x * 0.5 - 240.0, y + 32), _won,
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color(0.92, 0.95, 0.97))
+	draw_rect(Rect2(Vector2.ZERO, Vector2(w.x, 26)), Color(0.86, 0.62, 0.24, 0.92))
+	draw_string(f, Vector2(24, 20), _won, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.06, 0.09, 0.12))
 
 func _draw_bars() -> void:
 	# one per live limb, sitting on its own ring rather than in a corner
