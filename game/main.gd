@@ -35,6 +35,7 @@ var ui_air: Label
 var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
+var refusal := ""
 
 func _ready() -> void:
 	run = Run.new()
@@ -129,6 +130,13 @@ func _build_ui() -> void:
 	ui_help.offset_top = 7; ui_help.offset_bottom = -7
 	help_panel.add_child(ui_help)
 
+# Selecting a diver who is not on this dive left NOBODY selected: the party
+# is content and changes per beat, so the index has to be clamped to it.
+func _select(i: int) -> void:
+	if combat == null:
+		return
+	selected = clampi(i, 0, combat.divers.size() - 1)
+
 func _refresh() -> void:
 	if run.puzzle != null:
 		# The lock, drawn as its own state: a water line and three valves.
@@ -199,18 +207,38 @@ func _refresh() -> void:
 		var mark := ">" if i == selected else " "
 		var state := "DOWN" if d.down else "%s  %d HP" % [Combat.STATION_NAMES[d.station], d.hp]
 		card.get_node("label").text = "%s%d %s  (%d air)\n%s" % [mark, i + 1, d.dname, d.cost, state]
-	ui_help.text = "1-3 pick a diver  ·  Q W E R T move to a station  ·  SPACE attack from where you stand  ·  ENTER end turn"
+	ui_help.text = (refusal + "        ") if refusal != "" else ""
+	ui_help.text += "1-3 pick a diver  ·  Q W E R T move to a station  ·  SPACE attack from where you stand  ·  ENTER end turn"
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
+# A refused input must say WHY. Silence is how a player concludes the game
+# is broken rather than that they cannot afford the action.
 func player_attack() -> bool:
 	var ok := combat.act_attack(selected)
-	if ok: _after()
+	if ok:
+		refusal = ""
+		_after()
+	else:
+		var d = combat.divers[selected]
+		if d.down: refusal = "%s is down" % d.dname
+		elif combat.air < d.cost: refusal = "not enough air: %s needs %d, you have %d" % [d.dname, d.cost, combat.air]
+		elif not combat.can_attack(d): refusal = "nothing to hit from %s" % Combat.STATION_NAMES[d.station]
+		else: refusal = "that action is not available"
+		_refresh()
 	return ok
 
 func player_move(station: int) -> bool:
 	var ok := combat.act_move(selected, station)
-	if ok: _refresh()
+	if ok:
+		refusal = ""
+	else:
+		var d = combat.divers[selected]
+		if not combat.station_open(station): refusal = "%s is not open here" % Combat.STATION_NAMES[station]
+		elif d.station == station: refusal = "%s is already at %s" % [d.dname, Combat.STATION_NAMES[station]]
+		elif combat.air < Combat.MOVE_COST: refusal = "not enough air to move"
+		else: refusal = "that move is not available"
+	_refresh()
 	return ok
 
 func player_end_turn() -> void:
@@ -233,15 +261,15 @@ func _unhandled_input(e: InputEvent) -> void:
 	match k:
 		KEY_1:
 			if run.puzzle != null: run.puzzle.toggle(0)
-			else: selected = 0
+			else: _select(0)
 			_refresh()
 		KEY_2:
 			if run.puzzle != null: run.puzzle.toggle(1)
-			else: selected = 1
+			else: _select(1)
 			_refresh()
 		KEY_3:
 			if run.puzzle != null: run.puzzle.toggle(2)
-			else: selected = 2
+			else: _select(2)
 			_refresh()
 		KEY_Q: player_move(Combat.FRONT)
 		KEY_W: player_move(Combat.FLANK)
