@@ -111,7 +111,7 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(210, 66)
+		m.size = Vector2(232, 66)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		add_child(m)
 		var l := Label.new()
@@ -248,8 +248,9 @@ func _recent() -> void:
 	if ui_log == null:
 		return
 	var src: Array = []
-	for l in run.log_lines:
-		src.append(l)
+	if combat == null and run.puzzle == null:
+		for l in run.log_lines:
+			src.append(l)
 	if combat != null:
 		for l in combat.log_lines:
 			src.append(l)
@@ -459,7 +460,7 @@ func _refresh() -> void:
 			want = "The way out sits above chamber A. Fill A, keep B dry."
 		else:
 			want = "The way out is above the waterline. Fill the chamber to the top."
-		ui_scene.text = want + "\n\nplaceholder copy, for Marc"
+		ui_scene.text = want
 		var vk := ["1", "2", "3", "4"]
 		var labels: Array = []
 		for i in range(run.puzzle.valves()):
@@ -501,7 +502,7 @@ func _refresh() -> void:
 		hp3.size = Vector2(840, 40)
 		ui_scene.text = "\n\n".join(body)
 		if marked:
-			ui_scene.text += "\n\nplaceholder copy, for Marc"
+			ui_scene.text += "\n\n                                                          placeholder · Marc"
 		ui_scene.get_parent().visible = body.size() > 0
 		ui_help.text = controls
 		queue_redraw()
@@ -529,17 +530,12 @@ func _refresh() -> void:
 		var lb: int = combat.STATION_LIMB[i]
 		var lbl: Label = ui_stations[i].get_node("label")
 		if lb < 0:
-			lbl.text = "%s  [%s]\nno limb here" % [Combat.STATION_NAMES[i], String(keys2[i])]
+			lbl.text = "%s  [%s]%s\nnothing to hit here" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i)]
 		elif combat.limb_broken[lb]:
-			lbl.text = "%s  [%s]\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), String(combat.LIMB_NAMES[lb]).to_upper()]
+			lbl.text = "%s  [%s]%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), String(combat.LIMB_NAMES[lb]).to_upper()]
 		else:
 			var stun := "  SHUT" if int(combat.limb_stun[lb]) > 0 else ""
-			var here := ""
-			for d2 in combat.divers:
-				if not d2.down and int(d2.station) == i and d2.id == selected:
-					here = "  <- you"
-			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
-			lbl.text = "%s  [%s]\n%s %d/%d hp%s%s" % [Combat.STATION_NAMES[i], String(keys2[i]), String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, stun, here]
+			lbl.text = "%s  [%s]%s%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i)]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -697,7 +693,7 @@ var _won := ""
 
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
-		_won = ("THE %s IS DISABLED" % String(combat.enc.get("title", "enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
+		_won = ("%s IS DISABLED" % String(combat.enc.get("title", "the enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
 		_hold = 0.9
 		run.advance()
 		combat = run.combat
@@ -945,9 +941,9 @@ func _draw_windup() -> void:
 				# it bites where it stands: ring the station instead
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
-				draw_circle(dst + Vector2(0, -rr - 4.0), 15.0, Color(0.10, 0.05, 0.06, 0.92))
-				draw_arc(dst + Vector2(0, -rr - 4.0), 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
-				draw_string(f, dst + Vector2(-6, -rr + 3.0), str(int(it.dmg)),
+				draw_circle(dst + Vector2(0, -60.0), 15.0, Color(0.10, 0.05, 0.06, 0.92))
+				draw_arc(dst + Vector2(0, -60.0), 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
+				draw_string(f, dst + Vector2(-6, -53.0), str(int(it.dmg)),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 				continue
 			var n: Vector2 = dir.normalized()
@@ -962,10 +958,12 @@ func _draw_windup() -> void:
 				var t1: float = float(i + 1) / float(segs)
 				draw_line(a.lerp(b, t0), a.lerp(b, t1),
 					Color(0.98, 0.46, 0.34, 0.55 + 0.45 * pulse), 6.0)
-			var mid: Vector2 = a.lerp(b, 0.52)
-			draw_circle(mid, 15.0, Color(0.10, 0.05, 0.06, 0.92))
-			draw_arc(mid, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
-			draw_string(f, mid + Vector2(-6, 7), str(int(it.dmg)),
+			# anchored to the RING it lands on, never to the middle of the
+			# line, so it can never read as belonging to another station
+			var pip: Vector2 = dst + Vector2(0, -60.0)
+			draw_circle(pip, 15.0, Color(0.10, 0.05, 0.06, 0.92))
+			draw_arc(pip, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
+			draw_string(f, pip + Vector2(-6, 7), str(int(it.dmg)),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 
 # A click means the obvious thing for whatever is under it: a station moves
@@ -1007,6 +1005,13 @@ func _draw_banner() -> void:
 	draw_rect(Rect2(Vector2.ZERO, Vector2(w.x, 26)), Color(0.86, 0.62, 0.24, 0.92))
 	draw_string(f, Vector2(24, 20), _won, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.06, 0.09, 0.12))
 
+# who is standing here, said the same way everywhere
+func here_free(st: int) -> String:
+	for d in combat.divers:
+		if not d.down and int(d.station) == st:
+			return "  ·  taken"
+	return ""
+
 func _draw_bars() -> void:
 	# one per live limb, sitting on its own ring rather than in a corner
 	for st in range(5):
@@ -1016,8 +1021,14 @@ func _draw_bars() -> void:
 		if lb < 0 or combat.limb_broken[lb]:
 			continue
 		var maxhp: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
-		var at: Vector2 = place(st) + Vector2(-52, 34)
-		_bar(at, 104, 9, float(combat.limb_hp[lb]) / max(1.0, maxhp), BAR_LIMB)
+		var frac2: float = float(combat.limb_hp[lb]) / max(1.0, maxhp)
+		var at: Vector2 = place(st) + Vector2(-88, 30)
+		_bar(at, 176, 16, frac2, BAR_LIMB)
+		# and the name of what you are breaking, on the bar itself
+		var f2: Font = ThemeDB.fallback_font
+		draw_string(f2, at + Vector2(6, 13), "%s %d/%d" % [String(combat.LIMB_NAMES[lb]).to_upper(),
+			int(combat.limb_hp[lb]), int(maxhp)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+			Color(0.98, 0.96, 0.94))
 	# and one per diver, ON the diver, not in a card at the bottom of the screen
 	for d in combat.divers:
 		if d.down:
@@ -1066,10 +1077,17 @@ func _draw() -> void:
 				var nb: Vector2 = dirb.normalized()
 				draw_line(pc + nb * 48.0, pc + nb * (dirb.length() * 0.72),
 					Color(0.62, 0.72, 0.78, 0.34), 2.0)
+		var occupied := false
+		for d3 in combat.divers:
+			if not d3.down and int(d3.station) == i:
+				occupied = true
 		var col := Color(0.25, 0.55, 0.6)
 		if i in combat.threatened_stations():
 			col = Color(0.85, 0.35, 0.25)
-		draw_arc(place(i), 46, 0, TAU, 40, col, 2.0)
+		# a threatened station with nobody in it is an attack about to hit
+		# empty water, which costs the squad an air line. Hollow it, so the
+		# miss is something you can see coming.
+		draw_arc(place(i), 46, 0, TAU, 40, Color(col.r, col.g, col.b, 1.0 if occupied else 0.40), 4.0 if occupied else 2.0)
 	# scale is PIXELS PER BODY UNIT, not a multiplier. Passing 1.6 made the
 	# crab under two pixels tall, its foot triangles sub-pixel, and the
 	# triangulator rejected them, so the enemy silently did not draw at all
