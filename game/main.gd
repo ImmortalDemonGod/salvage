@@ -1048,7 +1048,9 @@ func _draw_bars() -> void:
 			continue
 		var maxhp: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
 		var frac2: float = float(combat.limb_hp[lb]) / max(1.0, maxhp)
-		var at: Vector2 = place(st) + Vector2(-88, -74)
+		# clamped out of the HUD: a station high on the board pushed its bar
+		# up behind the control bar
+		var at: Vector2 = Vector2(place(st).x - 88.0, max(place(st).y - 74.0, HUD_BOTTOM + 4.0))
 		_bar(at, 176, 16, frac2, BAR_LIMB)
 		# and the name of what you are breaking, on the bar itself
 		var f2: Font = ThemeDB.fallback_font
