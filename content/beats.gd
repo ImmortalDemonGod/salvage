@@ -30,9 +30,9 @@ static var LADDER := [
 		# the last prototype shipped.
 		# ALL TEXT PLACEHOLDER, for Marc.
 		"lines": [
-			{"role": "who", "text": "(placeholder) Three of you. Two suits and a set of scuba gear, all of it borrowed."},
-			{"role": "obstacle", "text": "(placeholder) The water never went down. Everything worth having is under it, and the things down there got there first."},
-			{"role": "want", "text": "(placeholder) The pump is dying. What fixes it is down in the city. We go down."},
+			{"role": "obstacle", "text": "(placeholder) The pump on this rig has four days left in it. When it stops, the rig floods, and we are standing on it."},
+			{"role": "who", "text": "(placeholder) There are three of us. Two borrowed suits, one set of scuba gear, and nobody left who is qualified."},
+			{"role": "want", "text": "(placeholder) The part that fixes it is in the city under us. The city has been under water for eleven years, and whatever got there first is still down there.\n\nWe go down."},
 			# controls for THIS beat only. Combat keys are taught in `descent`,
 			# which is the beat that teaches the combat frame: telling a player
 			# how to end a turn before turns exist is the teach ladder broken

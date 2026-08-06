@@ -640,9 +640,15 @@ func _refresh() -> void:
 		elif combat != null: mood = "deep" if _depth() > 0.72 else "combat"
 		sfx.set_mood(mood, _depth())
 	ui_intent.get_parent().visible = true
-	var hp4: Control = ui_help.get_parent()
-	hp4.position = Vector2(30, 166)
-	hp4.size = Vector2(1220, 40)
+	var hp0: Control = ui_help.get_parent()
+	if run.puzzle != null or combat != null:
+		hp0.position = Vector2(30, 166)
+		hp0.size = Vector2(1220, 40)
+		ui_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		ui_help.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		ui_help.add_theme_font_size_override("font_size", 14)
+		ui_help.add_theme_color_override("font_color", Color(0.58, 0.68, 0.75))
+		hp0.add_theme_stylebox_override("panel", skin_quiet())
 	var scene_p: Control = ui_scene.get_parent()
 	if run.puzzle != null:
 		scene_p.position = Vector2(190, 596)
@@ -708,11 +714,17 @@ func _refresh() -> void:
 				marked = true
 		ui_intent.get_parent().visible = false
 		var sp3: Control = ui_scene.get_parent()
-		sp3.position = Vector2(220, 392)
-		sp3.size = Vector2(840, 262)
+		sp3.position = Vector2(200, 366)
+		sp3.size = Vector2(880, 292)
 		var hp3: Control = ui_help.get_parent()
-		hp3.position = Vector2(220, 668)
-		hp3.size = Vector2(840, 40)
+		var bw: float = 300.0 if ui_help.text.length() < 24 else 660.0
+		hp3.position = Vector2(640.0 - bw * 0.5, 664)
+		hp3.size = Vector2(bw, 52)
+		ui_help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		ui_help.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		ui_help.add_theme_font_size_override("font_size", 19)
+		ui_help.add_theme_color_override("font_color", BRASS_LIT)
+		hp3.add_theme_stylebox_override("panel", skin_primary())
 		ui_scene.text = "\n\n".join(body)
 		if marked:
 			ui_scene.text += "\n\n                                                          placeholder · Marc"
