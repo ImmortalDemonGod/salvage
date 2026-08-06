@@ -321,6 +321,20 @@ station-occupancy check before the next one starts.
 respect a shipping budget has spent the run without buying information,
 which is the exact failure prototype 1 was retired for.
 
+## Where the run stopped
+
+Three consecutive dry deep passes (46, 47, 48) over 48 total, each on a
+distinct commit carrying real work, which is what the ledger requires: a
+pass that repeats a commit already counted is refused with "build
+something, then run it again."
+
+    stop-gate: 3 consecutive dry deep passes over 48 total. Run may stop.
+
+Every gate is GREEN except **G5-HUMAN**, which is UNVERIFIED by
+definition and can only be closed by a person who did not build this.
+That is the one thing left, and no amount of further machine work
+substitutes for it.
+
 ## Honest gate report
 
 Every claim carries its instrument. Reproduce the fast set with
@@ -330,12 +344,12 @@ Every claim carries its instrument. Reproduce the fast set with
 | Gate | Verdict | Evidence |
 |---|---|---|
 | **G1 BUG-FREE** | GREEN | 21/21 scripts parse; fuzz 15,000 hostile actions with per-action invariants over **138 fights rotating through all four encounters**, air observed 0..4 against a 0..5 bound, 0 findings; web export loads with 0 page errors across every capture. The rotation is load-bearing: while the fuzz ran one encounter it never opened BACKLINE, and three real defects were sitting there |
-| **G2 WINNABLE** | GREEN | 40/40 runs clear all nine beats, worst 140 actions. No softlock: positioning never stranded a diver |
-| **G3 BANDS** | GREEN | crab 79.8% / 9.0 turns / 14.0 HP; spitter 67.6% / 8.0 / 20.0; dredge 66.9% / 17.0 / 39.0, all inside the pinned 55-90 band. `descent` SKIPPED by declaration as a teaching beat |
+| **G2 WINNABLE** | GREEN | 40/40 runs clear all nine beats, worst 140 actions, played with the abilities earned by each beat rather than the whole kit. No softlock: positioning never stranded a diver |
+| **G3 BANDS** | GREEN, crab on the edge | Judged AS PLAYED, with the abilities earned by that beat: crab 90.0% / 9.0 turns / 14.0 HP with one ability; spitter 67.6% / 8.0 / 20.0 and dredge 66.9% / 17.0 / 39.0 with two. All inside the pinned 55-90 band, but the crab sits on its upper edge and is flagged rather than retuned |
 | **G4 PER-OPTION DOMINANCE** | GREEN | deep set: 0 dominance signatures across all fighting encounters. Was RED for five passes on `attack:Prototype1`; resolved by giving the disabler its verb |
 | **G5-MACHINE** | EVIDENCED | bands, station occupancy (no dead, none above 60%), 4 distinct anatomies, telegraph honest over 5,600 slots |
 | **G5-HUMAN** | **UNVERIFIED by definition** | No human has played it. This can only be closed by a person who did not build it |
-| **G6 VISUAL** | GREEN after fixes | Fresh-eyes reviewer, gallery now **10 shots covering 9 of 9 beats**, derived by `tools/keypath.gd` rather than hand-authored key strings (the hand-authored set reached the crab and stopped, so four of nine beats were all G6 and G10 ever saw), severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
+| **G6 VISUAL** | GREEN after fixes, 2 open MED | Fresh-eyes reviewer, gallery now **10 shots covering 9 of 9 beats**, derived by `tools/keypath.gd` rather than hand-authored key strings (the hand-authored set reached the crab and stopped, so four of nine beats were all G6 and G10 ever saw), severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
 | **G7 AUDIO** | GREEN (musical quality permanently UNVERIFIED) | 12 of 12 named events classify from REAL sim lines across 10,539 lines of played output, every encounter and the lock, both policies. Wired into the scene: `main.gd` drains the sim log into the voice each refresh, because classification is not wiring. Voices are procedural tones with no assets; whether they sound good is a human call and cannot be closed here |
 | **G8 FIDELITY** | GREEN on the HIGHs, MED and LOW open | An adversarial round briefed "prove this does NOT match the spec" returned **13 HIGH, 9 MED, 4 LOW**. Every HIGH is fixed or ruled; see below. The reviewer also positively verified determinism (zero RNG anywhere in `sim/` or `content/`), the parking lot (no stamina, song, verse, relic, inventory, banking or mid-dive healing), and a dozen decided rules |
 | **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
