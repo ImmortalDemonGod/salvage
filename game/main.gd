@@ -520,6 +520,7 @@ func _process(dt: float) -> void:
 	fx.tick(dt)
 	if _dive > 0.0:
 		_dive -= dt
+		_hud(false)
 		queue_redraw()
 		if _dive <= 0.0:
 			_refresh()
