@@ -1,6 +1,14 @@
 # SALVAGE overnight build log
 
-**State: SLICE BUILT.** All eight ladder beats playable start to finish. Sim core, judge bots and the per-commit verification
+**State: PLAYABLE AND DEPLOYED**, at https://immortaldemongod.github.io/salvage/
+(`./tools/deploy.sh` after every commit, or the link is stale). Nine beats,
+four encounters, two locks, three divers, six abilities, placeholder art,
+placeholder motion, a procedural score, mouse and keyboard.
+
+The line below described the state at 22:00 on day zero and is kept for
+the record.
+
+**Day zero: SLICE BUILT.** All eight ladder beats playable start to finish. Sim core, judge bots and the per-commit verification
 set exist and run headless. No presentation, no content, no art.
 
 Binding documents, in precedence order: this file, then `docs/SPEC.md`.
@@ -61,6 +69,15 @@ the attempt. **G1, G2, G14 and G-TEACH may never be UNVERIFIED.**
 
 ### PINNED JUDGE POLICIES AND BANDS (pinned before any tuning)
 
+**The pin below is the DAY ZERO text and no longer describes the bots.**
+Both judges were rebuilt after four separate pathologies, each logged in
+the feature log and in `tools/bots.gd` at the line that changed. The pin
+is the artifact the whole judge discipline rests on, so it is corrected
+here rather than 500 lines away: casual is attack-preferring with a 0.3
+move chance, a 0.12 pass rate and a 70% first-slot bias; greedy carries a
+0.55-weighted shutdown term. The BANDS below are unchanged and remain
+pinned: 55-90 casual win, 6.0 greedy turns, 8.0 squad HP.
+
 Changing any of these requires a logged reason **and** re-running every
 gate that used them.
 
@@ -95,10 +112,10 @@ FINDING  DEAD STATION: UNDER is never occupied in optimal play
 VERIFY: 3 finding(s)
 ```
 
-**G3 is RED and stays red until fight one is tuned into band. This is the
+**G3 was RED at day zero and is GREEN now** (crab 90.0, spitter 73.2, dredge 66.0 against the 55-90 band). Kept for the record. The original note read: **G3 is RED and stays red until fight one is tuned into band. This is the
 run's first task and it cannot be faked.**
 
-**The UNDER finding is the most interesting of the three and must not be
+**RESOLVED, kept for the record. UNDER now sits at 50.0% occupancy in the crab.** The original note read: **The UNDER finding is the most interesting of the three and must not be
 tuned away silently.** UNDER is the deliberately empty station whose whole
 job is to teach that safety is a reason to move (SPEC 2.6). The greedy bot
 never stands there, which means either the bot does not value survival
@@ -610,7 +627,7 @@ the user, but not closed by my explanation.
   compares full state after every step. 10 steps, identical.
 - **Bootstrap 5, web export and deploy.** Templates installed,
   `tools/deploy.sh` builds and publishes to gh-pages in one command.
-  NOTE: the repo is private, so Pages will not serve until it is made
+  NOTE (SUPERSEDED): the repo is public and the link serves. It was private, so Pages would not serve until it was made
   public.
 - **JUDGE CHANGE, logged with reason (standing rule).** The casual bot
   was uniform random over ALL legal actions. In a positional game that is

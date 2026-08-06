@@ -64,7 +64,7 @@ gone.**
 | Banking unspent Air | **No** |
 | Cost to act | The acting diver's gear cost: **1 / 2 / 3** |
 | Cost to move | **1**, flat, for anyone (Q3) |
-| Overdraft | **Spend HP to buy one extra Air.** The desperation valve. |
+| Overdraft | **CUT by R3.** Spend HP to buy one extra Air. Kept so the reasoning stays readable; `OVERDRAFT_ENABLED` is false and no key reaches it. |
 | HP | Per diver. Small, sacred, hard to heal. The attrition resource. |
 
 **The fiction is surface-supplied diving.** The squad is on umbilicals
@@ -812,9 +812,22 @@ not follow it.
 
 ## Still open against the spec
 
-- **2.9's six named abilities do not exist.** Each diver has one attack
-  and a verb. The animation-derived kit is unbuilt work.
-- **2.12's second puzzle** is unbuilt; the lock appears once.
+Both entries that stood here (2.9's six abilities and 2.12's second lock)
+are built. What is genuinely still open against the spec:
+
+- **2.4's boss whose station map changes mid-fight.** No encounter mutates
+  `open_stations`; it is fixed at `_init`. The prototype was meant partly
+  to answer "does the format escalate at a boss" and it does not answer it.
+- **The boat as a place with a job.** 2b gives the hub upgrades and a
+  choice; it is two text panels, and only `boat1` grants anything.
+- **The NPC.** 2b fixes "the merfolk should have given something"
+  structurally; there is no NPC in the build.
+- **Character wants.** Each archetype is meant to keep one want in the Oz
+  shape; no beat's copy carries one.
+- **Axe Kick and Dual Palm do not do what 2.9 says.** Axe Kick is a plain
+  2-damage hit rather than shoving a part, and Dual Palm shuts one limb
+  for two turns rather than two limbs at once. So Scuba's "one verb
+  expressed twice" is currently carried by one of her two abilities.
 
 ---
 
@@ -825,8 +838,8 @@ branches.
 
 | # | Loose end |
 |---|---|
-| L2 | The six ability effects in 2.9 are invented rather than derived, and should be the first thing the bands and the dominance search are pointed at |
-| L4 | The full teach ladder written out beat by beat, before content starts |
+| L2 | CLOSED. All 11 actions carry a dominance verdict over 400 states |
+| L4 | CLOSED. `content/beats.gd` is the ladder, and `verify/teach.gd` holds it against the sim |
 
 ---
 
