@@ -397,7 +397,7 @@ func _process(dt: float) -> void:
 
 func _stamp_title() -> void:
 	var b: Dictionary = run.current()
-	DisplayServer.window_set_title("SALVAGE beat=%s" % String(b.get("id", "?")))
+	DisplayServer.window_set_title("SALVAGE beat=%s" % ("ending" if run.finished else String(b.get("id", "?"))))
 
 func _draw_ending() -> void:
 	var f: Font = ThemeDB.fallback_font

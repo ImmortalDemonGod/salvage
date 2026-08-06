@@ -100,18 +100,20 @@ func _init() -> void:
 	for e in out:
 		if not (e.id in seen):
 			seen.append(e.id)
+	seen.append("ending")
 	var missing: Array = []
 	for b in Beats.LADDER:
 		if not (String(b.id) in seen):
 			missing.append(String(b.id))
 
+	out.append({"id": "ending", "keys": ",".join(keys)})
 	for e in out:
 		print("%s\t%s" % [e.id, e.keys])
 	if not missing.is_empty():
 		print("KEYPATH INCOMPLETE: never reached %s" % ", ".join(missing))
 		quit(1)
 		return
-	print("KEYPATH: %d of %d beats reachable from the keyboard" % [seen.size(), Beats.LADDER.size()])
+	print("KEYPATH: %d of %d beats reachable from the keyboard, plus the ending" % [seen.size() - 1, Beats.LADDER.size()])
 	quit(0)
 	return
 
