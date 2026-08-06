@@ -11,11 +11,10 @@
 # Usage: godot --headless --path ~/salvage --script verify/fuzz.gd
 extends SceneTree
 
-const ACTIONS := 12000
-const AIR_MAX := 5              # AIR_PER_TURN 4, plus at most one overdraft
+const ACTIONS := 15000          # sized so the RANDOM share alone clears 10,000
 const POST_OVER_ACTIONS := 8    # keep hammering a finished fight before reset
 const FIGHT_CAP := 60
-const GUIDED_PCT := 14          # share steered by Bots.greedy, to reach victory
+const GUIDED_PCT := 22          # share steered by Bots.greedy, purely to reach victory states
 
 var findings: Array = []        # stable signatures, in first-seen order
 var texts: Dictionary = {}      # signature -> first full text
@@ -23,6 +22,10 @@ var hits: Dictionary = {}       # signature -> times observed
 var n: Dictionary = {}          # measured counters
 var air_peak := 0
 var air_floor := 99
+# The ceiling is ASKED OF THE SIM, not written down here: a turn's refill plus
+# at most one overdraft. Hardcoding 5 would turn any future air tuning into a
+# false finding, and the point of a fuzzer is that its red means something.
+var air_max := 5
 
 func fail(sig: String, text: String) -> void:
 	if not hits.has(sig):
@@ -99,11 +102,20 @@ func expect_move(c: Combat, i: int, s: int) -> bool:
 		return false
 	if c.air < Combat.MOVE_COST:
 		return false
+	# a station that is not open in this encounter is not a legal
+	# destination. Fight one runs on four; BACKLINE arrives with the
+	# scanner in fight two.
+	if not (s in Combat.OPEN_STATIONS):
+		return false
 	return int(d.station) != s
 
-func expect_overdraft(c: Combat, i: int) -> bool:
+# `used` is the fuzzer's OWN count of overdrafts accepted since the last
+# end_turn, not the sim's flag. Reading the sim's bookkeeping to predict the
+# sim's answer would make this check agree with itself by construction; the
+# valve is once per turn, so the mirror counts turns independently.
+func expect_overdraft(c: Combat, i: int, used: bool) -> bool:
 	var d = c.divers[i]
-	if c.outcome != "ongoing" or d.down:
+	if c.outcome != "ongoing" or d.down or used:
 		return false
 	return int(d.hp) > Combat.OVERDRAFT_HP
 
@@ -128,9 +140,9 @@ func check(c: Combat, pre: Dictionary, kind: String) -> void:
 			fail("down-revived", "A DOWNED DIVER CAME BACK: %s was down and is not, after %s"
 				% [d2.dname, kind])
 
-	if c.air < 0 or c.air > AIR_MAX:
-		fail("air-range", "AIR OUT OF RANGE: air %d, bounds 0..%d (%d base plus at most one overdraft), after %s"
-			% [c.air, AIR_MAX, Combat.AIR_PER_TURN, kind])
+	if c.air < 0 or c.air > air_max:
+		fail("air-range", "AIR OUT OF RANGE: air %d, bounds 0..%d (%d per turn plus at most one overdraft), after %s"
+			% [c.air, air_max, air_max - 1, kind])
 	air_peak = max(air_peak, c.air)
 	air_floor = min(air_floor, c.air)
 
@@ -156,9 +168,11 @@ func fuzz() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20260805
 	var c := Combat.new()
+	air_max = c.air_this_turn() + 1
 	bump("fights")
 	var post_over := 0
 	var last_was_end := false
+	var od_used := false      # the fuzzer's own once-per-turn tally
 	var acted := 0
 
 	while acted < ACTIONS:
@@ -231,8 +245,12 @@ func fuzz() -> void:
 			bump("try_over")
 			if int(d.hp) <= Combat.OVERDRAFT_HP:
 				bump("ill_lowhp")
-			expected = expect_overdraft(c, i)
+			if od_used:
+				bump("ill_od_twice")
+			expected = expect_overdraft(c, i, od_used)
 			accepted = c.act_overdraft(i)
+			if accepted:
+				od_used = true
 			last_was_end = false
 		else:
 			kind = "end_turn"
@@ -242,6 +260,7 @@ func fuzz() -> void:
 			if over_before:
 				bump("end_after_over")
 			c.end_turn()
+			od_used = false
 			expected = true
 			accepted = true
 			last_was_end = true
@@ -291,30 +310,60 @@ func fuzz() -> void:
 				bump("fights")
 				post_over = 0
 				last_was_end = false
+				od_used = false
 		elif c.turn > FIGHT_CAP:
 			bump("capped")
 			c = Combat.new()
 			bump("fights")
 			post_over = 0
 			last_was_end = false
+			od_used = false
+
+# ---- one contained probe, on a throwaway sim ---------------------------
+# The main loop keeps move targets inside 0..4, so on its own the station
+# invariant could never fire and would be a check that proves nothing. This
+# asks the one question that can move a diver off the board: does act_move
+# validate its argument? It runs on a Combat that is thrown away immediately,
+# and the engine's own index error goes to stderr, not to this report.
+func probe_station_bounds() -> void:
+	# 5 is one past the board; -1 is the interesting one, because GDScript
+	# indexes arrays from the end for negatives, so it raises no engine error
+	# at all and act_move returns TRUE on a diver that is now nowhere.
+	for bad in [5, -1]:
+		var c := Combat.new()
+		var air_before: int = c.air
+		var accepted: bool = c.act_move(0, bad)
+		var d = c.divers[0]
+		bump("probes")
+		if int(d.station) < 0 or int(d.station) > 4:
+			fail("move-unvalidated", "act_move DOES NOT VALIDATE ITS STATION: act_move(0, %d) left %s at station %d, which is off the board (0..4)"
+				% [bad, d.dname, d.station])
+		if not accepted and (int(c.air) != air_before or int(d.station) != 0):
+			fail("move-unvalidated-silent", "act_move(0, %d) returned false yet spent %d Air and moved %s to %d: a caller cannot tell refusal from corruption"
+				% [bad, air_before - int(c.air), d.dname, d.station])
 
 func _init() -> void:
 	var t := Time.get_ticks_usec()
 	fuzz()
+	probe_station_bounds()
 	print(("fuzz %d actions, %d random and %d steered by Bots.greedy  %d accepted %d rejected (end_turn %d, always legal) | tried: attack %d  move %d  overdraft %d  end_turn %d"
 		+ " | illegal by construction, counted: fight already over %d, downed diver %d, not enough Air %d, station with no live limb %d,"
-		+ " move to the station already occupied %d, overdraft at hp<=%d %d, end_turn twice in a row %d"
-		+ " | %d fights: %d victory %d defeat %d hit the %d-turn cap | %d invariant sweeps, air seen %d..%d (bound 0..%d) | ran in %.0f ms")
+		+ " move to the station already occupied %d, overdraft at hp<=%d %d, second overdraft in one turn %d, end_turn twice in a row %d"
+		+ " | %d fights: %d victory %d defeat %d hit the %d-turn cap | %d invariant sweeps, air seen %d..%d (bound 0..%d)"
+		+ " | plus %d off-the-board move probes on throwaway sims | ran in %.0f ms")
 		% [ACTIONS, ACTIONS - got("guided"), got("guided"), got("accepted"), got("rejected"), got("ok_end"),
 			got("try_attack"), got("try_move"), got("try_over"), got("try_end"),
 			got("ill_over"), got("ill_down"), got("ill_air"), got("ill_nolimb"),
-			got("ill_same"), Combat.OVERDRAFT_HP, got("ill_lowhp"), got("ill_end_repeat"),
+			got("ill_same"), Combat.OVERDRAFT_HP, got("ill_lowhp"), got("ill_od_twice"), got("ill_end_repeat"),
 			got("fights"), got("end_victory"), got("end_defeat"), got("capped"), FIGHT_CAP,
-			got("sweeps"), air_floor, air_peak, AIR_MAX,
+			got("sweeps"), air_floor, air_peak, air_max, got("probes"),
 			(Time.get_ticks_usec() - t) / 1000.0])
+	# quit() only REQUESTS a quit; it does not return from _init, so without
+	# this the clean path falls straight through and re-quits with 1.
 	if findings.is_empty():
 		print("FUZZ: clean")
 		quit(0)
+		return
 	for s in findings:
 		var text: String = texts[s]
 		print("FINDING  %s  [%d occurrence(s)]" % [text, int(hits.get(s, 0))])

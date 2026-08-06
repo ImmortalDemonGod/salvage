@@ -59,7 +59,10 @@ func check_stations(n: int) -> void:
 	var parts: Array = []
 	for i in range(5):
 		var pct: float = 100.0 * float(occ[i]) / float(max(1, total))
-		parts.append("%s %.1f%%" % [Combat.STATION_NAMES[i], pct])
+		var open_here: bool = i in Combat.OPEN_STATIONS
+		parts.append("%s %.1f%%%s" % [Combat.STATION_NAMES[i], pct, "" if open_here else " (closed)"])
+		if not open_here:
+			continue
 		if pct == 0.0:
 			fail("DEAD STATION: %s is never occupied in optimal play" % Combat.STATION_NAMES[i])
 		if pct > 60.0:

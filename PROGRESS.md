@@ -1,6 +1,6 @@
 # SALVAGE overnight build log
 
-**State: SCAFFOLD.** Sim core, judge bots and the per-commit verification
+**State: BOOTSTRAP COMPLETE.** Sim core, judge bots and the per-commit verification
 set exist and run headless. No presentation, no content, no art.
 
 Binding documents, in precedence order: this file, then `docs/SPEC.md`.
@@ -288,3 +288,48 @@ respect a shipping budget has spent the run without buying information,
 which is the exact failure prototype 1 was retired for.
 
 ## Feature log
+
+- RUN START. Bootstrap 1-5 complete. Godot 4.7.1, pure GDScript (Q12
+  closed on measurement: 10k fights in ~6.5s).
+- **Bootstrap 3, layout invariants over the scene tree.** Built BEFORE
+  content, per the binding order. `verify/layout.gd` walks every Control,
+  checks label-on-label collision, containment in the owning panel with
+  padding, and whether the text actually fits the box it was given. It
+  caught a defect in the first scene ever written, before any human
+  looked at it: help_panel's label sat 5px from its edge against a 6px
+  minimum. That is the class that took a human playtest to find last
+  time.
+- **Bootstrap 4, differential.** `verify/differential.gd` drives one
+  scripted sequence down the bot path and the scene's keyboard path and
+  compares full state after every step. 10 steps, identical.
+- **Bootstrap 5, web export and deploy.** Templates installed,
+  `tools/deploy.sh` builds and publishes to gh-pages in one command.
+  NOTE: the repo is private, so Pages will not serve until it is made
+  public.
+- **JUDGE CHANGE, logged with reason (standing rule).** The casual bot
+  was uniform random over ALL legal actions. In a positional game that is
+  roughly 3 attacks against 12 moves, so it attacked 20 percent of the
+  time and wandered the rest. It won 1.4 percent, and a full 36-cell
+  parameter sweep (`tools/sweep.gd`) found NO configuration that could
+  lift it into band, because every number that lengthens the fight for
+  the skilled bot feeds the wanderer more enemy turns. That is judge
+  pathology, not a broken game: a human who does not know what they are
+  doing still mostly attacks. Casual now attacks when it can and wanders
+  30 percent of the time. Every gate that used it was re-run.
+- **G3 GREEN.** Tuned by sweep, not by argument. Eight configurations
+  land in band; chose the smallest numbers per Glass_Goat's chess
+  directive. limbs 14/10/10, divers 6/10/16, jaw 3 tail 2. Measured:
+  casual 75.8 percent, greedy 7.0 turns, 22.0 squad HP lost.
+- **Three sim bugs found by the fuzz bot**, all fixed: overdraft stacked
+  without limit so Air reached 8 against a bound of 5 (unlimited actions
+  for HP, a dominant strategy rather than a valve; now once per turn);
+  `act_move` did not validate its station and put a diver on station 5 of
+  a five-station board; and a caller could not distinguish refusal from
+  corruption. All three now validate before spending anything.
+- **DEAD STATION resolved, and the diagnosis mattered.** UNDER sat at 0.0
+  percent occupancy. The cause was not that safety is worthless, it was
+  that BACKLINE is ALSO safe with no downside, so UNDER was dominated by
+  a duplicate. Fight one now runs on FOUR stations; BACKLINE arrives in
+  fight two with the scanner that makes standing there worth it. UNDER
+  went to 17.6 percent and G3 held. The teach ladder produced the fix:
+  a station arrives with the thing that makes it worth occupying.
