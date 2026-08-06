@@ -1291,6 +1291,26 @@ func _draw() -> void:
 	Art.draw_crab(self, Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150) + fx.body_offset() + fx.idle(7) * 1.6, asc, combat.limb_broken)
 	Art.tint = Color(1, 1, 1)
 	Art.stretch = 1.0
+	# lamp cones first, under everything, so they light the water rather
+	# than painting over the things in it
+	for d in combat.divers:
+		if d.down:
+			continue
+		var lf: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
+		var head: Vector2 = lf + Vector2(0, -DIVER_SCALE * 0.72)
+		var ap1: Array = combat.enc.art.pos
+		var aim: Vector2 = (Vector2(float(ap1[0]), float(ap1[1])) + Vector2(0, 150) - head)
+		if aim.length() < 1.0:
+			continue
+		var an: Vector2 = aim.normalized()
+		var side := Vector2(-an.y, an.x)
+		var reach: float = min(aim.length() * 0.92, 340.0)
+		draw_colored_polygon(PackedVector2Array([
+			head + side * 7.0, head - side * 7.0,
+			head + an * reach - side * (36.0 + reach * 0.16),
+			head + an * reach + side * (36.0 + reach * 0.16)]),
+			Color(0.72, 0.90, 0.98, 0.055))
+		draw_circle(head, 5.0, Color(0.88, 0.96, 1.0, 0.55))
 	for d in combat.divers:
 		if d.down:
 			continue
