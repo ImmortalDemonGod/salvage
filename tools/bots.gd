@@ -210,4 +210,6 @@ static func run_fight(seed_val: int, policy: String, enc_id := "crab", cap := 40
 	var hp_lost := 0
 	for d in c.divers:
 		hp_lost += d.max_hp - d.hp
-	return {"win": c.outcome == "victory", "turns": c.turn, "hp_lost": hp_lost, "downed": 3 - c.alive().size()}
+	# the party size is CONTENT: the descent runs one diver, so a hardcoded
+	# 3 reported two divers down in a fight that never had them
+	return {"win": c.outcome == "victory", "turns": c.turn, "hp_lost": hp_lost, "downed": c.divers.size() - c.alive().size()}

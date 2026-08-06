@@ -389,7 +389,15 @@ func _refresh() -> void:
 				"hit_and_step": what = "%d dmg, then move free" % int(ab.dmg)
 				"hit_wide": what = "%d dmg here and either side" % int(ab.dmg)
 				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "no damage, ") + "the limb cannot attack for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
-			lines.append("%s %s: %s" % [key, String(ab.name), what])
+			var onto := ""
+			if not combat.can_attack(d):
+				onto = "  --  nothing to hit from %s" % Combat.STATION_NAMES[int(d.station)]
+			else:
+				var tl: int = combat.target_limb(d)
+				if tl >= 0:
+					onto = "  ->  %s %d/%d" % [String(combat.LIMB_NAMES[tl]).to_upper(),
+						int(combat.limb_hp[tl]), int((combat.enc.limbs[tl] as Dictionary).hp)]
+			lines.append("%s %s: %s%s" % [key, String(ab.name), what, onto])
 		card.get_node("label").text = "%s%d %s  %d air per ability%s\n%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, "\n".join(lines), state]
 	ui_help.text = (refusal + "        ") if refusal != "" else ""
 	var keys := ["Q", "W", "E", "R", "T"]
@@ -398,7 +406,11 @@ func _refresh() -> void:
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
 	var pick := "1 diver only" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
-	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE / F use an ability  ·  ENTER end turn" % [pick, "  ".join(moves)]
+	var widest := 0
+	for d0 in combat.divers:
+		widest = max(widest, int(d0.kit.size()))
+	var use := "SPACE use an ability" if widest < 2 else "SPACE / F use an ability"
+	ui_help.text += "%s  ·  move (1 air): %s  ·  %s  ·  ENTER end turn" % [pick, "  ".join(moves), use]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
