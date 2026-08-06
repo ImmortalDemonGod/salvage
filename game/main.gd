@@ -17,13 +17,13 @@ const DESIGN := Vector2(1280, 720)
 # FLANK floating over empty shell while the claw was elsewhere, which
 # silently breaks the "the limb IS the position" contract (SPEC 2.3).
 const STATION_POS := [
-	Vector2(700, 430),   # FRONT  - the jaw
-	Vector2(752, 344),   # FLANK  - the raised claw, which the art puts forward
-	Vector2(880, 540),   # UNDER  - the soft belly, no limb
-	Vector2(1046, 372),  # REAR   - the tail
-	Vector2(300, 430),   # BACKLINE - out of reach
+	Vector2(700, 386),   # FRONT  - the jaw
+	Vector2(752, 300),   # FLANK  - the raised claw, which the art puts forward
+	Vector2(880, 470),   # UNDER  - the soft belly, no limb
+	Vector2(1046, 328),  # REAR   - the tail
+	Vector2(300, 386),   # BACKLINE - out of reach
 ]
-const CRAB_POS := Vector2(866, 350)
+const CRAB_POS := Vector2(866, 306)
 const CRAB_SCALE := 150.0
 
 var run: Run
@@ -36,6 +36,7 @@ var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
 var ui_legend: Label
+var ui_goal: Label
 var refusal := ""
 
 func _ready() -> void:
@@ -51,8 +52,8 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(184, 66)
-		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 54)
+		m.size = Vector2(210, 66)
+		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 48)
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
@@ -69,8 +70,8 @@ func _build_ui() -> void:
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(330, 92)
-		p.position = Vector2(30 + i * 344, 606)
+		p.size = Vector2(392, 96)
+		p.position = Vector2(24 + i * 406, 600)
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
@@ -131,10 +132,22 @@ func _build_ui() -> void:
 	ui_legend.offset_top = 11; ui_legend.offset_bottom = -11
 	legend_panel.add_child(ui_legend)
 
+	var goal_panel := Panel.new()
+	goal_panel.name = "goal_panel"
+	goal_panel.size = Vector2(430, 42)
+	goal_panel.position = Vector2(690, 96)
+	add_child(goal_panel)
+	ui_goal = Label.new()
+	ui_goal.name = "label"
+	ui_goal.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_goal.offset_left = 14; ui_goal.offset_right = -14
+	ui_goal.offset_top = 11; ui_goal.offset_bottom = -11
+	goal_panel.add_child(ui_goal)
+
 	var help_panel := Panel.new()
 	help_panel.name = "help_panel"
 	help_panel.size = Vector2(1220, 40)
-	help_panel.position = Vector2(30, 516)
+	help_panel.position = Vector2(30, 146)
 	add_child(help_panel)
 	ui_help = Label.new()
 	ui_help.name = "label"
@@ -155,6 +168,7 @@ func _refresh() -> void:
 		# The lock, drawn as its own state: a water line and three valves.
 		ui_air.get_parent().visible = false
 		ui_legend.get_parent().visible = false
+		ui_goal.get_parent().visible = false
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
@@ -171,6 +185,7 @@ func _refresh() -> void:
 		# buttons do (SPEC 3.3).
 		ui_air.get_parent().visible = false
 		ui_legend.get_parent().visible = false
+		ui_goal.get_parent().visible = false
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
@@ -193,6 +208,7 @@ func _refresh() -> void:
 	ui_scene.get_parent().visible = false
 	ui_air.get_parent().visible = true
 	ui_legend.get_parent().visible = true
+	ui_goal.get_parent().visible = true
 	ui_legend.text = "red ring = a limb that can still hit you    ·    blue ring = safe to stand"
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
@@ -210,7 +226,12 @@ func _refresh() -> void:
 			lbl.text = "%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper()]
 		else:
 			var stun := "  SHUT" if int(combat.limb_stun[lb]) > 0 else ""
-			lbl.text = "%s\n%s %d hp%s" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), stun]
+			var here := ""
+			for d2 in combat.divers:
+				if not d2.down and int(d2.station) == i and d2.id == selected:
+					here = "  <- you"
+			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
+			lbl.text = "%s\n%s %d/%d hp%s%s" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, stun, here]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -218,6 +239,11 @@ func _refresh() -> void:
 		ui_air.text = "AIR  %d of %d left this turn   (%d line cut)" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
 	else:
 		ui_air.text = "AIR  %d of %d left this turn" % [combat.air, combat.air_this_turn()]
+	var live := 0
+	for lb in range(combat.limb_broken.size()):
+		if not combat.limb_broken[lb]:
+			live += 1
+	ui_goal.text = "break every limb to win   ·   %d of %d still working" % [live, combat.limb_broken.size()]
 	var it: Dictionary = combat.intent()
 	if it.is_empty():
 		ui_intent.text = "%s   spent" % run.state_line()
@@ -239,14 +265,15 @@ func _refresh() -> void:
 		var mark := ">" if i == selected else " "
 		var state := "DOWN" if d.down else "%s  %d HP" % [Combat.STATION_NAMES[d.station], d.hp]
 		var afford := "" if combat.air >= d.cost else "   cannot afford"
-		card.get_node("label").text = "%s%d %s  costs %d air to act%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, state]
+		var verb := "shuts a limb down for a turn" if d.disables else "hits for %d" % d.dmg
+		card.get_node("label").text = "%s%d %s  %d air to act, %s%s\n%s" % [mark, i + 1, d.dname, d.cost, verb, afford, state]
 	ui_help.text = (refusal + "        ") if refusal != "" else ""
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []
 	for i in range(5):
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
-	ui_help.text += "1-%d pick a diver  ·  move: %s  ·  SPACE attack from where you stand  ·  ENTER end turn" % [combat.divers.size(), "  ".join(moves)]
+	ui_help.text += "1-%d pick a diver  ·  move (1 air): %s  ·  SPACE attack from where you stand  ·  ENTER end turn" % [combat.divers.size(), "  ".join(moves)]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
