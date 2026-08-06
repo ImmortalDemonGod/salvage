@@ -428,6 +428,10 @@ func _refresh() -> void:
 		if run.puzzle != null: mood = "puzzle"
 		elif combat != null: mood = "deep" if _depth() > 0.72 else "combat"
 		sfx.set_mood(mood, _depth())
+	ui_intent.get_parent().visible = true
+	var hp4: Control = ui_help.get_parent()
+	hp4.position = Vector2(30, 166)
+	hp4.size = Vector2(1220, 40)
 	var scene_p: Control = ui_scene.get_parent()
 	if run.puzzle != null:
 		scene_p.position = Vector2(190, 596)
@@ -488,6 +492,13 @@ func _refresh() -> void:
 		for l2 in lines:
 			if String(l2.get("text", "")).begins_with("(placeholder)"):
 				marked = true
+		ui_intent.get_parent().visible = false
+		var sp3: Control = ui_scene.get_parent()
+		sp3.position = Vector2(220, 392)
+		sp3.size = Vector2(840, 262)
+		var hp3: Control = ui_help.get_parent()
+		hp3.position = Vector2(220, 668)
+		hp3.size = Vector2(840, 40)
 		ui_scene.text = "\n\n".join(body)
 		if marked:
 			ui_scene.text += "\n\nplaceholder copy, for Marc"
@@ -798,6 +809,38 @@ func _valve_pos(i: int) -> Vector2:
 		return Vector2(x + 150.0, top + tall + 60.0)
 	return Vector2(x + wide1 - 40.0, top + tall - 30.0)
 
+func _draw_rig() -> void:
+	var f: Font = ThemeDB.fallback_font
+	var w: Vector2 = size.max(DESIGN)
+	var surf: float = 232.0
+	# the surface: everything above it is air and rain-coloured
+	draw_rect(Rect2(Vector2.ZERO, Vector2(w.x, surf)), Color(0.055, 0.085, 0.125))
+	draw_line(Vector2(0, surf), Vector2(w.x, surf), Color(0.42, 0.62, 0.70, 0.75), 2.0)
+	for i in range(46):
+		var x: float = float(i) * (w.x / 46.0)
+		var bob: float = sin(_clock * 1.1 + float(i) * 0.6) * 3.0
+		draw_line(Vector2(x, surf + bob), Vector2(x + w.x / 46.0, surf - bob),
+			Color(0.55, 0.76, 0.84, 0.30), 2.0)
+	# the rig: a deck on legs, which is the thing the whole story is about
+	var dx: float = w.x * 0.5 - 190.0
+	draw_rect(Rect2(Vector2(dx, surf - 54), Vector2(380, 26)), Color(0.20, 0.22, 0.24))
+	draw_rect(Rect2(Vector2(dx + 40, surf - 104), Vector2(96, 50)), Color(0.24, 0.26, 0.28))
+	draw_rect(Rect2(Vector2(dx + 250, surf - 88), Vector2(40, 34)), Color(0.24, 0.26, 0.28))
+	# the failing pump, blinking
+	var lit: float = 0.35 + 0.65 * abs(sin(_clock * 2.3))
+	draw_circle(Vector2(dx + 270, surf - 96), 5.0, Color(0.92, 0.44, 0.30, lit))
+	for lx in [dx + 24.0, dx + 178.0, dx + 340.0]:
+		draw_line(Vector2(lx, surf - 28), Vector2(lx + 10.0, surf + 96.0), Color(0.18, 0.20, 0.22), 7.0)
+	# the squad on the deck, the cast the copy is talking about
+	for i in range(3):
+		Art.draw_diver(self, i + 1, Vector2(dx + 110.0 + float(i) * 82.0, surf - 54.0) + fx.idle(i), 54.0, 1)
+	var b: Dictionary = run.current()
+	var title := String(b.get("title", "")).to_upper()
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 84.0), title,
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.88, 0.93, 0.96))
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 112.0), "beat %d of %d" % [run.beat + 1, Beats.LADDER.size()],
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 17, Color(0.55, 0.66, 0.72))
+
 func _draw_lock(p) -> void:
 	var tall := 180.0
 	if p.stage == 2:
@@ -997,6 +1040,9 @@ func _draw() -> void:
 		_draw_banner()
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
+		return
+	if combat == null and run != null and not run.finished:
+		_draw_rig()
 		return
 	var jolt := Vector2.ZERO
 	if fx.shake > 0.01:
