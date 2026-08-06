@@ -599,16 +599,17 @@ func _refresh() -> void:
 				"hit_and_step": what = "%d dmg, then move free" % int(ab.dmg)
 				"hit_wide": what = "%d dmg here and either side" % int(ab.dmg)
 				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "no damage, ") + "the limb cannot attack for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
-			var onto := ""
-			if not combat.can_attack(d):
-				onto = "  ·  nothing to hit from %s" % Combat.STATION_NAMES[int(d.station)]
-			else:
-				var tl: int = combat.target_limb(d)
-				if tl >= 0:
-					onto = "  ->  %s %d/%d" % [String(combat.LIMB_NAMES[tl]).to_upper(),
-						int(combat.limb_hp[tl]), int((combat.enc.limbs[tl] as Dictionary).hp)]
-			lines.append("%s %s: %s%s" % [key, String(ab.name), what, onto])
-		card.get_node("label").text = "%s%d %s  %d air per ability%s\n%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, "\n".join(lines), state]
+			lines.append("%s %s: %s" % [key, String(ab.name), what])
+		# the target once, at the top, instead of on every ability line
+		var onto := ""
+		if not combat.can_attack(d):
+			onto = "  ·  nothing to hit from %s" % Combat.STATION_NAMES[int(d.station)]
+		else:
+			var tl: int = combat.target_limb(d)
+			if tl >= 0:
+				onto = "  ·  hits %s %d/%d" % [String(combat.LIMB_NAMES[tl]).to_upper(),
+					int(combat.limb_hp[tl]), int((combat.enc.limbs[tl] as Dictionary).hp)]
+		card.get_node("label").text = "%s%d %s  %d air per ability%s\n%s%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, state, onto, "\n".join(lines)]
 	ui_help.text = (refusal + "        ") if refusal != "" else ""
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []

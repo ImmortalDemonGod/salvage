@@ -338,6 +338,38 @@ station-occupancy check before the next one starts.
 respect a shipping budget has spent the run without buying information,
 which is the exact failure prototype 1 was retired for.
 
+## The presentation pass
+
+The run met its stopping condition at 04:54 and the very next commit was
+presentation work. That is the finding, not a footnote: the stop gate is a
+depth-limited dominance search and it cannot see whether anything on
+screen moves, so "three dry passes" measured the harness being exhausted,
+not the game being ready. A human opened the link, found a 404, and then
+said the combat felt like pressing buttons while a number changed.
+
+What that produced, all of it verified by looking at regenerated
+screenshots rather than by a gate going green:
+
+| Was | Is |
+|---|---|
+| Nothing moved at all | `game/fx.gd`, driven off the same event classifier as the audio. Hit motion, enemy body lunge, recoil, shake, floating damage, break bursts, idle bob. Each ability kind moves differently, and `verify/door.gd` fails any kind that falls through to the default nudge |
+| The telegraph was a sentence | Drawn: an arc from the limb to every station it will reach, arrowhead on the end, and one disc per station carrying the TOTAL landing there. Two attacks on one station used to draw two discs and the player read the top one: the badge said 3 while 8 arrived |
+| Every quantity was a text fraction | Bars on limbs and divers |
+| The sim's prose never reached the player | The event log is on screen. This was the last prototype's CRITICAL defect, arrived at by a different route |
+| No music, and one audio player so only the last event of a turn was audible | A four-mood procedural score that tightens with depth, and four round-robin voices |
+| Keyboard only, on a link build | Click to move, click again to attack, click a card to select, click a valve to turn. Same `player_*` functions, so there is still one door |
+| Flat navy | Depth-graded water, light from the surface, drifting silt |
+| The lock was a sentence on an empty screen | Drawn: water levels with a moving surface, a dashed line at the height you must reach, pipes from each valve to the chamber it feeds |
+| Finishing printed "run complete" | An ending screen, and a banner when a fight is won |
+| The story beats were three panels in a void | The rig, drawn, with the squad on the deck and the pump light failing |
+
+New gates from the same pass, each mutation-tested before being trusted:
+`check_safe_ground` (no fight may leave every station threatened two turns
+running), `check_placeholders` (every story line marked in source, since
+the marker no longer prints on screen), `check_earned` (the first fight
+offers one ability and a later one offers more), and the motion-coverage
+arm of `verify/door.gd`.
+
 ## Where the run stopped
 
 Three consecutive dry deep passes (46, 47, 48) over 48 total, each on a
