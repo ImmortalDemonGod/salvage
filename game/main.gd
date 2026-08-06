@@ -198,6 +198,11 @@ func _build_ui() -> void:
 		fill.color = BAR_LIMB
 		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		m.add_child(fill)
+		var prev := ColorRect.new()
+		prev.name = "bar_preview"
+		prev.color = Color(0.98, 0.90, 0.55)
+		prev.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		m.add_child(prev)
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
@@ -876,6 +881,19 @@ func _refresh() -> void:
 			bgr.size = Vector2(mk.size.x - 20, 8)
 			flr.position = bgr.position
 			flr.size = Vector2(bgr.size.x * fr, 8)
+			# the preview chunk: the part of this bar the selected diver's
+			# SPACE would remove, bright at the fill's leading edge
+			var pv: ColorRect = mk.get_node("bar_preview")
+			pv.visible = false
+			var ds = combat.divers[selected]
+			if not ds.down and combat.target_limb(ds) == lb0 and combat.outcome == "ongoing":
+				var ef: Dictionary = combat.effect_at(ds, 0, combat.tier_for(ds))
+				var would: int = combat._after_trait(lb0, int(ef.dmg)) if combat.known(lb0) else int(ef.dmg)
+				if would > 0:
+					var wfrac: float = clampf(float(would) / max(1.0, mx), 0.0, fr)
+					pv.visible = true
+					pv.position = Vector2(bgr.position.x + bgr.size.x * (fr - wfrac), bgr.position.y)
+					pv.size = Vector2(bgr.size.x * wfrac, 8)
 			# and it flashes white the instant it is struck
 			flr.color = BAR_LIMB.lerp(Color(1, 1, 1), fx.limb_flash(lb0))
 		# The limb IS the position, so the marker has to SAY the limb and
@@ -1547,6 +1565,41 @@ func _click(at: Vector2) -> void:
 func here_free(_st: int) -> String:
 	return ""
 
+func _draw_affordances() -> void:
+	if combat.outcome != "ongoing":
+		return
+	var d = combat.divers[selected]
+	if d.down:
+		return
+	var t: float = 0.5 + 0.5 * sin(_clock * 3.2)
+	# 1. who is acting: a pulsing ring underfoot
+	var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
+	draw_arc(foot + Vector2(0, 4), 26.0 + 3.0 * t, 0, TAU, 30, Color(0.95, 0.85, 0.45, 0.65 + 0.3 * t), 3.0)
+	# 2. where they can go: a breathing dashed halo on every legal move
+	if combat.air >= Combat.MOVE_COST:
+		for st in combat.OPEN_STATIONS:
+			if int(st) == int(d.station):
+				continue
+			var busy := false
+			for o in combat.divers:
+				if not o.down and int(o.station) == int(st):
+					busy = true
+			if busy:
+				continue
+			var c0: Vector2 = place(int(st))
+			for k in range(10):
+				if k % 2 == 1:
+					continue
+				var a0: float = TAU * float(k) / 10.0 + _clock * 0.8
+				draw_arc(c0, 52.0 + 2.0 * t, a0, a0 + TAU / 10.0, 6, Color(0.55, 0.85, 0.75, 0.5), 2.5)
+	# 3. what SPACE would do: a reticle on the target and a preview chunk
+	var lb: int = combat.target_limb(d)
+	if lb >= 0 and not combat.limb_broken[lb]:
+		var at: Vector2 = _limb_at(lb)
+		draw_arc(at, 30.0, -0.4 + t * 0.1, 0.4 + t * 0.1, 8, Color(0.95, 0.85, 0.45, 0.9), 2.5)
+		draw_arc(at, 30.0, PI - 0.4 - t * 0.1, PI + 0.4 - t * 0.1, 8, Color(0.95, 0.85, 0.45, 0.9), 2.5)
+		draw_line(at + Vector2(-6, 0), at + Vector2(6, 0), Color(0.95, 0.85, 0.45, 0.9), 2.0)
+
 func _draw_traits() -> void:
 	for st in range(5):
 		if not combat.station_open(st):
@@ -1704,6 +1757,7 @@ func _draw() -> void:
 		if d.down:
 			continue
 		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
+	_draw_affordances()
 	_draw_traits()
 	_draw_windup()
 	_draw_bars()
