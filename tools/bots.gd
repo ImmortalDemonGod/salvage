@@ -14,6 +14,8 @@ static func legal(c: Combat) -> Array:
 				out.append({"kind": "attack", "i": d.id, "slot": slot})
 		if Combat.OVERDRAFT_ENABLED and not c.overdrafted and d.hp > Combat.OVERDRAFT_HP:
 			out.append({"kind": "overdraft", "i": d.id})
+		if c.afford(Combat.ANALYZE_COST) and c.target_limb(d) >= 0 and not c.known(c.target_limb(d)):
+			out.append({"kind": "analyze", "i": d.id})
 		if c.afford(Combat.MOVE_COST):
 			for s in c.OPEN_STATIONS:
 				if s != d.station:
@@ -23,6 +25,7 @@ static func legal(c: Combat) -> Array:
 static func apply(c: Combat, a: Dictionary) -> bool:
 	match a.kind:
 		"attack": return c.act_ability(a.i, int(a.get("slot", 0)))
+		"analyze": return c.act_analyze(a.i)
 		"move": return c.act_move(a.i, a.s)
 		"overdraft": return c.act_overdraft(a.i)
 	return false
@@ -50,14 +53,18 @@ static func casual(c: Combat, rng: RandomNumberGenerator) -> Dictionary:
 	var attacks: Array = []
 	var moves: Array = []
 	var burns: Array = []
+	var reads: Array = []
 	for a in opts:
-		if a.kind == "attack": attacks.append(a)
+		if a.kind == "analyze": reads.append(a)
+		elif a.kind == "attack": attacks.append(a)
 		elif a.kind == "overdraft": burns.append(a)
 		else: moves.append(a)
 	# Burning HP for air is a desperate act; a novice does it occasionally,
 	# not one time in three. Leaving it in the uniform pool dropped casual
 	# from 65 to 31 percent, which measured the bot's recklessness rather
 	# than the fight's difficulty. Same judge pathology as the first sweep.
+	if not reads.is_empty() and rng.randf() < 0.18:
+		return reads[rng.randi() % reads.size()]
 	if not burns.is_empty() and rng.randf() < 0.06:
 		return burns[rng.randi() % burns.size()]
 	var want_move: bool = attacks.is_empty() or (not moves.is_empty() and rng.randf() < CASUAL_MOVE_CHANCE)
@@ -88,7 +95,12 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 	for a in legal(c):
 		var d = c.divers[a.i]
 		var score := 0.0
-		if a.kind == "attack":
+		if a.kind == "analyze":
+			# reading a limb pays off only while there is enough of it left
+			# for the trait to matter, and never as a whole turn's work
+			var lb0: int = c.target_limb(c.divers[a.i])
+			score = 2.6 if lb0 >= 0 and int(c.limb_hp[lb0]) > 4 else 0.4
+		elif a.kind == "attack":
 			var ab: Dictionary = d.kit[int(a.get("slot", 0))]
 			var limb: int = c.target_limb(d)
 			if limb < 0:

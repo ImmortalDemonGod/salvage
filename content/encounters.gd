@@ -39,7 +39,7 @@ static var ALL := {
 	"crab": {
 		"title": "the hunter crab",
 		"art": {"kind": "crab", "scale": 158.0, "pos": [872, 330], "tint": [1.0, 1.0, 1.0]},
-		"places": {"0": [610, 392], "1": [788, 292], "2": [900, 430], "3": [1122, 320]},
+		"places": {"0": [610, 392], "1": [788, 292], "2": [880, 404], "3": [1150, 300]},
 		# TWO divers. One was tried and REFUTED by measurement: the crab
 		# became unwinnable (G2 0/40), casual fell to 5.2 percent, and
 		# UNDER went dead because a lone diver never has a reason to stand
@@ -61,9 +61,9 @@ static var ALL := {
 			# swept after Proto5 became the efficient heavy (8 dmg for 3 Air)
 			# and the overdraft was cut. All three encounters land at limbs
 			# x1.45: crab 66.7% / 9.0 turns / 14.0 HP
-			{"name": "jaw", "hp": 13, "station": FRONT},
+			{"name": "jaw", "hp": 13, "station": FRONT, "trait": "brittle"},
 			{"name": "claw", "hp": 11, "station": FLANK},
-			{"name": "tail", "hp": 11, "station": REAR},
+			{"name": "tail", "hp": 11, "station": REAR, "trait": "leaking"},
 		],
 		# SPEC 2.6 verbatim: "the jaw only reaches FRONT, and the tail sweeps
 		# REAR and FLANK together. No conditions, no statuses, no special
@@ -89,7 +89,7 @@ static var ALL := {
 		# a LONGER, thinner body: the stations sit further apart along it,
 		# so the board itself reads differently from the crab's
 		"art": {"kind": "worm", "scale": 188.0, "pos": [910, 312], "tint": [0.55, 0.85, 0.70]},
-		"places": {"0": [604, 386], "1": [886, 288], "2": [946, 430], "4": [286, 386]},
+		"places": {"0": [604, 386], "1": [886, 288], "2": [946, 404], "4": [286, 386]},
 		"party": 2,
 		# The drum is fitted before this fight, so it is declared HERE.
 		# While gear was a global set by the run, the bands measured the
@@ -109,9 +109,9 @@ static var ALL := {
 			# ladder (crab 2s, worm 5/5/3, dredge 4/3/4) rather than the
 			# gentler one that would have made fight two easier than fight
 			# one.
-			{"name": "maw", "hp": 10, "station": FRONT},
-			{"name": "vent", "hp": 7, "station": FLANK},
-			{"name": "gut", "hp": 7, "station": UNDER},
+			{"name": "maw", "hp": 10, "station": FRONT, "trait": "brittle"},
+			{"name": "vent", "hp": 7, "station": FLANK, "trait": "pressurised"},
+			{"name": "gut", "hp": 7, "station": UNDER, "trait": "plated"},
 		],
 		# Every limb attacks, so every station is threatened by something and
 		# breaking any of them changes the map. The gut had no attack, which
@@ -152,9 +152,9 @@ static var ALL := {
 			# player safe ground and handed back too much: casual 92.5%,
 			# outside the pinned band. Paid for in limb HP and damage, not
 			# by moving the band.
-			{"name": "arm", "hp": 11, "station": FRONT},
-			{"name": "boiler", "hp": 10, "station": FLANK},
-			{"name": "winch", "hp": 10, "station": REAR},
+			{"name": "arm", "hp": 11, "station": FRONT, "trait": "plated"},
+			{"name": "boiler", "hp": 10, "station": FLANK, "trait": "pressurised"},
+			{"name": "winch", "hp": 10, "station": REAR, "trait": "brittle"},
 		],
 		"attacks": [
 			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},

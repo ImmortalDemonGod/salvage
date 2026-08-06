@@ -185,7 +185,7 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(258, 68)
+		m.size = Vector2(272, 96)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
 		var bg := ColorRect.new()
@@ -875,8 +875,14 @@ func _refresh() -> void:
 		else:
 			var stun := "  ·  SHUT %d" % int(combat.limb_stun[lb]) if int(combat.limb_stun[lb]) > 0 else ""
 			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
-			lbl.text = "%s  [%s]%s%s\n%s %d/%d" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
-				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp]
+			var read := ""
+			if combat.known(lb):
+				var tr := combat.trait_of(lb)
+				read = "\n" + String(Combat.TRAITS[tr]) if tr != "" else "\nread: nothing unusual"
+			else:
+				read = "\nunread  ·  press A"
+			lbl.text = "%s  [%s]%s%s\n%s %d/%d%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
+				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, read]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -969,7 +975,7 @@ func _refresh() -> void:
 	for i in range(5):
 		if combat.station_open(i):
 			mkeys.append(String(keys[i]))
-	ui_help.text += "click to move, click again to attack  ·  %s  ·  the key on a station moves there (1 air)  ·  %s  ·  ENTER end turn" % [pick, use]
+	ui_help.text += "click to move, click again to attack  ·  %s  ·  station key moves there  ·  A reads a limb  ·  %s  ·  ENTER end turn" % [pick, use]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
@@ -979,6 +985,26 @@ func _refresh() -> void:
 # bots used all six, while the player had one key. A blind reviewer put it
 # plainly: "there is nothing on screen indicating a second or alternate
 # attack for either character."
+# Marc's Analyze step. Reading a limb costs 1 air and tells you what it
+# turns out to be, which is what makes the ORDER you break things a
+# decision rather than a chore.
+func player_analyze() -> bool:
+	var ok := combat.act_analyze(selected)
+	if ok:
+		refusal = ""
+		_after()
+	else:
+		var d = combat.divers[selected]
+		var lb: int = combat.target_limb(d)
+		if lb >= 0 and combat.known(lb):
+			refusal = "the %s has already been read" % String(combat.LIMB_NAMES[lb]).to_upper()
+		elif lb < 0:
+			refusal = "nothing to read from %s" % Combat.STATION_NAMES[int(d.station)]
+		else:
+			refusal = "not enough air to read a limb"
+		_refresh()
+	return ok
+
 func player_ability(slot: int) -> bool:
 	var ok := combat.act_ability(selected, slot)
 	if ok:
@@ -1084,6 +1110,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_E: player_move(Combat.UNDER)
 		KEY_R: player_move(Combat.REAR)
 		KEY_T: player_move(Combat.BACKLINE)
+		KEY_A: player_analyze()
 		KEY_SPACE: player_ability(0)
 		KEY_F: player_ability(1)
 		KEY_LEFT, KEY_RIGHT:

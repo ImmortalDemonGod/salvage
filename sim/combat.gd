@@ -97,6 +97,7 @@ var limb_stun: Array = []
 # 2 Air, and the greedy bot finished the vent worm without taking a scratch.
 # A shutdown should be a PARTIAL answer: it removes one limb's swing from a
 # turn that has several.
+var analyzed: Array = []   # which limbs a diver has read
 var locked: Array = []
 
 # kit_size 0 means "everything this diver owns", which is what the bots and
@@ -105,6 +106,9 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 	enc_id = encounter
 	enc = (Encounters.ALL[encounter] as Dictionary)
 	STATION_LIMB = Encounters.station_limb(enc)
+	analyzed = []
+	for _l in enc.limbs:
+		analyzed.append(false)
 	OPEN_STATIONS = (enc.open_stations as Array).duplicate()
 	LIMB_NAMES = []
 	limb_hp = []
@@ -221,6 +225,45 @@ func alive() -> Array:
 			out.append(d)
 	return out
 
+# what a limb turns out to be, once a diver has read it
+const TRAITS := {
+	"brittle": "brittle: it takes double damage",
+	"pressurised": "pressurised: breaking it shuts every other limb for a turn",
+	"leaking": "leaking: breaking it gives the squad 2 air back",
+	"plated": "plated: it takes one less from every hit",
+}
+
+func trait_of(limb: int) -> String:
+	if limb < 0 or limb >= enc.limbs.size():
+		return ""
+	return String((enc.limbs[limb] as Dictionary).get("trait", ""))
+
+func known(limb: int) -> bool:
+	return limb >= 0 and limb < analyzed.size() and bool(analyzed[limb])
+
+# Reading a limb costs air like anything else. It is the cheapest action in
+# the game because information should be affordable, and the only one that
+# does no damage at all.
+const ANALYZE_COST := 1
+
+func act_analyze(i: int) -> bool:
+	if i < 0 or i >= divers.size():
+		return false
+	var d = divers[i]
+	if outcome != "ongoing" or d.down or not afford(ANALYZE_COST):
+		return false
+	var limb: int = target_limb(d)
+	if limb < 0 or known(limb):
+		return false
+	air -= ANALYZE_COST
+	analyzed[limb] = true
+	var t := trait_of(limb)
+	if t == "":
+		log_lines.append("%s reads the %s: nothing unusual about it" % [d.dname, LIMB_NAMES[limb]])
+	else:
+		log_lines.append("%s reads the %s -- %s" % [d.dname, LIMB_NAMES[limb], String(TRAITS[t])])
+	return true
+
 func can_attack(d) -> bool:
 	# From BACKLINE the disabler reaches with the drum: it shuts down
 	# whatever is winding up, wherever it is. That is what makes standing
@@ -330,6 +373,7 @@ func act_ability(i: int, slot: int) -> bool:
 		air -= int(d.cost)
 	var at_range: bool = d.disables and d.station == BACKLINE
 	var dmg: int = 0 if at_range else int(eff.dmg)
+	dmg = _after_trait(limb, dmg)
 	if dmg > 0:
 		limb_hp[limb] -= dmg
 		log_lines.append("%s: %s hits the %s for %d" % [d.dname, String(ab.name), LIMB_NAMES[limb], dmg])
@@ -355,12 +399,35 @@ func act_ability(i: int, slot: int) -> bool:
 	_break_if_spent(limb)
 	return true
 
+# a trait only bites once it is KNOWN, so reading a limb is what turns it
+# into an opportunity rather than a hidden dice roll
+func _after_trait(limb: int, dmg: int) -> int:
+	if dmg <= 0 or not known(limb):
+		return dmg
+	match trait_of(limb):
+		"brittle":
+			return dmg * 2
+		"plated":
+			return max(1, dmg - 1)
+	return dmg
+
 func _break_if_spent(limb: int) -> void:
 	if limb < 0 or limb_broken[limb] or limb_hp[limb] > 0:
 		return
 	limb_hp[limb] = 0
 	limb_broken[limb] = true
 	log_lines.append("the %s BREAKS" % LIMB_NAMES[limb])
+	# what breaking it was FOR, which is the whole point of choosing one
+	if known(limb):
+		match trait_of(limb):
+			"pressurised":
+				for o in range(limb_hp.size()):
+					if o != limb and not limb_broken[o]:
+						limb_stun[o] = max(int(limb_stun[o]), 1)
+				log_lines.append("the pressure blows out: every other limb is shut down and will not swing")
+			"leaking":
+				air += 2
+				log_lines.append("the line vents back into the tank: 2 air returned")
 	_check_victory()
 
 func act_attack(i: int) -> bool:
