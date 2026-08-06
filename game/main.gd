@@ -185,7 +185,7 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(272, 96)
+		m.size = Vector2(286, 74)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
 		var bg := ColorRect.new()
@@ -894,7 +894,7 @@ func _refresh() -> void:
 				var tr := combat.trait_of(lb)
 				read = "\n" + String(Combat.TRAITS[tr]) if tr != "" else "\nread: nothing unusual"
 			else:
-				read = "\nunread  ·  press A"
+				read = "   unread [A]"
 			lbl.text = "%s  [%s]%s%s\n%s %d/%d%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
 				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, read]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
