@@ -950,6 +950,26 @@ func _draw_water() -> void:
 				Vector2(x - 40, 0), Vector2(x + 40, 0),
 				Vector2(x + 150, w.y), Vector2(x - 20, w.y)])
 			draw_colored_polygon(pts, Color(0.55, 0.85, 0.95, 0.030 * lit))
+	# the drowned city, far off and getting closer as you go down. Kept very
+	# low contrast on purpose: it is the reason the frame has a floor and a
+	# horizon, not something to look at instead of the fight.
+	var far: Color = Color(0.10, 0.19, 0.24).lerp(Color(0.045, 0.085, 0.13), d)
+	var near: Color = Color(0.075, 0.145, 0.19).lerp(Color(0.03, 0.06, 0.10), d)
+	var sky: float = w.y * (0.50 + 0.10 * d)
+	# a far skyline of towers
+	for i in range(11):
+		var bx0: float = w.x * (float(i) / 11.0) - 40.0 + sin(float(i) * 2.3) * 30.0
+		var bw: float = 52.0 + float((i * 37) % 60)
+		var bh: float = 60.0 + float((i * 53) % 150)
+		draw_rect(Rect2(Vector2(bx0, sky - bh), Vector2(bw, bh + 40.0)), far)
+	# and a nearer one, lower and darker, which gives the floor its edge
+	for i in range(8):
+		var cx0: float = w.x * (float(i) / 8.0) - 70.0 + cos(float(i) * 1.7) * 44.0
+		var cw: float = 90.0 + float((i * 71) % 90)
+		var ch: float = 40.0 + float((i * 29) % 90)
+		draw_rect(Rect2(Vector2(cx0, w.y - ch - 60.0), Vector2(cw, ch + 90.0)), near)
+	draw_rect(Rect2(Vector2(0, w.y - 60.0), Vector2(w.x, 60.0)), near)
+
 	# silt drifting up, so the frame is never completely still
 	for i in range(34):
 		var sx: float = fmod(float(i) * 137.5 + sin(float(i)) * 40.0, w.x)
