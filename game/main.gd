@@ -1288,7 +1288,19 @@ func _draw() -> void:
 		Art.stretch = 1.55        # long and thin
 	elif String(art.get("kind", "crab")) == "dredge":
 		Art.stretch = 0.78        # squat and blocky
-	Art.draw_crab(self, Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150) + fx.body_offset() + fx.idle(7) * 1.6, asc, combat.limb_broken)
+	var body_at: Vector2 = Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150) + fx.body_offset() + fx.idle(7) * 1.6
+	var lamps := 0
+	for dl in combat.divers:
+		if not dl.down:
+			lamps += 1
+	if lamps > 0:
+		for ring in range(7):
+			var rr: float = 90.0 + float(ring) * 34.0
+			draw_circle(body_at + Vector2(0, -30), rr,
+				Color(0.66, 0.86, 0.94, 0.020 * float(lamps) * (1.0 - float(ring) / 7.0)))
+	# and the creature itself is lifted out of the dark by that light
+	Art.tint = Art.tint.lightened(0.05 * float(lamps))
+	Art.draw_crab(self, body_at, asc, combat.limb_broken)
 	Art.tint = Color(1, 1, 1)
 	Art.stretch = 1.0
 	# lamp cones first, under everything, so they light the water rather
