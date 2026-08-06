@@ -39,6 +39,7 @@ var selected := 0
 var ui_stations: Array = []
 var ui_divers: Array = []
 var ui_air: Label
+var ui_tanks: Array = []
 var ui_log: Label
 var ui_intent: Label
 var ui_help: Label
@@ -111,6 +112,12 @@ func place(i: int) -> Vector2:
 # One design language, in one place. PRIMARY is for the things that change
 # every turn, QUIET for the things that never do, so the eye has somewhere
 # to go first.
+const BRASS := Color(0.72, 0.54, 0.26)
+const BRASS_LIT := Color(0.90, 0.72, 0.38)
+const PLATE := Color(0.085, 0.105, 0.120)
+const PLATE_DEEP := Color(0.055, 0.070, 0.085)
+const RIVET := Color(0.52, 0.44, 0.30)
+
 static func _skin(bg: Color, border: Color, radius := 6) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = bg
@@ -122,13 +129,32 @@ static func _skin(bg: Color, border: Color, radius := 6) -> StyleBoxFlat:
 	return sb
 
 static func skin_primary() -> StyleBoxFlat:
-	return _skin(Color(0.055, 0.115, 0.155, 0.94), Color(0.30, 0.50, 0.60, 0.75))
+	# the gauges you read every turn: brightest brass, deepest plate
+	var sb := _skin(Color(0.100, 0.120, 0.135, 0.96), BRASS, 4)
+	sb.set_border_width_all(2)
+	return sb
 
 static func skin_quiet() -> StyleBoxFlat:
-	return _skin(Color(0.040, 0.075, 0.105, 0.80), Color(0.20, 0.30, 0.38, 0.55))
+	# painted steel, no brass: the labels that never change
+	return _skin(Color(0.070, 0.085, 0.098, 0.88), Color(0.26, 0.29, 0.32, 0.9), 3)
 
 static func skin_card() -> StyleBoxFlat:
-	return _skin(Color(0.050, 0.100, 0.140, 0.92), Color(0.26, 0.44, 0.54, 0.70), 8)
+	# a suit plate: the roster, the story, the things about the people
+	var sb := _skin(Color(0.088, 0.108, 0.124, 0.95), Color(0.45, 0.36, 0.22, 0.95), 5)
+	sb.set_border_width_all(2)
+	return sb
+
+# four rivets, one per corner, added as children so they sit ON the plate
+func _rivet(pan: Control) -> void:
+	for c in [Vector2(7, 7), Vector2(pan.size.x - 12, 7),
+			Vector2(7, pan.size.y - 12), Vector2(pan.size.x - 12, pan.size.y - 12)]:
+		var r := ColorRect.new()
+		r.name = "rivet"
+		r.color = RIVET
+		r.size = Vector2(5, 5)
+		r.position = c
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		pan.add_child(r)
 
 func _build_ui() -> void:
 	# station markers: one Control each, so the invariants can assert they
@@ -158,6 +184,7 @@ func _build_ui() -> void:
 		p.size = Vector2(392, 190)
 		p.position = Vector2(24 + i * 406, CARD_TOP)
 		p.add_theme_stylebox_override("panel", skin_card())
+		_rivet(p)
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
@@ -170,24 +197,34 @@ func _build_ui() -> void:
 
 	var air_panel := Panel.new()
 	air_panel.name = "air_panel"
-	air_panel.size = Vector2(340, 76)
+	air_panel.size = Vector2(340, 84)
 	air_panel.position = Vector2(30, 24)
 	air_panel.add_theme_stylebox_override("panel", skin_primary())
+	_rivet(air_panel)
 	add_child(air_panel)
 	ui_air = Label.new()
 	ui_air.name = "label"
 	ui_air.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_air.offset_left = 10; ui_air.offset_right = -10
-	ui_air.offset_top = 6; ui_air.offset_bottom = -6
+	ui_air.offset_top = 6; ui_air.offset_bottom = -46
 	ui_air.add_theme_font_size_override("font_size", 19)
 	ui_air.add_theme_color_override("font_color", Color(0.94, 0.96, 0.98))
 	air_panel.add_child(ui_air)
+	for i in range(Combat.AIR_PER_TURN):
+		var tank := ColorRect.new()
+		tank.name = "tank_%d" % i
+		tank.size = Vector2(26, 30)
+		tank.position = Vector2(16 + i * 34, 44)
+		tank.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		air_panel.add_child(tank)
+		ui_tanks.append(tank)
 
 	var tel := Panel.new()
 	tel.name = "telegraph_panel"
 	tel.size = Vector2(856, 76)
 	tel.position = Vector2(392, 24)
 	tel.add_theme_stylebox_override("panel", skin_primary())
+	_rivet(tel)
 	add_child(tel)
 	ui_intent = Label.new()
 	ui_intent.name = "label"
@@ -205,6 +242,7 @@ func _build_ui() -> void:
 	scene_panel.size = SCENE_PANEL_SIZE
 	scene_panel.position = SCENE_PANEL_AT
 	scene_panel.add_theme_stylebox_override("panel", skin_card())
+	_rivet(scene_panel)
 	add_child(scene_panel)
 	ui_scene = Label.new()
 	ui_scene.name = "label"
@@ -219,6 +257,7 @@ func _build_ui() -> void:
 	legend_panel.size = Vector2(640, 46)
 	legend_panel.position = Vector2(30, 116)
 	legend_panel.add_theme_stylebox_override("panel", skin_quiet())
+	_rivet(legend_panel)
 	add_child(legend_panel)
 	ui_legend = Label.new()
 	ui_legend.name = "label"
@@ -234,6 +273,7 @@ func _build_ui() -> void:
 	goal_panel.size = Vector2(430, 42)
 	goal_panel.position = Vector2(700, 116)
 	goal_panel.add_theme_stylebox_override("panel", skin_quiet())
+	_rivet(goal_panel)
 	add_child(goal_panel)
 	ui_goal = Label.new()
 	ui_goal.name = "label"
@@ -248,6 +288,7 @@ func _build_ui() -> void:
 	help_panel.size = Vector2(1220, 40)
 	help_panel.position = Vector2(30, 166)
 	help_panel.add_theme_stylebox_override("panel", skin_quiet())
+	_rivet(help_panel)
 	add_child(help_panel)
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
@@ -259,6 +300,7 @@ func _build_ui() -> void:
 	lst.set_border_width_all(1)
 	lst.set_corner_radius_all(3)
 	log_panel.add_theme_stylebox_override("panel", lst)
+	_rivet(log_panel)
 	add_child(log_panel)
 	ui_log = Label.new()
 	ui_log.name = "label"
@@ -554,6 +596,17 @@ func _refresh() -> void:
 		return
 	ui_scene.get_parent().visible = false
 	ui_air.get_parent().visible = true
+	# the bottles: full ones lit brass, spent ones dark, ones cut off by a
+	# severed line crossed out in red
+	for i in range(ui_tanks.size()):
+		var t: ColorRect = ui_tanks[i]
+		t.visible = true
+		if i < combat.air:
+			t.color = BRASS_LIT
+		elif i < combat.air_this_turn():
+			t.color = Color(0.20, 0.19, 0.16)
+		else:
+			t.color = Color(0.42, 0.16, 0.13)
 	ui_legend.get_parent().visible = true
 	ui_goal.get_parent().visible = true
 	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
@@ -590,9 +643,9 @@ func _refresh() -> void:
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
 	if combat.air_penalty > 0:
-		ui_air.text = "AIR  %d of %d left this turn\na swing hit nobody: %d line cut" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
+		ui_air.text = "AIR   %d line cut" % combat.air_penalty
 	else:
-		ui_air.text = "AIR  %d of %d left this turn\none shared pool, no banking" % [combat.air, combat.air_this_turn()]
+		ui_air.text = "AIR   one shared tank"
 	var live := 0
 	for lb in range(combat.limb_broken.size()):
 		if not combat.limb_broken[lb]:
