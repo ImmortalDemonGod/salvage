@@ -975,15 +975,25 @@ func _draw_windup() -> void:
 			var n: Vector2 = dir.normalized()
 			var a: Vector2 = src + n * 30.0
 			var b: Vector2 = dst - n * 48.0
-			# a dashed reach, so it reads as "about to" rather than "is"
-			var segs := 9
-			for i in range(segs):
-				if i % 2 == 1:
-					continue
-				var t0: float = float(i) / float(segs)
-				var t1: float = float(i + 1) / float(segs)
-				draw_line(a.lerp(b, t0), a.lerp(b, t1),
-					Color(0.98, 0.46, 0.34, 0.55 + 0.45 * pulse), 6.0)
+			# a bowed arc rather than a straight line: the direct route runs
+			# under the station cards and arrives as disconnected strokes
+			var lift: float = min(90.0, dir.length() * 0.30)
+			var ctrl: Vector2 = a.lerp(b, 0.5) + Vector2(0, -lift)
+			var segs := 18
+			var prev: Vector2 = a
+			for i in range(1, segs + 1):
+				var t: float = float(i) / float(segs)
+				var q: Vector2 = a.lerp(ctrl, t).lerp(ctrl.lerp(b, t), t)
+				# taper: thin where it leaves, heavy where it lands
+				draw_line(prev, q, Color(0.98, 0.46, 0.34, 0.30 + 0.55 * pulse * t),
+					2.0 + 5.0 * t)
+				prev = q
+			# an arrowhead, so the direction is never in question
+			var tipd: Vector2 = (b - prev).normalized() if (b - prev).length() > 1.0 else n
+			var perp := Vector2(-tipd.y, tipd.x)
+			draw_colored_polygon(PackedVector2Array([
+				b, b - tipd * 20.0 + perp * 10.0, b - tipd * 20.0 - perp * 10.0]),
+				Color(0.98, 0.46, 0.34, 0.55 + 0.45 * pulse))
 			# anchored to the RING it lands on, never to the middle of the
 			# line, so it can never read as belonging to another station
 			var pip: Vector2 = dst + Vector2(46.0, -34.0)
