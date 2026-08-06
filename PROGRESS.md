@@ -698,6 +698,31 @@ open question, the salvage on the board, valve flow causality drawn.
 Standing rules 26-32 bind throughout; deploys only through
 tools/deploy.sh, which now proves what it serves.
 
+### The night's ledger
+
+**P0 economy: LANDED** (commit 5b0e689, live as build 383d1b4). Free
+move per diver per turn; air pays for swings only. Forced by
+measurement in the same hour: hunting arcs (announced, cannot reach the
+back line), the crab's claw pinch and a declared, machine-checked
+refuge at UNDER, the greedy judge's move pricing re-derived (reach a
+target, reach the platform, dodge for free), desperation once per diver
+per fight, traits physical instead of epistemic, the ramping boiler
+(SPEC 2.4 answered small, capped +3), and no re-shut two turns running.
+New gate verify/masher.gd: mash-and-move LOSES the crab at turn 7,
+never stalemates, pure mash never wins. Bands re-paid in content: crab
+60.7, spitter 81.5, dredge 58.8, all in 55-90. Station health: refuge
+14.3, platform 12.5 and 25.9 percent occupancy. The clone amnesia bug
+(limb reads lost) found and fixed on the way.
+
+**Rig bake: frames exist, not yet integrated.** art/baked/ carries all
+fifteen clips as PNG frame stacks with a manifest; spot-checked real
+(Scuba mid axe kick, Proto5's ring-handled suit). Unlit flat white and
+possibly back-facing; the bake pipeline is still being refined and its
+report is pending. Integration is its own item.
+
+Next: P0 buttons and full mouse parity with the mouse-door gate, then
+the occlusion diet with the HUD budget gate.
+
 ## The presentation pass
 
 The run met its stopping condition at 04:54 and the very next commit was
