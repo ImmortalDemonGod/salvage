@@ -570,6 +570,9 @@ func _next_step() -> String:
 		return ""
 	if combat.air <= 0:
 		return "Out of air. Press ENTER to end the turn and refill the tank."
+	if float(d.hp) / max(1.0, float(d.max_hp)) <= 0.34:
+		return "%s is at %d of %d and will go down soon. Move somewhere nothing is announced, or finish the limb that is hitting them." % [
+			d.dname, int(d.hp), int(d.max_hp)]
 	if not combat.can_attack(d):
 		var safe_far := -1
 		for st in combat.OPEN_STATIONS:
@@ -608,8 +611,11 @@ func _next_step() -> String:
 	if empty_swing:
 		return "An attack will hit empty water and tear an air line: you lose 1 air next turn. Stand in it, or accept it."
 	if lb2 >= 0:
-		return "Press SPACE to hit the %s.   %s has %d air of the %d left." % [
-			String(combat.LIMB_NAMES[lb2]).to_upper(), d.dname, combat.air, combat.air_this_turn()]
+		var line := "Press SPACE for %s: hit the %s for %d." % [
+			String(d.kit[0].name), String(combat.LIMB_NAMES[lb2]).to_upper(), int(d.kit[0].dmg)]
+		if d.kit.size() > 1:
+			line += "   Or F for %s." % String(d.kit[1].name)
+		return line
 	return "Press ENTER to end the turn."
 
 # never leave the player holding a diver who cannot act
@@ -1400,7 +1406,10 @@ func _draw_bars() -> void:
 			continue
 		var f: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 		var frac: float = float(d.hp) / max(1.0, float(d.max_hp))
-		_bar(f + Vector2(-30, -DIVER_SCALE - 4), 60, 7, frac, BAR_OK if frac > 0.34 else BAR_LOW)
+		_bar(f + Vector2(-52, -DIVER_SCALE - 8), 104, 13, frac, BAR_OK if frac > 0.34 else BAR_LOW)
+		var df: Font = ThemeDB.fallback_font
+		draw_string(df, f + Vector2(-48, -DIVER_SCALE + 2), "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)],
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.96, 0.98, 1.0))
 
 func _draw() -> void:
 	# Paint the ACTUAL rect, not the design size. With stretch/expand the
