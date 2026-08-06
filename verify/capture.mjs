@@ -96,7 +96,9 @@ if (keySpec) {
     await page.keyboard.up(k);
     await page.waitForTimeout(all ? 320 : 90);
     if (all || i === keys.length - 1) {
-      await page.waitForTimeout(all ? 0 : 400);
+      // the descent between beats runs 1.7s; shooting before it finishes
+      // photographs the transition instead of the board it leads to
+      await page.waitForTimeout(all ? 0 : 2100);
       await page.screenshot({ path: join(outdir, `${String(shot++).padStart(5, "0")}-${k}.png`) });
     }
   }
