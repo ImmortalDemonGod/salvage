@@ -450,32 +450,37 @@ them both.
 
 ## The second human playtest (Aug 6, 4:16 pm)
 
-He played again and recorded it: 25 minutes, quit at dive eight. "The
-TIDESONG combat was fun. This one is just tedious, and I feel like I'm
-being punished for playing it." He called it the last playtest before he
-shares the build with the team.
+He played again and recorded it: 25 minutes, quit at dive eight. He
+called it, "hopefully, at least for today," the last playtest before he
+shares the build with the team. "The TIDESONG combat was fun. This one
+is just tedious, and I feel like I'm being punished for playing it."
 
 **Which build he played matters, and I got it wrong twice.** I first
 wrote that he played the 14:38 build, off the 14:44 file stamps inside
-the otter export. His own otter page says the recording started at
-4:16 pm and ran 25 minutes; the stamps in the export are Pacific time,
-and 14:44 PT is 16:44 here, three minutes after the recording ended.
-A derived timestamp is not evidence of when a person did something; the
-display the person sees is. He caught this, not me.
+the otter export. His otter page, relayed mid-session, shows the
+recording starting at 4:16 pm and running 25 minutes. The 14:44 stamps
+cohere only as Pacific time: 14:44 PT is 16:44 here, about when a 4:16
+recording of that length finishes transcribing. The Pacific attribution
+is inference, not an artifact, but it is the only reading under which
+the evidence agrees. A derived timestamp is not evidence of when a
+person did something; the display the person sees is. He caught this,
+not me.
 
 That put him on the advertised URL at 16:16, a quarter hour AFTER the
 block closed, which should have meant the final build. The transcript
 says otherwise: he reads the combat legend aloud, word for word, and that
-line was deleted at 15:22. The served pck resolved it: the URL was
-serving the 13:52 deploy. **He played a build from before the fun pass
-started. Nobody has ever been served the fun pass.**
+line was deleted at 15:22. The served bytes resolved it: the URL's pck
+hashed a019d01f with a last-modified of 18:52:51 GMT, which is 13:52
+here, squarely in the first deploy's window. **He played a build from
+before the fun pass started, and as of his session nobody had ever been
+served the fun pass.**
 
 ### How three hours of deploys went nowhere
 
 `tools/deploy.sh` did this on every run:
 
-1. `rm -rf site` deleted `site/.vercel`, the file that links the
-   directory to the Vercel project, then
+1. `rm -rf site` deleted `site/.vercel`, the directory that links
+   site/ to the Vercel project, then
 2. `vercel deploy --prod --yes >/dev/null 2>&1` ran unlinked, silently
    auto-created a project called "site", and shipped every subsequent
    build to throwaway URLs under it, and
@@ -495,25 +500,31 @@ recording started after the block ended, and is withdrawn.
 His findings below therefore describe the pre-fun-pass build. Everything
 the block built (tiers, analyze and traits, board teaching, the genre
 affordances, the legend removal) reached the URL for the first time at
-17:04, after his session. The design defects in the next table were
-verified against current source and stand regardless.
+17:04, in the redeploy performed during this diagnosis, after his
+session. The design defects in the next table were verified against
+current source and stand regardless.
+
+Quotes in these tables are cleaned of stutters against the transcript;
+where screen copy and his reaction to it met inside one quotation, they
+are separated below, because this file's own standing lesson is that a
+summary wearing quotation marks is still a summary.
 
 ### Verified still true in the 16:00 build (each checked against source)
 
 | Finding | Evidence |
 |---|---|
 | **The team rig is in the repo and the game uses none of it.** "They look a little different than what Glass_Goat actually gave us... you have to be using it because you were talking about the names" | Exactly right. `art/rigs/Main_Team_Rigging.fbx` has been in the repo since the scaffold: three rigged divers, fifteen clips, including two attacks and a damaged reaction per character. INPUTS.md Part 2e analyzes it in detail. I took the names and none of the meshes or motion. The two things he asks for most, attack animation and hit reaction, already exist as clips in that file |
-| **Mash dominance is real.** "I'm just gonna use one player and just click space a bunch of times, as seems to be the dominant strategy" | `act_ability` has no per diver, per turn limit; air is the only economy, so one cheap diver can attack four times a turn and the squad is optional. This is the tedium core and it is a design decision, not a bug fix: changing it moves the pinned bands and must be paid for in content |
-| **Mouse parity is broken.** "Why can't I just play the game by clicking? I also have to click the screen AND use the keys" | `_click` on your own station or the creature fires ability 0 only. There is no click path to the second ability or to analyze. A misclick on empty board space also fires ability 0 and wastes air |
+| **Mash dominance is real.** "I'm just gonna use one player and just click space a bunch of times, as seems to be the dominant strategy" | `act_ability` has no per diver, per turn limit; air (or health, once the tank empties and desperation opens) is the only economy, so one cheap diver can attack four times a turn and the squad is optional. This is the tedium core and it is a design decision, not a bug fix: changing it moves the pinned bands and must be paid for in content |
+| **Mouse parity is broken.** "Why can't I just play the game by clicking the screen? I also have to click the screen and use the keys" | `_click` on your own station or the creature fires ability 0 only. There is no click path to the second ability or to analyze. A misclick on empty board space also fires ability 0 and wastes air when the swing is legal; an illegal one is refused and costs nothing |
 | **The off-centre box is an aspect bug, not a copy bug.** Both playtests reported it | `aspect="expand"` grows the canvas rightward on any window wider than 16:9 while every panel sits at absolute 1280-space coordinates. The opening panel is mathematically centred at design size and left of centre on his screen |
 | **The gallery cannot see it.** | `verify/capture.mjs` shoots at 1280x800, where the canvas is exactly design width. The evidence pipeline is blind to the player's aspect. Rule 26 again, in a new place |
 | "80% of the screen is nothing but a panel" | Not measured before; panels do dominate. The affordance pass moved teaching onto the board but did not shrink the chrome |
-| The valve puzzle "felt like a test of can you read instructions... had I understood if I could actually visually SEE the water flowing" | The puzzle is still taught by text. Water level and flow are not drawn |
-| "Press F for it. I'm pressing F, and nothing happens" | The interlude that grants the second ability says press F on a screen where F is inert. The teaching moment the beat exists for cannot happen on it |
+| The valve puzzle "felt like a test of can you read instructions... had I understood if I could actually visually see the water flowing" | Water LEVELS have been drawn since 08:01 (moving surface, dashed target line, pipes), and the first version of this row said they were not, contradicting the presentation pass above it. What is genuinely not drawn is the causality: flow between chambers when a valve turns, and why one chamber must be full and the other empty. He read the instructions instead of the water, so the levels alone do not carry the puzzle |
+| The screen says "press F for it"; he tries: "All right, I'm pressing F. Oh nope," and later "I press F, and nothing happens" | The interlude that grants the second ability says press F on a screen where F is inert. The teaching moment the beat exists for cannot happen on it |
 | "Playing around with the keys wastes my turn. There's no way to strategize" | No undo. The sim is pure, so snapshot and restore is cheap; moves could be undoable until an ability or a read locks the turn |
 | "I have no idea which diver is which" | The card does carry the number ("1 Scuba...") but inside the dense status line he read aloud on stream and could not parse. Present and illegible |
-| Interlude copy incoherent: "Prototype one comes with you now. They were already on the rig"; "what did I even do? Why did I even go down there?" | Placeholder words are Marc's to replace, but ours must carry cause and effect. They do not |
-| "No winning screen, just directly to another puzzle thing" | A victory banner has existed since morning and he still did not see a win at the dredge. Claimed fixed, contradicted as played. Must be reproduced at that transition, not asserted |
+| Interlude copy incoherent: the screen says "Prototype one comes with you now" and he objects "What do you mean? It comes with me now. They were already on the rig"; later, "What did I even do? Why did I even go down there?" | Placeholder words are Marc's to replace, but ours must carry cause and effect. They do not |
+| "No winning screen, just directly to a another puzzle thing" | A victory banner has existed since morning and he still did not perceive a win. The kill in question is the vent worm (fight2) into the second lock: he quit before reaching the dredge fight, and the first version of this row named the dredge, which would have sent the reproduction to a seam he never played. Reproduce at fight2 into puzzle2, as played, not asserted |
 
 ### What he asked for that is new
 
@@ -521,7 +532,7 @@ verified against current source and stand regardless.
 |---|---|
 | **A tiny tutorial fight.** "One stage where you defeat a very tiny enemy... the red ring pops up, boom. I don't need to show that ever again" | He designed the replacement for the legend himself: teach each rule once, by play, then never print it again |
 | **Mouse first, keys second.** "We're removing keyboard controls entirely... you can keep them, I guess, or rework them" | Prompts phrased around clicking, keys in parentheses. `verify/hint.gd` audits keyboard phrasing and must move in lockstep or it will fight the change |
-| A HUD analysis of the kin games (Into the Breach, Slay the Spire, Darkest Dungeon, Monster Hunter, Fallout, Vagrant Story, Zelda) | He is sending one from his own agent. Expect it; audit our HUD against the same list before it arrives |
+| A HUD analysis of the kin games (Into the Breach, Slay the Spire, Darkest Dungeon, Monster Hunter, classic multi-part JRPG bosses, Fallout, Vagrant Story, Fear Hunter, Zelda dungeons) | He is sending one from his own agent. Expect it; audit our HUD against the same list before it arrives. The first version of this row silently dropped two entries from his spoken list |
 
 What he liked, so it does not get lost: the music registering at all, the
 audio feedback ("at least I know things are happening"), the improved
@@ -544,6 +555,15 @@ build, because the stale build also behaved. After every deploy, hash
 the artifact the advertised URL actually serves and compare it to the
 artifact you built; a deploy step that can fail must be able to say so,
 and a step that can run against the wrong target must refuse to.
+
+Amended the same evening, after an adversarial review of the first fix
+found it could still lie: hash EVERY file the site ships, not the two
+that felt important, because a deploy that changes only the HTML passes
+a pck check; guard the comparison against comparing empty to empty,
+which passes; and a gate whose exit status dies in a pipe is decoration,
+not a gate. The deploy now publishes its source commit at /build.txt
+beside the site, so which build is being served is observable from any
+browser, and the deploy ends by reading it back.
 
 ## The presentation pass
 

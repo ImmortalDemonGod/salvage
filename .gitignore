@@ -8,3 +8,4 @@ verify/.run-armed
 verify/.stop-blocks
 verify/deep-ledger.json
 site/.vercel/
+site/build.txt

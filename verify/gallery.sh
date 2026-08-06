@@ -6,7 +6,10 @@ cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/salvage-gallery}
 rc=0
 rm -rf "$OUT"; mkdir -p "$OUT"
-./tools/deploy.sh --export-only >/dev/null 2>&1
+if ! ./tools/deploy.sh --export-only >/dev/null 2>&1; then
+  echo "FINDING  THE EXPORT FAILED -- every capture below would photograph a stale build"
+  exit 1
+fi
 shoot() {  # name, keys, expected beat id
   local d="$OUT/$1"
   local log="$OUT/$1.log"
