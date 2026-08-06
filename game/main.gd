@@ -92,7 +92,7 @@ func diver_rect(d) -> Rect2:
 # panel from being laid straight over the puzzle.
 const LOCK_RECT := Rect2(300, 214, 640, 400)
 const SCENE_PANEL_AT := Vector2(190, 220)
-const SCENE_PANEL_SIZE := Vector2(900, 216)
+const SCENE_PANEL_SIZE := Vector2(900, 262)
 
 func place(i: int) -> Vector2:
 	if combat != null:
@@ -385,8 +385,14 @@ func _refresh() -> void:
 			if String(l.role) == "controls":
 				controls = String(l.text)
 			else:
-				body.append(String(l.text))
+				body.append(String(l.text).replace("(placeholder) ", ""))
+		var marked := false
+		for l2 in lines:
+			if String(l2.get("text", "")).begins_with("(placeholder)"):
+				marked = true
 		ui_scene.text = "\n\n".join(body)
+		if marked:
+			ui_scene.text += "\n\nplaceholder copy, for Marc"
 		ui_scene.get_parent().visible = body.size() > 0
 		ui_help.text = controls
 		queue_redraw()
@@ -680,12 +686,24 @@ func _draw_lock(p) -> void:
 	_valve_dot(Vector2(x + 150, top + tall + 60), "2", p.valve[1], p.reachable(1))
 	_valve_dot(Vector2(x + wide - 40, top + tall - 30), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
 
+# how deep we are, 0 at the rig and 1 at the bottom
+func _depth() -> float:
+	var n: int = Beats.LADDER.size()
+	if n <= 1:
+		return 0.0
+	return clampf(float(run.beat) / float(n - 1), 0.0, 1.0)
+
+func _water() -> Color:
+	var d: float = _depth()
+	return Color(0.055, 0.135, 0.190).lerp(Color(0.014, 0.035, 0.070), d)
+
 func _draw() -> void:
 	# Paint the ACTUAL rect, not the design size. With stretch/expand the
 	# viewport grows past 720 and anything beyond it was left unpainted,
 	# which is the flat grey band a visual reviewer flagged as the game
 	# failing to fill its window.
-	draw_rect(Rect2(Vector2.ZERO, size.max(DESIGN)), Color(0.04, 0.11, 0.16))
+	draw_rect(Rect2(Vector2.ZERO, size.max(DESIGN)), _water())
+	# the lock is inside the wreck, so it is lit by what you brought
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
 		return

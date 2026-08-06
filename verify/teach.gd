@@ -19,6 +19,26 @@ var findings: Array = []
 # order. Every diver handed over its whole kit on beat one before this, and
 # nothing noticed, because "the ability exists" and "the ability is yours
 # yet" are different statements and only the first was ever tested.
+# Story copy is placeholder-marked so Marc can find every line he owns. The
+# screen no longer prints the marker on each line, because branding every
+# sentence "(placeholder)" stopped the copy landing, so the contract now
+# lives only in the source and needs holding up.
+func check_placeholders() -> void:
+	var unmarked: Array = []
+	var marked := 0
+	for beat in Beats.LADDER:
+		for l in beat.get("lines", []):
+			if String(l.get("role", "")) == "controls":
+				continue
+			var t := String(l.get("text", ""))
+			if t.begins_with("(placeholder)"):
+				marked += 1
+			else:
+				unmarked.append("%s: %s" % [String(beat.id), t.substr(0, 46)])
+	for u in unmarked:
+		fail("UNMARKED STORY LINE: %s -- Marc finds his lines by searching for the marker, and this one is invisible to that search" % u)
+	print("copy       %d story line(s), all placeholder-marked in source" % marked)
+
 func check_earned() -> void:
 	var r := Run.new()
 	var seen: Array = []          # [beat id, widest kit on offer]
@@ -62,6 +82,7 @@ func fail(s: String) -> void:
 		findings.append(s)
 
 func _init() -> void:
+	check_placeholders()
 	check_earned()
 	var taught: Array = []
 	var rows: Array = []
