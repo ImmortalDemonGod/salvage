@@ -49,7 +49,9 @@ func _init() -> void:
 		if r.combat != null:
 			var c = r.combat
 			if c.outcome != "ongoing":
-				keys.append("Enter")       # advance past the finished fight
+				# NO key here: game/main.gd's _after() advances the run on
+				# the winning blow itself, so the press that ends the fight
+				# is the press that leaves the beat.
 				selected = 0
 				if not r.advance():
 					break

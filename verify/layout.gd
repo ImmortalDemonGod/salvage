@@ -165,6 +165,17 @@ func check_current() -> void:
 				if ov.size.x > 2.0 and ov.size.y > 2.0:
 					fail("PANELS OVERLAP: %s and %s by %dx%d" % [pa.name, pb.name, int(ov.size.x), int(ov.size.y)])
 
+	# nothing may be laid over the lock drawing
+	if scene.run != null and scene.run.puzzle != null:
+		for p2 in panels:
+			if not (p2 as Control).visible:
+				continue
+			var pr: Rect2 = (p2 as Control).get_global_rect()
+			if pr.intersects(scene.LOCK_RECT):
+				var ov2: Rect2 = pr.intersection(scene.LOCK_RECT)
+				if ov2.size.x > 2.0 and ov2.size.y > 2.0:
+					fail("PANEL COVERS THE LOCK: %s sits over the puzzle drawing by %dx%d" % [p2.name, int(ov2.size.x), int(ov2.size.y)])
+
 	walked += controls.size()
 
 func report() -> void:

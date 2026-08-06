@@ -4,14 +4,22 @@
 # driven through real KeyboardEvents (verify/capture.mjs).
 cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/salvage-gallery}
+rc=0
 rm -rf "$OUT"; mkdir -p "$OUT"
 ./tools/deploy.sh >/dev/null 2>&1
-shoot() {  # name, keys
+shoot() {  # name, keys, expected beat id
   local d="$OUT/$1"
+  local log="$OUT/$1.log"
   PLAYWRIGHT_CORE=${PLAYWRIGHT_CORE:-$HOME/node_modules/playwright-core/index.mjs} \
-    node verify/capture.mjs "$d" "$2" >/dev/null 2>&1
+    node verify/capture.mjs "$d" "$2" "$3" > "$log" 2>&1
+  if grep -q "^FINDING" "$log"; then
+    grep "^FINDING" "$log"
+    rc=1
+  fi
   # keep only the last frame: that is the state we asked for
-  last=$(ls "$d" | sort | tail -1)
+  # numeric sort: "99" sorts after "250" lexicographically, which silently
+  # picked the wrong frame for every sequence longer than 99 keys
+  last=$(ls "$d" | sort -V | tail -1)
   mv "$d/$last" "$OUT/$1.png"; rm -rf "$d"
   echo "  $1.png"
 }
@@ -30,7 +38,9 @@ fi
 n=0
 while IFS=$'\t' read -r id seq; do
   n=$((n+1))
-  shoot "$(printf '%02d' $n)-$id" "$seq"
+  shoot "$(printf '%02d' $n)-$id" "$seq" "$id"
 done <<< "$paths"
 # and one mid-fight shot, which is the state the cold read actually reads
-shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,KeyR,Space"
+shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,KeyR,Space" "fight1"
+if [ $rc -ne 0 ]; then echo "GALLERY: replay landed on the wrong beat"; exit 1; fi
+echo "GALLERY: $((n+1)) shots, every replay landed where it claimed"

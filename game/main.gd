@@ -57,6 +57,12 @@ func _ready() -> void:
 
 # where this encounter puts a station, falling back to the default ring
 const BOARD_LIFT := Vector2(0, -46)
+# the area _draw_lock() paints, declared so verify/layout.gd can hold the
+# Controls off it. A drawing is not a Control, so nothing was stopping a
+# panel from being laid straight over the puzzle.
+const LOCK_RECT := Rect2(300, 214, 640, 400)
+const SCENE_PANEL_AT := Vector2(190, 220)
+const SCENE_PANEL_SIZE := Vector2(900, 200)
 
 func place(i: int) -> Vector2:
 	if combat != null:
@@ -131,8 +137,8 @@ func _build_ui() -> void:
 	# built BEFORE the first _refresh, which runs on the opening scene beat
 	var scene_panel := Panel.new()
 	scene_panel.name = "scene_panel"
-	scene_panel.size = Vector2(900, 200)
-	scene_panel.position = Vector2(190, 220)
+	scene_panel.size = SCENE_PANEL_SIZE
+	scene_panel.position = SCENE_PANEL_AT
 	add_child(scene_panel)
 	ui_scene = Label.new()
 	ui_scene.name = "label"
@@ -196,8 +202,30 @@ func _voice() -> void:
 	elif run.puzzle != null:
 		_log_at = sfx.drain(run.puzzle.log_lines, _log_at)
 
+# Report the current beat in the window title. On the web export this is
+# document.title, so the capture driver can read where the replay actually
+# ended up instead of trusting the key sequence to have landed.
+var _title_ticks := 0
+
+func _process(_dt: float) -> void:
+	if _title_ticks < 120:
+		_title_ticks += 1
+		_stamp_title()
+
+func _stamp_title() -> void:
+	var b: Dictionary = run.current()
+	DisplayServer.window_set_title("SALVAGE beat=%s" % String(b.get("id", "?")))
+
 func _refresh() -> void:
+	_stamp_title()
 	_voice()
+	var scene_p: Control = ui_scene.get_parent()
+	if run.puzzle != null:
+		scene_p.position = Vector2(190, 620)
+		scene_p.size = Vector2(900, 96)
+	else:
+		scene_p.position = SCENE_PANEL_AT
+		scene_p.size = SCENE_PANEL_SIZE
 	if run.puzzle != null:
 		# The lock, drawn as its own state: a water line and three valves.
 		ui_air.get_parent().visible = false
@@ -215,10 +243,10 @@ func _refresh() -> void:
 		if run.puzzle.solved():
 			want = "the way out is open"
 		elif run.puzzle.stage == 2:
-			want = "(placeholder) The way out sits above chamber A. Fill A to the top, and chamber B has to stay dry to hold it there."
+			want = "(placeholder) The way out sits above chamber A. Fill A, keep B dry."
 		else:
 			want = "(placeholder) The way out is above the waterline. Fill the chamber to the top."
-		ui_scene.text = run.puzzle.state_text() + "\n\n" + want
+		ui_scene.text = want
 		var vk := ["1", "2", "3", "4"]
 		var labels: Array = []
 		for i in range(run.puzzle.valves()):
@@ -493,12 +521,12 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.72, 0.74, 0.78))
 
 func _draw_lock(p) -> void:
-	var tall := 260.0
+	var tall := 210.0
 	if p.stage == 2:
 		var ax := 300.0
 		var bx := 700.0
 		var wide := 240.0
-		var top := 250.0
+		var top := 250.0   # help line ends at 206; the sentence starts at 648
 		_chamber(Vector2(ax, top), wide, tall, p.level_a(), 3, "chamber A")
 		_chamber(Vector2(bx, top), wide, tall, p.level_b(), 3, "chamber B")
 		_door(Vector2(ax, top - 30), wide, p.solved())

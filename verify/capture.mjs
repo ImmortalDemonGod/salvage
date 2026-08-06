@@ -85,16 +85,31 @@ if (keySpec) {
     const [k, n] = tok.split("*");
     return Array.from({ length: Number(n ?? 1) }, () => k);
   });
-  for (const k of keys) {
+  // A 250-key replay does not need 250 screenshots; the caller wants the
+  // state at the end. Shooting every frame made the gallery take minutes
+  // per beat. CAPTURE_ALL=1 restores the full film when debugging a replay.
+  const all = process.env.CAPTURE_ALL === "1";
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
     await page.keyboard.down(k);
     await page.waitForTimeout(60);
     await page.keyboard.up(k);
-    await page.waitForTimeout(320);
-    await page.screenshot({ path: join(outdir, `${String(shot++).padStart(2, "0")}-${k}.png`) });
+    await page.waitForTimeout(all ? 320 : 90);
+    if (all || i === keys.length - 1) {
+      await page.waitForTimeout(all ? 0 : 400);
+      await page.screenshot({ path: join(outdir, `${String(shot++).padStart(5, "0")}-${k}.png`) });
+    }
   }
 }
 
-console.log(`CAPTURE: ${shot} frame(s) to ${outdir}, ${errors.length} page error(s)`);
+// where the replay ACTUALLY ended up, straight from the build
+const title = await page.title();
+console.log(`CAPTURE: ${shot} frame(s) to ${outdir}, ${errors.length} page error(s), title="${title}"`);
+const want = process.argv[4];
+if (want && !title.includes(`beat=${want}`)) {
+  console.log(`FINDING  REPLAY LANDED WRONG: asked for beat=${want}, the build reports "${title}"`);
+  await browser.close(); server.kill(); process.exit(3);
+}
 for (const e of errors.slice(0, 8)) console.log("PAGE ERROR  " + e);
 await browser.close();
 stop();
