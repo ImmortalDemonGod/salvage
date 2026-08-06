@@ -410,6 +410,26 @@ Ruled rather than fixed, with reasons:
 
 ## Feature log
 
+- **SPEC 2.9's six abilities shipped.** One verb per diver expressed
+  twice, named from the clips that exist in the rig: Scuba displaces with
+  Axe Kick and Double Knee (which attacks and steps), Prototype1 disables
+  with Palm Strike and Dual Palm (a longer shutdown), Proto5 breaks with
+  Attck1 and Attck2 (which spills onto neighbouring stations). Every one
+  is uniquely optimal somewhere under the depth-limited search, and the
+  taught line's distance from optimal IMPROVED from 1.43 to 1.11.
+- **The state-space budget is now visibly spent.** SPEC 4.1 accepted "the
+  state space is a budget" as a design constraint, and doubling the kit
+  took the deep set from 13 seconds to **134**. It still fits a nightly,
+  but a third ability per diver would not. That is the constraint doing
+  its job: the next mechanic has to justify itself against the cost of
+  being able to prove anything about it.
+- **Three judge pathologies in one session**, all the same shape and all
+  logged where they happened: the casual bot burning HP uniformly, the
+  greedy bot stunning forever because prevention outscored progress, and
+  the casual bot picking uniformly among six abilities when a novice
+  presses the first button. Each measured the BOT rather than the fight,
+  and each was caught because a band moved when no content had changed.
+
 - **G-TEACH built and BLOCKING.** `content/beats.gd` declares the ladder
   as data; `verify/teach.gd` checks one-new-idea-per-beat, no mechanic
   taught twice, every mechanic placed somewhere, AND cross-checks the
