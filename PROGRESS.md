@@ -448,21 +448,55 @@ mouse and the limb bars -- and both had a commit message stating they
 worked. Standing rules 27 and 28 were written the same morning I broke
 them both.
 
-## The second human playtest (Aug 6, 14:44)
+## The second human playtest (Aug 6, 4:16 pm)
 
-He played again, mid fun pass, and recorded it: 25 minutes, quit at dive
-eight. "The TIDESONG combat was fun. This one is just tedious, and I feel
-like I'm being punished for playing it." He called it the last playtest
-before he shares the build with the team.
+He played again and recorded it: 25 minutes, quit at dive eight. "The
+TIDESONG combat was fun. This one is just tedious, and I feel like I'm
+being punished for playing it." He called it the last playtest before he
+shares the build with the team.
 
-**Which build he played matters.** The recording is stamped 14:44; the
-deploy he was on was 14:38. He had tiers, analyze and traits, the audio,
-and the click layer. He did not have anything from 15:01 onward: the
-genre affordances (selection ring, move halos, reticle, damage preview),
-the legend removal, the nameplate and anchoring fixes. His live
-commentary was in fact the source of the mid-block "why is there so much
-text" direction, and part of this session answered it after he stopped
-recording. Those items need his eyes on the current build, not more work.
+**Which build he played matters, and I got it wrong twice.** I first
+wrote that he played the 14:38 build, off the 14:44 file stamps inside
+the otter export. His own otter page says the recording started at
+4:16 pm and ran 25 minutes; the stamps in the export are Pacific time,
+and 14:44 PT is 16:44 here, three minutes after the recording ended.
+A derived timestamp is not evidence of when a person did something; the
+display the person sees is. He caught this, not me.
+
+That put him on the advertised URL at 16:16, a quarter hour AFTER the
+block closed, which should have meant the final build. The transcript
+says otherwise: he reads the combat legend aloud, word for word, and that
+line was deleted at 15:22. The served pck resolved it: the URL was
+serving the 13:52 deploy. **He played a build from before the fun pass
+started. Nobody has ever been served the fun pass.**
+
+### How three hours of deploys went nowhere
+
+`tools/deploy.sh` did this on every run:
+
+1. `rm -rf site` deleted `site/.vercel`, the file that links the
+   directory to the Vercel project, then
+2. `vercel deploy --prod --yes >/dev/null 2>&1` ran unlinked, silently
+   auto-created a project called "site", and shipped every subsequent
+   build to throwaway URLs under it, and
+3. the `&&` after it swallowed any failure, so nothing was ever said, and
+4. `verify/live.mjs` then went green against the advertised URL, because
+   a stale build also boots, clicks, and reaches fight1. The gate
+   certified behavior. Nothing certified identity.
+
+Fixed: the link survives the rebuild, an unlinked or mislinked deploy is
+refused, a failed deploy says so and exits, and after every deploy the
+advertised URL's pck and wasm are hashed and compared against the local
+export. "Deployed and verified" now means the URL serves those exact
+bytes. Also corrected here: my earlier claim that his commentary sourced
+the mid-block "too much text" direction is impossible, since the
+recording started after the block ended, and is withdrawn.
+
+His findings below therefore describe the pre-fun-pass build. Everything
+the block built (tiers, analyze and traits, board teaching, the genre
+affordances, the legend removal) reached the URL for the first time at
+17:04, after his session. The design defects in the next table were
+verified against current source and stand regardless.
 
 ### Verified still true in the 16:00 build (each checked against source)
 
@@ -501,6 +535,15 @@ window, not the developer's.** The gallery shot at one aspect ratio and
 the off-centre UI both playtests reported was invisible at exactly that
 aspect. Capture at 16:9 and at least one wider aspect, or the gallery is
 testimony from a witness who was not at the scene.
+
+### Standing rule 32
+
+**A publish is verified by the bytes it serves, not the behavior it
+shows.** The live gate passed all afternoon against a three-hour-stale
+build, because the stale build also behaved. After every deploy, hash
+the artifact the advertised URL actually serves and compare it to the
+artifact you built; a deploy step that can fail must be able to say so,
+and a step that can run against the wrong target must refuse to.
 
 ## The presentation pass
 
