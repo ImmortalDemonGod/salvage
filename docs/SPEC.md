@@ -691,29 +691,54 @@ Air of umbilical damage, against 4 damage on a diver with 16 HP.
 **The vacate fix may have over-corrected and removed the reason to move
 at all.** Rule on it with numbers early; do not tune it away silently.
 
-# Part 2c: The content budget, re-agreed (L3)
+# Part 2c: Two budgets, and they are not the same budget
 
-Party members were on the merge proposal's post-jam list, so reopening
-them means the budget is renegotiated rather than extended. Proposed, for
-the team to veto:
+An earlier draft of this section cut the jam budget to "pay for" the
+party. **That was wrong and is withdrawn.** It imported the merge
+proposal's shipping budget, which is sized around two months of human
+labour for the Oct 5 build, and applied it to a prototype that is built
+overnight by a machine. A shipping budget constrains how much a team can
+finish. A prototype budget constrains how much can be learned. Optimising
+the second with the first inverts the purpose: the entire finding from
+prototype 1 was that we did not learn enough, and the proposed remedy was
+to learn less.
 
-| Item | Agreed jam budget | Proposed |
-|---|---|---|
-| Dungeons | 1 hub + 2 | 1 hub + **1** |
-| Bosses | 2 | **1** |
-| Enemy types | 3 | **2** |
-| Puzzle types | 2 to 3 | **1** (flood and drain), used twice |
-| Party | post-jam | **3 divers, in** |
-| Abilities | ~6 | ~6, now spread across the party |
+## The jam budget: unchanged, and not ours to spend
 
-The reasoning is that **"the enemy is the board" made enemies the
-expensive axis, not dungeons.** Each enemy is now an anatomy, a station
-map, a set of telegraphed attacks and its own animation set, so it costs
-what a small level used to cost. Cutting one dungeon and one boss buys
-the party outright.
+1 hub plus 2 dungeons, 2 bosses, 3 enemy types, 1 to 2 relics, 2 to 3
+puzzle types, ~6 abilities. Marc and Glass_Goat own it, for October.
+Nothing in this prototype spends it.
 
-What survives is the full teach ladder: opening, fight one, the boat and
-Proto5, the puzzle, fight two with conditions, and the boss. Six beats.
+## The prototype budget: set by questions, not by counts
+
+An overnight autonomous build is not labour-bound. What it IS bound by:
+
+- **Teaching burden.** Every new mechanic needs a beat where it appears
+  alone (G-TEACH). More *mechanics* costs. More *instances* of a mechanic
+  does not.
+- **Human art and human words.** Glass_Goat and Marc are the real
+  bottleneck, which is why everything ships placeholder.
+- **Per-encounter complexity, not encounter count.** The dominance search
+  is per fight, so ten fights is ten linear passes while one fight with
+  twice the limbs is exponential. Where this spec says "the state space is
+  a budget", it means per encounter.
+
+So the content list is derived from what has to be answered:
+
+| Question the prototype must answer | Content it requires |
+|---|---|
+| Does "the limb is the position" read to a cold player? | fight one, full station ring |
+| Does the station system survive a different anatomy? | a second enemy with a different station-to-limb map |
+| Does party composition actually bind? | a fight no single diver solves |
+| Does the Air economy bind? | measured, no extra content |
+| Do conditions land as a taught beat? | the drum unlock, then a fight that needs it |
+| Does the puzzle grammar read? | two puzzles, one to teach and one to escalate |
+| Does the format escalate at a boss? | one boss whose station map changes mid-fight |
+| Does the teach ladder hold? | every beat present, G-TEACH green |
+
+**The prototype should overshoot the shipping budget, because unbuilt
+content answers nothing.** Build until the questions are answered or the
+deep set goes dry, not until a count is reached.
 
 ---
 
@@ -725,7 +750,6 @@ branches.
 | # | Loose end |
 |---|---|
 | L2 | The six ability effects in 2.9 are invented rather than derived, and should be the first thing the bands and the dominance search are pointed at |
-| L3 | Budget proposal in Part 2c needs the team's veto or assent |
 | L4 | The full teach ladder written out beat by beat, before content starts |
 
 ---

@@ -264,4 +264,27 @@ re-running a green suite is not work, so if the fast set is green, build."
 
 ---
 
+## Content: what to build, and when to stop building it
+
+**Not a count.** The prototype is sized by the questions in
+`docs/SPEC.md` Part 2c, and the jam budget is untouched and not ours to
+spend. Build until the questions are answered or the deep set goes dry.
+
+Each item below is a beat in the teach ladder, so G-TEACH is what says
+whether it is done, and each new enemy must pass the bands and the
+station-occupancy check before the next one starts.
+
+1. Fight one, the hunter crab: attacks have geography
+2. The boat: Proto5 joins, a diver who costs 3 is a commitment
+3. Puzzle one, flood and drain: the lock's state is readable
+4. Fight two: conditions, delivered as a drum mode fitted at the boat
+5. A second anatomy with a different station-to-limb map: does the
+   geometry survive a different body
+6. Puzzle two: escalation of the same grammar
+7. A boss whose station map changes mid-fight
+
+**Unbuilt content answers nothing.** A prototype that stops early to
+respect a shipping budget has spent the run without buying information,
+which is the exact failure prototype 1 was retired for.
+
 ## Feature log
