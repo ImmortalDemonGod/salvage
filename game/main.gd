@@ -41,6 +41,7 @@ var ui_divers: Array = []
 var ui_air: Label
 var ui_tanks: Array = []
 var ui_log: Label
+var ui_step: Label
 var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
@@ -186,6 +187,16 @@ func _build_ui() -> void:
 		m.size = Vector2(238, 68)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
+		var bg := ColorRect.new()
+		bg.name = "bar_bg"
+		bg.color = Color(0.03, 0.05, 0.07, 0.92)
+		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		m.add_child(bg)
+		var fill := ColorRect.new()
+		fill.name = "bar_fill"
+		fill.color = BAR_LIMB
+		fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		m.add_child(fill)
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
@@ -311,6 +322,21 @@ func _build_ui() -> void:
 	help_panel.add_theme_stylebox_override("panel", skin_quiet())
 	_rivet(help_panel)
 	add_child(help_panel)
+	var step_panel := Panel.new()
+	step_panel.name = "step_panel"
+	step_panel.size = Vector2(1220, 40)
+	step_panel.position = Vector2(30, 212)
+	step_panel.add_theme_stylebox_override("panel", skin_primary())
+	_rivet(step_panel)
+	add_child(step_panel)
+	ui_step = Label.new()
+	ui_step.name = "label"
+	ui_step.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_step.offset_left = 12; ui_step.offset_right = -12
+	ui_step.offset_top = 7; ui_step.offset_bottom = -7
+	ui_step.add_theme_font_size_override("font_size", 18)
+	ui_step.add_theme_color_override("font_color", BRASS_LIT)
+	step_panel.add_child(ui_step)
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
 	log_panel.size = Vector2(1232, 68)
@@ -446,10 +472,10 @@ func _motion(lines: Array, from: int) -> void:
 							fx.add("ring", 0.52, tgt, Vector2.ZERO, "", Color(0.55, 0.78, 0.95), -1, lb)
 						_:
 							fx.add("lunge", 0.30, a, tgt, "", DEALT, who)
-					fx.add("flash", 0.36, tgt, Vector2.ZERO, "", DEALT, -1, lb)
+					fx.add("flash", 0.55, tgt, Vector2.ZERO, "", DEALT, -1, lb)
 					if n > 0:
-						fx.add("float", 0.95, tgt + Vector2(0, -30), Vector2.ZERO, "-%d" % n, DEALT)
-					fx.kick(0.10 + 0.02 * n)
+						fx.add("float", 1.20, tgt + Vector2(0, -30), Vector2.ZERO, "-%d" % n, DEALT)
+					fx.kick(0.30 + 0.05 * n)
 			SfxEvents.Kind.TAKE:
 				# the enemy reached a station. THIS is the one that read as
 				# nothing last time, so it gets the bolt, the recoil and the
@@ -461,8 +487,8 @@ func _motion(lines: Array, from: int) -> void:
 					fx.add("body", 0.36, src, dst, "", HURT)
 					fx.add("bolt", 0.28, src, dst, "", HURT)
 					fx.add("recoil", 0.42, src, dst, "", HURT, who)
-					fx.add("float", 1.05, dst + Vector2(0, -70), Vector2.ZERO, "-%d" % n, HURT)
-					fx.kick(0.22 + 0.03 * n)
+					fx.add("float", 1.30, dst + Vector2(0, -70), Vector2.ZERO, "-%d" % n, HURT)
+					fx.kick(0.40 + 0.05 * n)
 			SfxEvents.Kind.BREAK:
 				if lb >= 0:
 					fx.add("burst", 0.55, _limb_at(lb), Vector2.ZERO, "BROKEN", DEALT, -1, lb)
@@ -527,7 +553,57 @@ func _draw_ending() -> void:
 	draw_string(f, Vector2(cx, y + 262), "art Glass_Goat   ·   words Marc   ·   placeholder art and copy throughout",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
 
+func _next_step() -> String:
+	if combat == null:
+		return "press ENTER"
+	var d = combat.divers[selected]
+	if d.down:
+		for o in combat.divers:
+			if not o.down:
+				return "%s is down. Press %d to take over %s." % [d.dname, int(o.id) + 1, o.dname]
+		return ""
+	if combat.air <= 0:
+		return "Out of air. Press ENTER to end the turn and refill the tank."
+	if not combat.can_attack(d):
+		var safe_far := -1
+		for st in combat.OPEN_STATIONS:
+			if combat.STATION_LIMB[int(st)] >= 0 and not combat.limb_broken[int(combat.STATION_LIMB[int(st)])]:
+				safe_far = int(st)
+				break
+		if safe_far >= 0 and combat.air >= Combat.MOVE_COST:
+			return "Nothing to hit from %s. Click %s, or press %s, to move there (1 air)." % [
+				Combat.STATION_NAMES[int(d.station)], Combat.STATION_NAMES[safe_far],
+				["Q", "W", "E", "R", "T"][safe_far]]
+		return "Press ENTER to end the turn."
+	# standing somewhere an attack is about to land, with the air to leave
+	if int(d.station) in combat.threatened_stations() and combat.air >= Combat.MOVE_COST + d.cost:
+		for st in combat.OPEN_STATIONS:
+			if int(st) == int(d.station):
+				continue
+			if not (int(st) in combat.threatened_stations()):
+				return "%s is about to be hit. Move to %s (press %s), or hit the %s with SPACE." % [
+					d.dname, Combat.STATION_NAMES[int(st)], ["Q", "W", "E", "R", "T"][int(st)],
+					String(combat.LIMB_NAMES[combat.target_limb(d)]).to_upper()]
+	var lb2: int = combat.target_limb(d)
+	if lb2 >= 0:
+		return "Press SPACE to hit the %s.   %s has %d air of the %d left." % [
+			String(combat.LIMB_NAMES[lb2]).to_upper(), d.dname, combat.air, combat.air_this_turn()]
+	return "Press ENTER to end the turn."
+
+# never leave the player holding a diver who cannot act
+func _auto_select() -> void:
+	if combat == null:
+		return
+	var d = combat.divers[selected]
+	if not d.down:
+		return
+	for o in combat.divers:
+		if not o.down:
+			selected = int(o.id)
+			return
+
 func _refresh() -> void:
+	_auto_select()
 	_stamp_title()
 	_voice()
 	_recent()
@@ -553,6 +629,7 @@ func _refresh() -> void:
 		ui_legend.get_parent().visible = false
 		ui_goal.get_parent().visible = false
 		ui_intent.get_parent().visible = false
+		ui_step.get_parent().visible = false
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
@@ -588,6 +665,7 @@ func _refresh() -> void:
 			card.visible = false
 		for i in range(ui_stations.size()):
 			ui_stations[i].visible = false
+		ui_step.get_parent().visible = false
 		var b: Dictionary = run.current()
 		var lines: Array = b.get("lines", [])
 		var body: Array = []
@@ -616,6 +694,9 @@ func _refresh() -> void:
 		queue_redraw()
 		return
 	ui_scene.get_parent().visible = false
+	var step := _next_step()
+	ui_step.text = step
+	ui_step.get_parent().visible = step != ""
 	ui_air.get_parent().visible = true
 	# the bottles: full ones lit brass, spent ones dark, ones cut off by a
 	# severed line crossed out in red
@@ -643,6 +724,25 @@ func _refresh() -> void:
 		# the FLANK sprite up into the HUD instead, so the station moved
 		# rather than everything else.
 		mk.position = place(i) - mk.size * 0.5 + Vector2(0, 56)
+		# The limb bar. This was written once and lost: the script carrying
+		# it aborted on a failing anchor further down and never reached the
+		# write, so limb health has been TEXT ONLY ever since -- which is
+		# exactly what the playtester ran into.
+		var bgr: ColorRect = mk.get_node("bar_bg")
+		var flr: ColorRect = mk.get_node("bar_fill")
+		var lb0: int = combat.STATION_LIMB[i]
+		var show_bar: bool = lb0 >= 0 and not combat.limb_broken[lb0]
+		bgr.visible = show_bar
+		flr.visible = show_bar
+		if show_bar:
+			var mx: float = float(int((combat.enc.limbs[lb0] as Dictionary).hp))
+			var fr: float = clampf(float(combat.limb_hp[lb0]) / max(1.0, mx), 0.0, 1.0)
+			bgr.position = Vector2(10, mk.size.y - 13)
+			bgr.size = Vector2(mk.size.x - 20, 8)
+			flr.position = bgr.position
+			flr.size = Vector2(bgr.size.x * fr, 8)
+			# and it flashes white the instant it is struck
+			flr.color = BAR_LIMB.lerp(Color(1, 1, 1), fx.limb_flash(lb0))
 		# The limb IS the position, so the marker has to SAY the limb and
 		# how much of it is left. A blind reviewer found no enemy health
 		# readout anywhere on screen, which made the whole limb system

@@ -36,22 +36,25 @@ await page.goto("https://immortaldemongod.github.io/salvage/", { waitUntil: "loa
 await page.waitForTimeout(20000);
 const title = await page.title();
 // press ENTER twice and see whether the build advances, which only works if it is really running
+// CLICK FIRST, on the opening screen, where a click advances the beat and
+// the effect is therefore observable. The first version of this check
+// clicked during a FIGHT, where a click attacks instead of changing the
+// beat, so it reported the mouse broken while the mouse was fine: a test
+// that cannot see the thing it is testing.
+await page.mouse.click(640, 520);
+await page.waitForTimeout(1500);
+const clicked = await page.title();
 await page.keyboard.press("Enter"); await page.waitForTimeout(1200);
 const after = await page.title();
-// and a CLICK, because the keyboard working says nothing about the mouse:
-// every panel in this game swallowed mouse buttons for an entire run and
-// no check noticed, because no check had ever clicked anything.
-await page.mouse.click(640, 640);
-await page.waitForTimeout(1200);
-const clicked = await page.title();
 await page.screenshot({ path: "/tmp/live-boot.png" });
 console.log("TITLE AT BOOT : " + title);
-console.log("TITLE AFTER ENTER: " + after);
 console.log("PAGE ERRORS   : " + (errors.length ? errors.join(" | ") : "none"));
 console.log("FAILED REQS   : " + (failed.length ? failed.join(" | ") : "none"));
-const mouseWorks = clicked !== after;
+const mouseWorks = clicked !== title;
 console.log("TITLE AFTER CLICK: " + clicked + (mouseWorks ? "  (the mouse reaches the game)" : "  <-- FINDING: the click did nothing"));
-const ok = after !== title && after.includes("beat=") && mouseWorks && errors.length === 0 && failed.length === 0;
+const keyWorks = after !== clicked;
+console.log("TITLE AFTER ENTER: " + after + (keyWorks ? "" : "  <-- FINDING: the key did nothing"));
+const ok = mouseWorks && keyWorks && clicked.includes("beat=") && errors.length === 0 && failed.length === 0;
 console.log(ok ? "LIVE: the deployed build boots and responds to input" : "LIVE: FINDING -- the deployed build is not playable from its own URL");
 await browser.close();
 process.exit(ok ? 0 : 1);
