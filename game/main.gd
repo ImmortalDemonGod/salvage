@@ -1094,7 +1094,7 @@ func _draw_bars() -> void:
 		var frac2: float = float(combat.limb_hp[lb]) / max(1.0, maxhp)
 		# clamped out of the HUD: a station high on the board pushed its bar
 		# up behind the control bar
-		var at: Vector2 = Vector2(place(st).x - 88.0, max(place(st).y - 74.0, HUD_BOTTOM + 4.0))
+		var at: Vector2 = Vector2(place(st).x - 88.0, max(place(st).y - 96.0, HUD_BOTTOM + 4.0))
 		_bar(at, 176, 16, frac2, BAR_LIMB)
 		# and the name of what you are breaking, on the bar itself
 		var f2: Font = ThemeDB.fallback_font
@@ -1107,7 +1107,7 @@ func _draw_bars() -> void:
 			continue
 		var f: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 		var frac: float = float(d.hp) / max(1.0, float(d.max_hp))
-		_bar(f + Vector2(-30, -DIVER_SCALE - 16), 60, 7, frac, BAR_OK if frac > 0.34 else BAR_LOW)
+		_bar(f + Vector2(-30, -DIVER_SCALE - 4), 60, 7, frac, BAR_OK if frac > 0.34 else BAR_LOW)
 
 func _draw() -> void:
 	# Paint the ACTUAL rect, not the design size. With stretch/expand the
