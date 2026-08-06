@@ -20,6 +20,8 @@ const VOICE := {
 	SfxEvents.Kind.VALVE:    [520.0, 0.09, 0.22],
 	SfxEvents.Kind.LOCK:     [780.0, 0.40, 0.32],
 	SfxEvents.Kind.CUT:      [110.0, 0.22, 0.38],
+	SfxEvents.Kind.PAYOFF:   [880.0, 0.55, 0.40],
+	SfxEvents.Kind.READ:     [1180.0, 0.10, 0.16],
 }
 
 # One player meant a batch of events overwrote itself and only the LAST

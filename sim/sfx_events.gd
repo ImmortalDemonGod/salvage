@@ -8,9 +8,14 @@
 class_name SfxEvents
 extends RefCounted
 
-enum Kind { NONE, HIT, BREAK, SHUTDOWN, TAKE, DOWN, WIN, LOSE, MOVE, REFUSE, VALVE, LOCK, CUT }
+enum Kind { NONE, HIT, BREAK, SHUTDOWN, TAKE, DOWN, WIN, LOSE, MOVE, REFUSE, VALVE, LOCK, CUT, PAYOFF, READ }
 
 static func classify(line: String) -> int:
+	# the trait payoffs, and the reading that unlocks them
+	if line.find("the pressure blows out") >= 0 or line.find("vents back into the tank") >= 0:
+		return Kind.PAYOFF
+	if line.find(" reads the ") >= 0:
+		return Kind.READ
 	if line.find("cuts an air line") >= 0:
 		return Kind.CUT
 	if line.find("BREAKS") >= 0:
@@ -42,4 +47,4 @@ static func classify(line: String) -> int:
 	return Kind.NONE
 
 static func name_of(k: int) -> String:
-	return ["none", "hit", "break", "shutdown", "take", "down", "win", "lose", "move", "refuse", "valve", "lock", "cut"][k]
+	return ["none", "hit", "break", "shutdown", "take", "down", "win", "lose", "move", "refuse", "valve", "lock", "cut", "payoff", "read"][k]

@@ -498,6 +498,18 @@ func _motion(lines: Array, from: int) -> void:
 			SfxEvents.Kind.SHUTDOWN:
 				if lb >= 0:
 					fx.add("ring", 0.5, _limb_at(lb), Vector2.ZERO, "SHUT DOWN", Color(0.55, 0.78, 0.95), -1, lb)
+			SfxEvents.Kind.READ:
+				if lb >= 0:
+					fx.add("ring", 0.6, _limb_at(lb), Vector2.ZERO, "", Color(0.62, 0.86, 0.98), -1, lb)
+					fx.add("float", 1.3, _limb_at(lb) + Vector2(0, -40), Vector2.ZERO, "READ", Color(0.72, 0.90, 1.0))
+			SfxEvents.Kind.PAYOFF:
+				# every ring bursts at once: the whole thing goes quiet
+				for st2 in range(5):
+					if combat.station_open(st2):
+						fx.add("burst", 0.85, place(st2), Vector2.ZERO, "", Color(0.98, 0.86, 0.42), -1, combat.STATION_LIMB[st2])
+				fx.add("float", 1.6, Vector2(DESIGN.x * 0.5 - 120, DESIGN.y * 0.34), Vector2.ZERO,
+					"THE WHOLE THING SEIZES", Color(0.98, 0.86, 0.42))
+				fx.kick(0.9)
 			SfxEvents.Kind.CUT:
 				fx.add("float", 1.2, Vector2(DESIGN.x * 0.30, DESIGN.y * 0.42), Vector2.ZERO, "AIR LINE CUT", HURT)
 				fx.kick(0.35)
