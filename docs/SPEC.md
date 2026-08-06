@@ -667,6 +667,56 @@ Standing rule: **re-running a green suite is not work.**
 
 ---
 
+# Part 2b: Rules that were missing, now ruled
+
+Ruled with the user's standing permission to change any of them during
+the build if they become a problem. Change them **with a logged reason**,
+not silently.
+
+| # | Rule | Ruling |
+|---|---|---|
+| A1 | **A strike into empty water** | **Cuts the umbilicals: minus 1 Air from next turn's pool.** Without this, three divers vacate every telegraphed station for 3 of 4 Air every turn and the enemy never connects. That is a dominant strategy of exactly the class G4 exists to catch, and it was sitting in the spec. The fix is diegetic (air lines lie on the seabed where the fight is), it gives the compressor plot mechanical presence, and it makes the choice real: eat the damage, or run next turn on three Air |
+| A2 | **A diver at 0 HP** | Out for the rest of the fight, back at the boat afterwards. Losing a body mid-fight is punishment enough against a 4-Air budget |
+| A3 | **HP recovery** | Fully at the boat, never mid-dive. The dive is the unit of attrition, which is what makes HP sacred without a healing economy |
+| A4 | **Fail state** | All three down ends the dive. You surface, keep progress, lose the salvage |
+| A5 | **Enemy action selection** | A fixed rotation over its unbroken attacks, visible in the telegraph. Deterministic, and the *rule* is readable rather than only the outcome |
+| A6 | **One diver acting twice in a turn** | Allowed, Air permitting. It is what makes Scuba at cost 1 interesting |
+| L1 | **Heavy adjacent-only movement** | **Cut.** Flat 1 for everyone. Revisit only if the first bands run says the heavy is too mobile |
+
+**A1 carries a live risk, already measured.** The day-zero station
+histogram reports UNDER at 0.0 percent occupancy under optimal play, and
+UNDER is the deliberately empty station whose entire job is to teach that
+safety is a reason to move (2.6). Dodging now costs 1 Air to move plus 1
+Air of umbilical damage, against 4 damage on a diver with 16 HP.
+**The vacate fix may have over-corrected and removed the reason to move
+at all.** Rule on it with numbers early; do not tune it away silently.
+
+# Part 2c: The content budget, re-agreed (L3)
+
+Party members were on the merge proposal's post-jam list, so reopening
+them means the budget is renegotiated rather than extended. Proposed, for
+the team to veto:
+
+| Item | Agreed jam budget | Proposed |
+|---|---|---|
+| Dungeons | 1 hub + 2 | 1 hub + **1** |
+| Bosses | 2 | **1** |
+| Enemy types | 3 | **2** |
+| Puzzle types | 2 to 3 | **1** (flood and drain), used twice |
+| Party | post-jam | **3 divers, in** |
+| Abilities | ~6 | ~6, now spread across the party |
+
+The reasoning is that **"the enemy is the board" made enemies the
+expensive axis, not dungeons.** Each enemy is now an anatomy, a station
+map, a set of telegraphed attacks and its own animation set, so it costs
+what a small level used to cost. Cutting one dungeon and one boss buys
+the party outright.
+
+What survives is the full teach ladder: opening, fight one, the boat and
+Proto5, the puzzle, fight two with conditions, and the boss. Six beats.
+
+---
+
 # Part 5: Still open
 
 The question tree is complete. What remains are loose ends rather than
@@ -674,9 +724,8 @@ branches.
 
 | # | Loose end |
 |---|---|
-| L1 | Does the heavy get adjacent-only movement (2.3, proposed not ruled) |
 | L2 | The six ability effects in 2.9 are invented rather than derived, and should be the first thing the bands and the dominance search are pointed at |
-| L3 | What comes out of the content budget to pay for the party |
+| L3 | Budget proposal in Part 2c needs the team's veto or assent |
 | L4 | The full teach ladder written out beat by beat, before content starts |
 
 ---
