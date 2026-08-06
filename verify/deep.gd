@@ -221,6 +221,19 @@ func _init() -> void:
 		if not (s in seen):
 			fresh.append(s)
 			seen.append(s)
+	# A streak must mean three DISTINCT builds that each came back clean.
+	# Counting repeat passes on one unchanged build is exactly the thing
+	# the standing rule forbids: re-running a green suite is not work. The
+	# streak reached 6 of 3 on a single commit before this was added, which
+	# is the stop condition farming itself.
+	var head := "unknown"
+	if FileAccess.file_exists("res://verify/.fast-status"):
+		var raw2: String = FileAccess.open("res://verify/.fast-status", FileAccess.READ).get_as_text().strip_edges()
+		var bits2: PackedStringArray = raw2.split(" ")
+		if bits2.size() >= 2:
+			head = bits2[1]
+	var counted: Array = led.get("counted_commits", [])
+	var repeat: bool = head in counted
 	led.passes = int(led.passes) + 1
 	# A pass with any UNVERIFIED check CANNOT be dry. Without this, a deep
 	# set that checks two things and finds nothing counts as dry three times
@@ -238,7 +251,14 @@ func _init() -> void:
 	for u in unruled:
 		print("UNRULED  " + u)
 	var complete: bool = unverified.is_empty() and unruled.is_empty()
-	led.dry_streak = 0 if (fresh.size() > 0 or not complete) else int(led.dry_streak) + 1
+	if fresh.size() > 0 or not complete:
+		led.dry_streak = 0
+	elif repeat:
+		pass   # clean, but this build was already counted: not new evidence
+	else:
+		led.dry_streak = int(led.dry_streak) + 1
+		counted.append(head)
+	led.counted_commits = counted
 	led.seen = seen
 	var f := FileAccess.open(LEDGER, FileAccess.WRITE)
 	f.store_string(JSON.stringify(led, "  "))
@@ -251,4 +271,6 @@ func _init() -> void:
 		% [led.passes, sigs.size(), fresh.size(), unverified.size(), led.dry_streak])
 	if not complete:
 		print("       not dry: %d UNVERIFIED, %d UNRULED. A pass carrying either can never count toward the streak." % [unverified.size(), unruled.size()])
+	elif repeat:
+		print("       clean, but this commit was already counted. Build something, then run it again.")
 	quit(0 if int(led.dry_streak) >= 3 else 1)
