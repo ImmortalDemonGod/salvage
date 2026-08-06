@@ -7,3 +7,4 @@ verify/.fast-status
 verify/.run-armed
 verify/.stop-blocks
 verify/deep-ledger.json
+site/.vercel/
