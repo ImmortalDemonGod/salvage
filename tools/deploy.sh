@@ -13,10 +13,10 @@ fi
 # pushing an orphan gh-pages every time. The legacy branch builder errored
 # on two of three attempts with a null message and left the live site three
 # deploys behind for an hour.
-rm -rf docs && mkdir -p docs
-cp -r export/web/* docs/
-touch docs/.nojekyll
-git add -A docs
+rm -rf site && mkdir -p site
+cp -r export/web/* site/
+touch site/.nojekyll
+git add -A site
 git -c commit.gpgsign=false commit -q -m "web export" || true
 git push -q origin HEAD
 
