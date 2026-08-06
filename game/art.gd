@@ -140,7 +140,7 @@ static var bad_polys := 0
 # a placeholder, but a LONG one and a SQUAT one read as different bodies,
 # which is the thing the station design is being tested against.
 static var tint := Color(1, 1, 1)
-static var rim := Color(0.72, 0.88, 0.96, 0.30)
+static var rim := Color(0.72, 0.88, 0.96, 0.17)
 
 # the upward-facing edges of a shape, lit. Cheap, and it is what turns a
 # flat fill into something with a top and a bottom.

@@ -1318,9 +1318,9 @@ func _draw() -> void:
 		for ring in range(7):
 			var rr: float = 90.0 + float(ring) * 34.0
 			draw_circle(body_at + Vector2(0, -30), rr,
-				Color(0.66, 0.86, 0.94, 0.020 * float(lamps) * (1.0 - float(ring) / 7.0)))
+				Color(0.66, 0.86, 0.94, 0.013 * float(lamps) * (1.0 - float(ring) / 7.0)))
 	# and the creature itself is lifted out of the dark by that light
-	Art.tint = Art.tint.lightened(0.05 * float(lamps))
+	Art.tint = Art.tint.lightened(0.025 * float(lamps))
 	Art.draw_crab(self, body_at, asc, combat.limb_broken)
 	Art.tint = Color(1, 1, 1)
 	Art.stretch = 1.0
