@@ -1198,8 +1198,16 @@ func _click(at: Vector2) -> void:
 func _draw_banner() -> void:
 	var f: Font = ThemeDB.fallback_font
 	var w: Vector2 = size.max(DESIGN)
-	draw_rect(Rect2(Vector2.ZERO, Vector2(w.x, 26)), Color(0.86, 0.62, 0.24, 0.92))
-	draw_string(f, Vector2(24, 20), _won, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.06, 0.09, 0.12))
+	var a: float = clampf(_hold / 0.9, 0.0, 1.0)
+	var wide := 560.0
+	var at := Vector2(w.x * 0.5 - wide * 0.5, 224.0)
+	draw_rect(Rect2(at, Vector2(wide, 62)), Color(PLATE.r, PLATE.g, PLATE.b, 0.95 * a))
+	draw_rect(Rect2(at, Vector2(wide, 62)), Color(BRASS.r, BRASS.g, BRASS.b, a), false, 2.0)
+	for c in [at + Vector2(8, 8), at + Vector2(wide - 13, 8),
+			at + Vector2(8, 49), at + Vector2(wide - 13, 49)]:
+		draw_rect(Rect2(c, Vector2(5, 5)), Color(RIVET.r, RIVET.g, RIVET.b, a))
+	draw_string(f, at + Vector2(0, 40), _won, HORIZONTAL_ALIGNMENT_CENTER, wide, 24,
+		Color(BRASS_LIT.r, BRASS_LIT.g, BRASS_LIT.b, a))
 
 # who is standing here, said the same way everywhere
 func here_free(st: int) -> String:
