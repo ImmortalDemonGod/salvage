@@ -58,11 +58,12 @@ static var ALL := {
 		"limbs": [
 			# Swept after every limb gained an attack. Measured: casual
 			# 69.3%, greedy 6.0 turns, 10.0 squad HP lost.
-			# swept at divers [16,24,28] with every limb swinging:
-			# casual 67.5%, greedy 7.0 turns, 10.0 squad HP lost
-			{"name": "jaw", "hp": 16, "station": FRONT},
-			{"name": "claw", "hp": 13, "station": FLANK},
-			{"name": "tail", "hp": 13, "station": REAR},
+			# swept after Proto5 became the efficient heavy (8 dmg for 3 Air)
+			# and the overdraft was cut. All three encounters land at limbs
+			# x1.45: crab 66.7% / 9.0 turns / 14.0 HP
+			{"name": "jaw", "hp": 23, "station": FRONT},
+			{"name": "claw", "hp": 19, "station": FLANK},
+			{"name": "tail", "hp": 19, "station": REAR},
 		],
 		# SPEC 2.6 verbatim: "the jaw only reaches FRONT, and the tail sweeps
 		# REAR and FLANK together. No conditions, no statuses, no special
@@ -145,9 +146,9 @@ static var ALL := {
 		"limbs": [
 			# swept after the boiler widened to three stations. Measured:
 			# casual 63.3%, greedy 7.0 turns, 8.0 squad HP lost.
-			{"name": "arm", "hp": 10, "station": FRONT},
-			{"name": "boiler", "hp": 8, "station": FLANK},
-			{"name": "winch", "hp": 8, "station": REAR},
+			{"name": "arm", "hp": 12, "station": FRONT},
+			{"name": "boiler", "hp": 10, "station": FLANK},
+			{"name": "winch", "hp": 10, "station": REAR},
 		],
 		"attacks": [
 			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},

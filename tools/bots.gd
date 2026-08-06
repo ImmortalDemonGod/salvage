@@ -11,7 +11,7 @@ static func legal(c: Combat) -> Array:
 			continue
 		if c.afford(d.cost) and c.can_attack(d):
 			out.append({"kind": "attack", "i": d.id})
-		if not c.overdrafted and d.hp > Combat.OVERDRAFT_HP:
+		if Combat.OVERDRAFT_ENABLED and not c.overdrafted and d.hp > Combat.OVERDRAFT_HP:
 			out.append({"kind": "overdraft", "i": d.id})
 		if c.afford(Combat.MOVE_COST):
 			for s in c.OPEN_STATIONS:
@@ -100,7 +100,12 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 					for dd in c.divers:
 						if not dd.down and int(dd.station) in it.stations:
 							would += int(it.dmg)
-					score += float(would) / float(d.cost)
+					# Weighted BELOW parity on purpose. At full weight the judge
+					# stunned every turn forever: prevention scored 2.5 against
+					# an attack's 2.0, and since the ranged drum deals no
+					# damage the fight never progressed (41 turns, G2 0/40).
+					# A shutdown buys a turn; it does not win the fight.
+					score += float(would) / float(d.cost) * 0.55
 		elif a.kind == "overdraft":
 			# The greedy judge NEVER burns HP, deliberately. Scored at all,
 			# it fired every turn air ran short and doubled its own damage

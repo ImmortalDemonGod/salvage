@@ -27,7 +27,14 @@ var enc: Dictionary = {}
 
 const AIR_PER_TURN := 4   # see TUNE.air; this is the ceiling for clamping
 const MOVE_COST := 1
-const OVERDRAFT_HP := 2
+# CUT. Kept as a constant only so nothing referring to it breaks.
+# Two honest attempts to give the valve a niche failed: at 2 HP it bought
+# exactly break-even value, and at 1 HP with a leaf that prices HP spent on
+# a WON fight as nearly free, it was still never uniquely optimal in any
+# encounter. With a shared 4-Air pool and actions costing 1, a fifth action
+# is never decisive. A dead option is worse than no option.
+const OVERDRAFT_HP := 1
+const OVERDRAFT_ENABLED := false
 
 class Diver extends RefCounted:
 	var id: int
@@ -57,7 +64,11 @@ static var TUNE := {
 	# Re-swept after every live limb began swinging, which roughly tripled
 	# incoming damage. SPEC 2.10 licenses these being moved by the bands.
 	"diver_hp": [24, 34, 40],
-	"diver_dmg": [2, 2, 5],
+	# Proto5 was 5 damage for 3 Air, the WORST rate in the party, against
+	# Scuba's 2 for 1. With a shared pool and no per-diver action cap,
+	# "concentrated" buys nothing and he was dominated everywhere. He is now
+	# the efficient heavy: 8 for 3 beats 6 for 3.
+	"diver_dmg": [2, 2, 8],
 	"air": 4,
 }
 
@@ -184,14 +195,22 @@ func act_attack(i: int) -> bool:
 		return false
 	air -= d.cost
 	var limb: int = target_limb(d)
-	limb_hp[limb] -= d.dmg
-	log_lines.append("%s hits the %s for %d" % [d.dname, LIMB_NAMES[limb], d.dmg])
+	# From BACKLINE the drum SHUTS a limb down; it does not break it.
+	# While it also dealt damage, Prototype1 could dismantle the whole
+	# creature from safety and FLANK and UNDER went dead: nobody ever had a
+	# reason to stand anywhere. SPEC 2.9 says the drum applies a condition.
+	var at_range: bool = d.disables and d.station == BACKLINE
+	if not at_range:
+		limb_hp[limb] -= d.dmg
+		log_lines.append("%s hits the %s for %d" % [d.dname, LIMB_NAMES[limb], d.dmg])
+	else:
+		log_lines.append("%s points the drum at the %s" % [d.dname, LIMB_NAMES[limb]])
 	# SPEC 2.9 gives Prototype1 the verb *disable*. Until it had one it was
 	# strictly worse than Scuba at attacking and G4 reported it dominated.
 	if d.disables and not limb_broken[limb]:
 		limb_stun[limb] = 1
 		log_lines.append("the %s is shut down" % LIMB_NAMES[limb])
-	if limb_hp[limb] <= 0:
+	if not at_range and limb_hp[limb] <= 0:
 		limb_hp[limb] = 0
 		limb_broken[limb] = true
 		log_lines.append("the %s BREAKS" % LIMB_NAMES[limb])
@@ -224,6 +243,8 @@ func act_overdraft(i: int) -> bool:
 	if i < 0 or i >= divers.size():
 		return false
 	var d = divers[i]
+	if not OVERDRAFT_ENABLED:
+		return false
 	if outcome != "ongoing" or overdrafted or d.down or d.hp <= OVERDRAFT_HP:
 		return false
 	overdrafted = true
@@ -284,3 +305,25 @@ func end_turn() -> void:
 	overdrafted = false
 	air = air_this_turn()
 	_lock_intent()
+
+
+# Deep-set search needs to try an action and unwind. Cloning keeps the sim
+# pure: no undo stack, no hidden state to get out of sync.
+#
+# This was deleted by a careless slice replacement of end_turn, and because
+# the deep set's stderr was not gated, the dominance search crashed silently
+# and two passes counted as DRY while finding nothing because they could not
+# run at all.
+func clone() -> Combat:
+	var c := Combat.new(enc_id)
+	for i in range(divers.size()):
+		var a = divers[i]
+		var b = c.divers[i]
+		b.hp = a.hp; b.station = a.station; b.down = a.down
+	c.limb_hp = limb_hp.duplicate()
+	c.limb_broken = limb_broken.duplicate()
+	c.limb_stun = limb_stun.duplicate()
+	c.air = air; c.air_penalty = air_penalty; c.turn = turn
+	c.outcome = outcome; c._rotation = _rotation
+	c.overdrafted = overdrafted; c.locked = locked.duplicate()
+	return c

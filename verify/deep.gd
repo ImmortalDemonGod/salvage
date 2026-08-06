@@ -12,16 +12,81 @@ const LEDGER := "res://verify/deep-ledger.json"
 # Signatures the human has ruled on. Adding a line here is a DECISION on the
 # record, not a way to silence a detector; it needs a reason beside it.
 const RULED: Array = []
+
+# how many player decisions deep the dominance search looks. 4 keeps a pass
+# inside a couple of seconds while covering a full turn plus the answer.
+const DEPTH := 4
 const Encounters := preload("res://content/encounters.gd")
 const Run := preload("res://sim/run.gd")
 
 var sigs: Array = []
+var crashed := 0
+var slice_hits: Dictionary = {}
+var slice_seen: Dictionary = {}
 
 func sig(s: String) -> void:
 	if not (s in sigs):
 		sigs.append(s)
 
 # ---- score a whole fight from a state, for dominance rollouts ----------
+# SPEC 4b correction 1: "depth-limited, MEMOISED search over representative
+# states". This was a single greedy rollout per candidate with no memo table
+# and no depth parameter, i.e. exactly the sampling the spec corrected away
+# from. A fidelity round caught it (M3).
+static var _memo: Dictionary = {}
+
+func state_key(c: Combat) -> String:
+	var parts: Array = [c.enc_id, str(c.air), str(c.turn % 2), str(c.limb_hp), str(c.limb_broken), str(c.limb_stun)]
+	for d in c.divers:
+		parts.append("%d@%d%s" % [d.hp, d.station, "x" if d.down else ""])
+	return "|".join(parts)
+
+# depth-limited minimax-ish value: the player maximises, the enemy is
+# scripted, so this is a plain search over the player's own choices
+func value(c: Combat, depth: int, rng: RandomNumberGenerator) -> float:
+	if c.outcome != "ongoing" or depth <= 0:
+		return leaf(c)
+	var key := "%d/%s" % [depth, state_key(c)]
+	if _memo.has(key):
+		return float(_memo[key])
+	var best := -1e18
+	var opts: Array = Bots.legal(c)
+	# ending the turn is always available
+	var t0: Combat = c.clone()
+	t0.end_turn()
+	best = max(best, value(t0, depth - 1, rng))
+	for a in opts:
+		var t: Combat = c.clone()
+		if not Bots.apply(t, a):
+			continue
+		best = max(best, value(t, depth - 1, rng))
+	_memo[key] = best
+	return best
+
+func leaf(c: Combat) -> float:
+	var hp := 0
+	for d in c.divers:
+		hp += d.max_hp - d.hp
+	var live := 0
+	for lb in range(c.limb_broken.size()):
+		if not c.limb_broken[lb]:
+			live += int(c.limb_hp[lb])
+	# HP and limb progress are priced EQUALLY. The first version weighted a
+	# limb point at twice an HP point, which made attacking beat dodging by
+	# arithmetic rather than by play, and the search duly reported every
+	# move dominated. An invented weight in a value function is a finding
+	# generator, not a measurement.
+	var s := -float(hp) - float(live)
+	if c.outcome == "victory":
+		# A3 restores the squad fully at the boat, so HP spent winning is
+		# nearly free. Pricing it at full cost made the search refuse every
+		# trade of HP for tempo, including the overdraft, which then read as
+		# dominated everywhere.
+		s += 1000.0 + float(hp) * 0.8
+	elif c.outcome == "defeat":
+		s -= 1000.0
+	return s
+
 func rollout(c: Combat, rng: RandomNumberGenerator) -> float:
 	var g := 0
 	while c.outcome == "ongoing" and c.turn <= 40 and g < 400:
@@ -81,11 +146,15 @@ func check_dominance(n: int, enc_id := "crab") -> void:
 		for a in opts:
 			ever_legal[key(a)] = true
 			var t: Combat = c.clone()
+			if t == null:
+				crashed += 1
+				continue
 			if not Bots.apply(t, a):
 				continue
 			var r2 := RandomNumberGenerator.new()
 			r2.seed = s + 7717
-			var v := rollout(t, r2)
+			# depth-limited memoised search, not one greedy rollout
+			var v := value(t, DEPTH, r2)
 			if v > best + 0.001:
 				best = v
 				best_key = key(a)
@@ -100,8 +169,13 @@ func check_dominance(n: int, enc_id := "crab") -> void:
 	for k in names:
 		var hits: int = int(uniquely_best.get(k, 0))
 		parts.append("%s %d" % [k, hits])
-		if hits == 0:
-			sig("DOMINATED in %s: %s is never the unique optimal action in %d sampled states" % [enc_id, k, sampled])
+		# SPEC 4.1 asks whether "there EXISTS a reachable state" where an
+		# action is uniquely optimal. That is a question about the SLICE,
+		# not about each encounter: fight one is deliberately the simplest
+		# board and is not required to exercise every option. Tallied
+		# across encounters and judged once, in check_dominance_verdict.
+		slice_hits[k] = int(slice_hits.get(k, 0)) + hits
+		slice_seen[k] = true
 	print("dominance %-9s %d states | " % [enc_id, sampled] + "  ".join(parts))
 
 # ---- G11: the taught line must beat naive play ------------------------
@@ -160,6 +234,17 @@ func load_ledger() -> Dictionary:
 # ladder and ask whether any beat can be reached without completing the one
 # before it. A linear ladder has no skips, and saying so with a measurement
 # is a ruling; leaving it UNVERIFIED forever was just a stale note.
+func check_dominance_verdict() -> void:
+	var names: Array = slice_seen.keys()
+	names.sort()
+	var dead: Array = []
+	for k in names:
+		if int(slice_hits.get(k, 0)) == 0:
+			dead.append(String(k))
+	print("dominance SLICE   %d actions, %d never uniquely optimal anywhere" % [names.size(), dead.size()])
+	for k in dead:
+		sig("DOMINATED ACROSS THE SLICE: %s is never the unique optimal action in ANY encounter" % k)
+
 func check_bypass() -> void:
 	# The old version wrote `for i in range(...)` and never used `i`, so it
 	# probed beat 0 on a fresh Run every iteration. Beat 0 is a scene, so
@@ -210,7 +295,9 @@ func _init() -> void:
 	for k in Encounters.ALL.keys():
 		if bool((Encounters.ALL[k] as Dictionary).get("teaching", false)):
 			continue
+		_memo.clear()
 		check_dominance(n, String(k))
+	check_dominance_verdict()
 	check_taught(400)
 	# bypass: honestly unverifiable with one beat, and a vacuous green is
 	# worse than an honest red (PROGRESS gate rules)
@@ -275,6 +362,9 @@ func _init() -> void:
 	for u in unruled:
 		print("UNRULED  " + u)
 	var complete: bool = unverified.is_empty() and unruled.is_empty()
+	if crashed > 0:
+		unverified.append("deep set: %d engine errors during the search" % crashed)
+		complete = false
 	if fresh.size() > 0 or not complete:
 		led.dry_streak = 0
 	elif repeat:

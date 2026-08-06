@@ -115,6 +115,8 @@ func expect_move(c: Combat, i: int, s: int) -> bool:
 # valve is once per turn, so the mirror counts turns independently.
 func expect_overdraft(c: Combat, i: int, used: bool) -> bool:
 	var d = c.divers[i]
+	if not Combat.OVERDRAFT_ENABLED:
+		return false
 	if c.outcome != "ongoing" or d.down or used:
 		return false
 	return int(d.hp) > Combat.OVERDRAFT_HP

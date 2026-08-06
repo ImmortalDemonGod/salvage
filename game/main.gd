@@ -312,7 +312,7 @@ func _refresh() -> void:
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
 	var pick := "1 diver only" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
-	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE attack  ·  X burn %d HP for 1 air  ·  ENTER end turn" % [pick, "  ".join(moves), Combat.OVERDRAFT_HP]
+	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE attack  ·  ENTER end turn" % [pick, "  ".join(moves)]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
