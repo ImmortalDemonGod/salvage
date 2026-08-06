@@ -73,6 +73,20 @@ const PANEL_FLOOR := 262.0  # the prompt band ends at 252; readouts clamp below 
 const DIVER_SCALE := 66.0
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
 const CARD_TOP := 522.0
+# The action bar: the third playtest's ruling made buttons a hard
+# requirement ("having buttons on screen would replace the need of the
+# keyboard and make it visually obvious what to do"). One geometry,
+# drawn and hit-tested from the same rects (standing rule 29), enabled
+# state predicted by ASKING the sim on a clone, never by a parallel
+# rule that can drift.
+const BAR_H := 40.0
+# a vertical action menu on the LEFT, in the open water where nothing
+# else lives: the first horizontal placement sat under the UNDER station
+# tag, because Controls render above custom drawing and the bottom band
+# is already packed. A left column is also the genre's own furniture.
+const BAR_X := 24.0
+const BAR_TOP := 330.0
+const BAR_GAP := 6.0
 const BOARD_LIFT := Vector2(0, 0)
 
 # Where this diver's feet go. Divers used to be offset by their index in the
@@ -1124,6 +1138,46 @@ func _dead_player_overdraft() -> bool:
 	_refresh()
 	return ok
 
+# ---- the action bar: ids, legality, dispatch, geometry -----------------
+# Every sim-legal action has a button; the keyboard is a shortcut for the
+# same dispatcher. Legality is answered by trying the action on a CLONE,
+# so the greyed state can never disagree with what a press would do.
+func action_legal(id: String) -> bool:
+	if combat == null or combat.outcome != "ongoing":
+		return false
+	var c2: Combat = combat.clone()
+	match id:
+		"ability0": return c2.act_ability(selected, 0)
+		"ability1": return c2.act_ability(selected, 1)
+		"analyze": return c2.act_analyze(selected)
+		"end": return true
+	return false
+
+func _action(id: String) -> void:
+	match id:
+		"ability0": player_ability(0)
+		"ability1": player_ability(1)
+		"analyze": player_analyze()
+		"end":
+			player_end_turn()
+			_refresh()
+
+func bar_buttons() -> Array:
+	if combat == null or combat.outcome != "ongoing":
+		return []
+	var d = combat.divers[selected]
+	var out: Array = []
+	if d.kit.size() > 0:
+		out.append({"id": "ability0", "label": "%s  %d air  [SPACE]" % [String(d.kit[0].name), int(d.cost)]})
+	if d.kit.size() > 1:
+		out.append({"id": "ability1", "label": "%s  %d air  [F]" % [String(d.kit[1].name), int(d.cost)]})
+	out.append({"id": "analyze", "label": "Read limb  1 air  [A]"})
+	out.append({"id": "end", "label": "End turn  [ENTER]"})
+	return out
+
+func btn_rect(i: int, _n: int) -> Rect2:
+	return Rect2(Vector2(BAR_X, BAR_TOP + float(i) * (BAR_H + BAR_GAP)), Vector2(232.0, BAR_H))
+
 func player_end_turn() -> void:
 	combat.end_turn()
 	_after()
@@ -1556,9 +1610,23 @@ func _click(at: Vector2) -> void:
 	if combat == null:
 		run.advance(); combat = run.combat; selected = 0; _refresh()
 		return
+	# the action bar first: it sits over nothing else clickable
+	var btns: Array = bar_buttons()
+	for i in range(btns.size()):
+		if btn_rect(i, btns.size()).has_point(at):
+			_action(String(btns[i].id))
+			return
 	for i in range(combat.divers.size()):
 		var card: Control = ui_divers[i]
 		if card.visible and card.get_global_rect().has_point(at):
+			_select(i)
+			_refresh()
+			return
+	# a diver's body selects the diver; the third playtest clicked bodies
+	# expecting exactly that and moved someone instead
+	for i in range(combat.divers.size()):
+		var dd = combat.divers[i]
+		if not dd.down and at.distance_to(diver_foot(dd) + Vector2(0, -40)) < 34.0:
 			_select(i)
 			_refresh()
 			return
@@ -1572,8 +1640,12 @@ func _click(at: Vector2) -> void:
 			else:
 				player_move(st)
 			return
-	# anywhere on the creature means hit what you are standing next to
-	player_ability(0)
+	# the creature's body means hit what you are standing next to; empty
+	# water means NOTHING. The old fallthrough fired ability 0 on any
+	# misclick, which the second playtest paid for in air ("at least I
+	# can click space to make this go away" was a paid attack every time)
+	if at.distance_to(_body_at()) < 130.0:
+		player_ability(0)
 
 func here_free(_st: int) -> String:
 	return ""
@@ -1613,6 +1685,25 @@ func _draw_affordances() -> void:
 			var ang: float = TAU * float(k) / 4.0
 			var dv := Vector2(cos(ang), sin(ang))
 			draw_line(at + dv * (rr - 5.0), at + dv * (rr + 7.0), Color(0.95, 0.85, 0.45, 0.95), 3.0)
+
+func _draw_actionbar() -> void:
+	if combat == null or combat.outcome != "ongoing":
+		return
+	var btns: Array = bar_buttons()
+	var df: Font = ThemeDB.fallback_font
+	for i in range(btns.size()):
+		var b: Dictionary = btns[i]
+		var r: Rect2 = btn_rect(i, btns.size())
+		var on: bool = action_legal(String(b.id))
+		var face := Color(0.30, 0.36, 0.30, 0.92) if on else Color(0.16, 0.18, 0.19, 0.85)
+		var edge := Color(0.78, 0.86, 0.66, 0.9) if on else Color(0.40, 0.44, 0.46, 0.6)
+		var ink := Color(0.94, 0.97, 0.90) if on else Color(0.55, 0.58, 0.60)
+		draw_rect(r, face)
+		draw_rect(r, edge, false, 2.0)
+		var txt := String(b.label)
+		var tw: float = df.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+		draw_string(df, r.position + Vector2((r.size.x - tw) * 0.5, 26.0), txt,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
 
 func _draw_traits() -> void:
 	for st in range(5):
@@ -1778,6 +1869,7 @@ func _draw() -> void:
 		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
 	_draw_affordances()
 	_draw_traits()
+	_draw_actionbar()
 	_draw_windup()
 	_draw_bars()
 	_draw_fx()

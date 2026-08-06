@@ -24,8 +24,8 @@ while IFS= read -r f; do
     note "DOES NOT PARSE: $f :: $(echo "$out" | head -1 | sed 's/^ *//')"
     bad=$((bad+1))
   fi
-done < <(find sim tools verify game content -name '*.gd' 2>/dev/null | grep -v '^tools/bake/' | sort)
-echo "parse      $(find sim tools verify game content -name '*.gd' 2>/dev/null | grep -v '^tools/bake/' | wc -l | tr -d ' ') scripts checked, $bad broken"
+done < <(find sim tools verify game content -name '*.gd' 2>/dev/null | sort)
+echo "parse      $(find sim tools verify game content -name '*.gd' 2>/dev/null | wc -l | tr -d ' ') scripts checked, $bad broken"
 
 # --- 3. quit() must return ------------------------------------------------
 while IFS= read -r f; do
@@ -33,7 +33,7 @@ while IFS= read -r f; do
   awk -v F="$f" '/[^_a-zA-Z]quit\(/ {q=NR; line=$0; next}
        q && NR==q+1 { if ($0 !~ /return/ && line !~ /#/) print F":"q" "line; q=0 }' "$f" \
     | while read -r hit; do note "QUIT WITHOUT RETURN: $hit (quit only requests; code after it still runs)"; done
-done < <(find verify tools -name '*.gd' 2>/dev/null | grep -v '^tools/bake/' | sort)
+done < <(find verify tools -name '*.gd' 2>/dev/null | sort)
 
 # --- 4. nobody outside the sim may write sim state directly ---------------
 # Three verifiers each hand-rolled "for i in range(p.VALVES): p.valve[i] =
@@ -49,10 +49,10 @@ while IFS= read -r f; do
   if [ -n "$hit" ]; then
     note "WRITES SIM STATE DIRECTLY: $f :: $(echo "$hit" | head -1 | sed 's/^ *//') -- use Bots.solve_puzzle(), which drives toggle() and respects reachability"
   fi
-done < <(find verify tools game -name '*.gd' 2>/dev/null | grep -v '^tools/bake/' | sort)
+done < <(find verify tools game -name '*.gd' 2>/dev/null | sort)
 
 # --- the detectors, with 2. engine stderr gated ---------------------------
-for s in verify/checks.gd verify/teach.gd verify/pillar.gd verify/select.gd verify/hint.gd verify/door.gd verify/masher.gd verify/audio.gd verify/layout.gd verify/fuzz.gd verify/differential.gd; do
+for s in verify/checks.gd verify/teach.gd verify/pillar.gd verify/select.gd verify/hint.gd verify/door.gd verify/mousedoor.gd verify/masher.gd verify/audio.gd verify/layout.gd verify/fuzz.gd verify/differential.gd; do
   [ -f "$s" ] || continue
   out=$(godot --headless --path "$PWD" --script "$s" 2>&1 | grep -vE "^Godot Engine|^$")
   echo "$out" | grep -vE "^(ERROR|SCRIPT ERROR|WARNING|USER ERROR)|^ *at:|^ *GDScript backtrace|^ *\[[0-9]+\]"

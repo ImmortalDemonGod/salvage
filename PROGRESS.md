@@ -720,8 +720,19 @@ fifteen clips as PNG frame stacks with a manifest; spot-checked real
 possibly back-facing; the bake pipeline is still being refined and its
 report is pending. Integration is its own item.
 
-Next: P0 buttons and full mouse parity with the mouse-door gate, then
-the occlusion diet with the HUD budget gate.
+**P0 buttons and mouse parity: LANDED.** A vertical action menu in the
+open water on the left (the first placement sat under a station tag and
+a screenshot caught it): every action the sim permits is a button, with
+enabled state answered by trying the action on a CLONE so the grey can
+never lie. Clicking a diver's body selects it; empty water does nothing
+(the old fallthrough fired ability 0 on any misclick, paid in air).
+New gate verify/mousedoor.gd walks fights asserting button-enabled
+equals sim-accepts for every action id, plus on-screen bounds. The bake
+pipeline's scripts were fixed and re-included in the parse walks.
+
+Next: the occlusion diet with the HUD budget gate, folding in the baked
+rig frames (report at art/baked/REPORT.md: 114 frames verified, front
+facing, shared camera, floor anchor y=434).
 
 ## The presentation pass
 

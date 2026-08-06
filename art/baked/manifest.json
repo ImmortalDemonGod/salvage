@@ -6,13 +6,13 @@
     "position": [
       0.0,
       1.364,
-      8.40500736236572
+      8.405
     ],
     "projection": "orthographic",
     "rotation_degrees": [
-      0,
-      180,
-      0
+      0.0,
+      0.0,
+      0.0
     ],
     "world_units_per_pixel": 0.0077
   },
