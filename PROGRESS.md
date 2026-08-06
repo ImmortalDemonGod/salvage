@@ -382,6 +382,26 @@ everything below it.
 | "Not the right hook"; the prompt is left-justified | Opening reordered so the stake lands first; the prompt is a centred button that sizes to its text |
 | "The same crab creature" three beats running | One function drew all four enemies, differing only by a stretch and a tint. The worm and the dredge have their own bodies now |
 
+### Found on a second reading, after "did you address everything?"
+
+The table above came from my own notes on the session. Asked whether it
+was complete, I read the transcript again line by line and it was not:
+six more things were in it, including the one he actually quit over.
+
+| Missed | Verdict |
+|---|---|
+| **"Shut down. What does shut down mean? I gotta stop."** | **This is where he stopped playing.** SHUT appeared on a tag and in the log, and nothing said what shutting a limb BUYS: that its announced attack does not happen. The telegraph replaces that limb's line with "SHUT DOWN, it does not swing this turn", the tag counts the turns left, a floater says it as it lands |
+| "This is the same crab creature as before" | True, and not covered by the enemy work: the descent and fight one both drew the crab, one tinted grey. The thing in the dark has its own body now, no shell or legs, two eyes and tendrils out of the black |
+| "What about the arrow keys? Arrow keys don't work" | He reached for them before anything else. Left and right step the stations, up and down change diver |
+| "It says the Godot game engine" | Boot splash off; the loading colour is the water |
+| "Let the character control the descent" | OPEN. A feature, not a defect: an interactive dive instead of a cutscene. Needs a decision, not a fix |
+| "I don't think I broke all of the limbs" | PARTLY. He won and did not know why. The banner names the kill and the goal counts limbs, but I am not calling this closed without a human confirming it |
+
+The lesson is the same one this project keeps paying for: **my summary of
+the evidence is not the evidence.** I had written the findings down,
+worked from the list, and reported it complete, and the item he quit over
+was not on the list.
+
 Two lessons outrank the fixes.
 
 **The gates could not see any of it.** Everything above was green through
