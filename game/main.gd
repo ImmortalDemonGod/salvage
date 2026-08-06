@@ -144,6 +144,16 @@ static func skin_card() -> StyleBoxFlat:
 	sb.set_border_width_all(2)
 	return sb
 
+static func skin_station() -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.045, 0.070, 0.090, 0.62)
+	sb.border_color = BRASS
+	sb.border_width_bottom = 2
+	sb.set_corner_radius_all(2)
+	sb.content_margin_left = 10.0
+	sb.content_margin_right = 10.0
+	return sb
+
 # four rivets, one per corner, added as children so they sit ON the plate
 func _rivet(pan: Control) -> void:
 	for c in [Vector2(7, 7), Vector2(pan.size.x - 12, 7),
@@ -162,9 +172,9 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(232, 66)
+		m.size = Vector2(238, 68)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
-		m.add_theme_stylebox_override("panel", skin_quiet())
+		m.add_theme_stylebox_override("panel", skin_station())
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
