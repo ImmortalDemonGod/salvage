@@ -341,7 +341,7 @@ func _motion(lines: Array, from: int) -> void:
 				if lb >= 0:
 					fx.add("ring", 0.5, _limb_at(lb), Vector2.ZERO, "SHUT DOWN", Color(0.55, 0.78, 0.95), -1, lb)
 			SfxEvents.Kind.CUT:
-				fx.add("float", 1.2, Vector2(210, 150), Vector2.ZERO, "AIR LINE CUT", HURT)
+				fx.add("float", 1.2, Vector2(DESIGN.x * 0.30, DESIGN.y * 0.42), Vector2.ZERO, "AIR LINE CUT", HURT)
 				fx.kick(0.35)
 			SfxEvents.Kind.DOWN:
 				if who >= 0:

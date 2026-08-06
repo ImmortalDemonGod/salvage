@@ -20,8 +20,8 @@ static var ALL := {
 	# geography exists to complicate either (SPEC 2.7, one idea per beat).
 	"descent": {
 		"title": "something in the dark",
-		"art": {"kind": "crab", "scale": 150.0, "pos": [880, 320], "tint": [0.32, 0.38, 0.44]},
-		"places": {"0": [700, 386]},
+		"art": {"kind": "crab", "scale": 150.0, "pos": [900, 330], "tint": [0.32, 0.38, 0.44]},
+		"places": {"0": [600, 400]},
 		# TEACHING BEAT, exempt from the difficulty bands and from the
 		# dominant-station check by declaration, not by a silent special
 		# case. Its job is to establish that a turn is a budget and the
@@ -38,8 +38,8 @@ static var ALL := {
 	# Beat `fight1`. Three limbs, four stations, UNDER deliberately empty.
 	"crab": {
 		"title": "the hunter crab",
-		"art": {"kind": "crab", "scale": 176.0, "pos": [878, 322], "tint": [1.0, 1.0, 1.0]},
-		"places": {"0": [648, 386], "1": [752, 292], "2": [906, 424], "3": [1058, 322]},
+		"art": {"kind": "crab", "scale": 158.0, "pos": [872, 330], "tint": [1.0, 1.0, 1.0]},
+		"places": {"0": [610, 392], "1": [788, 244], "2": [900, 430], "3": [1122, 320]},
 		# TWO divers. One was tried and REFUTED by measurement: the crab
 		# became unwinnable (G2 0/40), casual fell to 5.2 percent, and
 		# UNDER went dead because a lone diver never has a reason to stand
@@ -88,8 +88,8 @@ static var ALL := {
 		"title": "the vent worm",
 		# a LONGER, thinner body: the stations sit further apart along it,
 		# so the board itself reads differently from the crab's
-		"art": {"kind": "worm", "scale": 205.0, "pos": [900, 300], "tint": [0.55, 0.85, 0.70]},
-		"places": {"0": [640, 366], "1": [858, 268], "2": [926, 424], "4": [300, 386]},
+		"art": {"kind": "worm", "scale": 188.0, "pos": [910, 312], "tint": [0.55, 0.85, 0.70]},
+		"places": {"0": [604, 386], "1": [886, 240], "2": [946, 430], "4": [286, 386]},
 		"party": 2,
 		# The drum is fitted before this fight, so it is declared HERE.
 		# While gear was a global set by the run, the bands measured the
@@ -134,8 +134,8 @@ static var ALL := {
 	# the umbilical rule and the HP overdraft finally bite.
 	"dredge": {
 		"title": "the dredge",
-		"art": {"kind": "dredge", "scale": 182.0, "pos": [890, 306], "tint": [0.72, 0.62, 0.42]},
-		"places": {"0": [686, 400], "1": [820, 276], "3": [1064, 356], "4": [300, 400]},
+		"art": {"kind": "dredge", "scale": 168.0, "pos": [884, 320], "tint": [0.72, 0.62, 0.42]},
+		"places": {"0": [614, 400], "1": [828, 256], "3": [1128, 350], "4": [286, 400]},
 		"party": 3,
 		"drum": true,
 		# UNDER is closed here. Every open station must either expose a limb
