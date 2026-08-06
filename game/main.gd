@@ -562,6 +562,8 @@ func _draw_ending() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
 
 func _next_step() -> String:
+	if run.puzzle != null:
+		return _lock_step(run.puzzle)
 	if combat == null:
 		return "press ENTER"
 	var d = combat.divers[selected]
@@ -637,6 +639,21 @@ func _auto_select() -> void:
 			selected = int(o.id)
 			return
 
+func _lock_step(p) -> String:
+	if p.solved():
+		return "The way out is open. Press ENTER to go through."
+	if p.stage == 2:
+		if not p.valve[p.CROSS]:
+			if p.reachable(p.CROSS):
+				return "Open the crossover (4) first, while chamber B is still dry. Once B fills it goes under and you cannot turn it."
+			return "The crossover is under water. Shut valve 3 to drain chamber B, then open the crossover."
+		return "Crossover open. Fill chamber A to the line with 1 and 2, and 3 to push B's water across. A needs three; B must end dry."
+	if not p.valve[p.SEIZED]:
+		if p.reachable(p.SEIZED):
+			return "Turn valve 3 first. It sits at the floor, and once the water rises it goes under and cannot be turned."
+		return "Valve 3 is under water now. Shut one of the others to drop the level, then turn 3."
+	return "Valve 3 is open. Turn the rest to fill the chamber to the line."
+
 func _refresh() -> void:
 	_auto_select()
 	_stamp_title()
@@ -670,7 +687,8 @@ func _refresh() -> void:
 		ui_legend.get_parent().visible = false
 		ui_goal.get_parent().visible = false
 		ui_intent.get_parent().visible = false
-		ui_step.get_parent().visible = false
+		ui_step.text = _next_step()
+		ui_step.get_parent().visible = true
 		ui_intent.text = run.state_line()
 		for card in ui_divers:
 			card.visible = false
