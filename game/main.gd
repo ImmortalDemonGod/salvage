@@ -56,7 +56,9 @@ func _ready() -> void:
 	sfx = Sfx.new()
 	add_child(sfx)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_ui()
+	_pass_clicks_through(self)
 	_refresh()
 
 # where this encounter puts a station, falling back to the default ring
@@ -165,6 +167,15 @@ func _rivet(pan: Control) -> void:
 		r.position = c
 		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		pan.add_child(r)
+
+# Nothing in the HUD is clickable, so nothing in the HUD may swallow a
+# click. Applied to the whole tree after it is built, so a panel added
+# later cannot silently reintroduce the bug.
+func _pass_clicks_through(node: Node) -> void:
+	for c in node.get_children():
+		if c is Control:
+			(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_pass_clicks_through(c)
 
 func _build_ui() -> void:
 	# station markers: one Control each, so the invariants can assert they

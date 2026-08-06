@@ -177,6 +177,14 @@ func check_current() -> void:
 				fail("DIVER DRAWN INTO THE HUD: %s at %s reaches y=%d, above the HUD floor at %d" % [
 					d.dname, Combat.STATION_NAMES[int(d.station)], int(dr.position.y), int(scene.HUD_BOTTOM)])
 
+	# Nothing in the HUD is clickable, so nothing may EAT a click. Godot
+	# Controls default to MOUSE_FILTER_STOP, which is how every panel and
+	# label in this game silently swallowed every mouse button for the
+	# entire run: a playtester clicked to move, nothing happened, and
+	# nearly quit over it.
+	for c in scene.get_children():
+		_no_swallow(c)
+
 	# nothing may be laid over the lock drawing
 	if scene.run != null and scene.run.puzzle != null:
 		for p2 in panels:
@@ -189,6 +197,13 @@ func check_current() -> void:
 					fail("PANEL COVERS THE LOCK: %s sits over the puzzle drawing by %dx%d" % [p2.name, int(ov2.size.x), int(ov2.size.y)])
 
 	walked += controls.size()
+
+func _no_swallow(node: Node) -> void:
+	if node is Control and (node as Control).mouse_filter != Control.MOUSE_FILTER_IGNORE:
+		fail("SWALLOWS CLICKS: %s has mouse_filter %d, so a click on it never reaches the game" % [
+			node.name, int((node as Control).mouse_filter)])
+	for c in node.get_children():
+		_no_swallow(c)
 
 func report() -> void:
 	print("layout     %d beats walked, %d Controls total" % [beat_idx, walked])

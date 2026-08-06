@@ -38,12 +38,20 @@ const title = await page.title();
 // press ENTER twice and see whether the build advances, which only works if it is really running
 await page.keyboard.press("Enter"); await page.waitForTimeout(1200);
 const after = await page.title();
+// and a CLICK, because the keyboard working says nothing about the mouse:
+// every panel in this game swallowed mouse buttons for an entire run and
+// no check noticed, because no check had ever clicked anything.
+await page.mouse.click(640, 640);
+await page.waitForTimeout(1200);
+const clicked = await page.title();
 await page.screenshot({ path: "/tmp/live-boot.png" });
 console.log("TITLE AT BOOT : " + title);
 console.log("TITLE AFTER ENTER: " + after);
 console.log("PAGE ERRORS   : " + (errors.length ? errors.join(" | ") : "none"));
 console.log("FAILED REQS   : " + (failed.length ? failed.join(" | ") : "none"));
-const ok = after !== title && after.includes("beat=") && errors.length === 0 && failed.length === 0;
+const mouseWorks = clicked !== after;
+console.log("TITLE AFTER CLICK: " + clicked + (mouseWorks ? "  (the mouse reaches the game)" : "  <-- FINDING: the click did nothing"));
+const ok = after !== title && after.includes("beat=") && mouseWorks && errors.length === 0 && failed.length === 0;
 console.log(ok ? "LIVE: the deployed build boots and responds to input" : "LIVE: FINDING -- the deployed build is not playable from its own URL");
 await browser.close();
 process.exit(ok ? 0 : 1);
