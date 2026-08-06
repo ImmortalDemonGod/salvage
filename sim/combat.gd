@@ -33,6 +33,7 @@ class Diver extends RefCounted:
 	var id: int
 	var dname: String
 	var cost: int
+	var disables: bool = false
 	var max_hp: int
 	var hp: int
 	var dmg: int
@@ -68,6 +69,11 @@ var outcome := "ongoing"      # ongoing | victory | defeat
 var log_lines: Array = []
 var _rotation := 0            # deterministic enemy cycle
 var overdrafted := false      # the valve opens once per turn, not endlessly
+# STUN: a limb that is stunned does not attack on its next turn. Chosen
+# because it is deterministic (Q1 forbids hidden rolls) and because it makes
+# the telegraph ACTIONABLE: you see the jaw winding up and you shut it. That
+# is the counterplay the whole information design was missing.
+var limb_stun: Array = []
 
 func _init(encounter := "crab") -> void:
 	enc_id = encounter
@@ -77,19 +83,23 @@ func _init(encounter := "crab") -> void:
 	LIMB_NAMES = []
 	limb_hp = []
 	limb_broken = []
+	limb_stun = []
 	for l in enc.limbs:
 		LIMB_NAMES.append(String(l.name))
 		limb_hp.append(int(l.hp))
 		limb_broken.append(false)
+		limb_stun.append(0)
 	var hp: Array = TUNE.diver_hp
 	var dm: Array = TUNE.diver_dmg
-	var roster := [["Scuba", 1], ["Prototype1", 2], ["Proto5", 3]]
+	var roster := [["Scuba", 1, false], ["Prototype1", 2, true], ["Proto5", 3, false]]
 	var starts: Array = enc.get("starts", [])
 	divers = []
 	var n: int = min(int(enc.party), roster.size())
 	for i in range(n):
 		var start: int = int(starts[i]) if i < starts.size() else int(OPEN_STATIONS[i % OPEN_STATIONS.size()])
-		divers.append(Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start))
+		var dv := Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start)
+		dv.disables = bool(roster[i][2])
+		divers.append(dv)
 	air = int(TUNE.air)
 
 # ---- enemy anatomy: fight one, the hunter crab -------------------------
@@ -102,7 +112,7 @@ func attacks() -> Array:
 func live_attacks() -> Array:
 	var out: Array = []
 	for a in attacks():
-		if not limb_broken[a.limb]:
+		if not limb_broken[a.limb] and int(limb_stun[a.limb]) <= 0:
 			out.append(a)
 	return out
 
@@ -141,6 +151,11 @@ func act_attack(i: int) -> bool:
 	var limb: int = STATION_LIMB[d.station]
 	limb_hp[limb] -= d.dmg
 	log_lines.append("%s hits the %s for %d" % [d.dname, LIMB_NAMES[limb], d.dmg])
+	# SPEC 2.9 gives Prototype1 the verb *disable*. Until it had one it was
+	# strictly worse than Scuba at attacking and G4 reported it dominated.
+	if d.disables and not limb_broken[limb]:
+		limb_stun[limb] = 2
+		log_lines.append("the %s is shut down" % LIMB_NAMES[limb])
 	if limb_hp[limb] <= 0:
 		limb_hp[limb] = 0
 		limb_broken[limb] = true
@@ -219,6 +234,9 @@ func end_turn() -> void:
 	if alive().is_empty():
 		outcome = "defeat"
 		log_lines.append("the squad is lost")
+	for i in range(limb_stun.size()):
+		if int(limb_stun[i]) > 0:
+			limb_stun[i] = int(limb_stun[i]) - 1
 	turn += 1
 	overdrafted = false
 	air = air_this_turn()
@@ -233,6 +251,7 @@ func clone() -> Combat:
 		b.hp = a.hp; b.station = a.station; b.down = a.down
 	c.limb_hp = limb_hp.duplicate()
 	c.limb_broken = limb_broken.duplicate()
+	c.limb_stun = limb_stun.duplicate()
 	c.air = air; c.air_penalty = air_penalty; c.turn = turn; c.overdrafted = overdrafted
 	c.outcome = outcome; c._rotation = _rotation
 	return c

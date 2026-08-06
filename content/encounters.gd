@@ -20,6 +20,12 @@ static var ALL := {
 	# geography exists to complicate either (SPEC 2.7, one idea per beat).
 	"descent": {
 		"title": "something in the dark",
+		# TEACHING BEAT, exempt from the difficulty bands and from the
+		# dominant-station check by declaration, not by a silent special
+		# case. Its job is to establish that a turn is a budget and the
+		# enemy announces itself; it is meant to be trivially winnable and
+		# to have exactly one place to stand.
+		"teaching": true,
 		"party": 1,
 		"open_stations": [FRONT],
 		"starts": [FRONT],
@@ -43,6 +49,33 @@ static var ALL := {
 		"attacks": [
 			{"limb": 0, "stations": [FRONT], "dmg": 2, "name": "snaps at"},
 			{"limb": 2, "stations": [REAR, FLANK], "dmg": 2, "name": "sweeps"},
+		],
+	},
+	# Beat `fight2`. A DIFFERENT anatomy, which is the question the whole
+	# station design rests on: does the geometry survive a different body?
+	# It inverts fight one deliberately. There, UNDER was the empty station
+	# and REAR was swept; here UNDER holds a limb and REAR is the empty one,
+	# so a player who learned "UNDER is safe" has to look again. Every close
+	# station is threatened, which is what finally gives BACKLINE a reason
+	# to exist and what makes the disabler's shutdown the answer.
+	"spitter": {
+		"title": "the vent worm",
+		"party": 3,
+		# REAR is not open here. It held no limb AND the maw reached it, so
+		# it was strictly dominated and the histogram called it dead. The
+		# inversion is sharper without it: in fight one UNDER was the safe
+		# empty station, here UNDER holds a limb and BACKLINE is the safe
+		# one, so a player who learned "UNDER is safe" must look again.
+		"open_stations": [FRONT, FLANK, UNDER, BACKLINE],
+		"starts": [FRONT, BACKLINE, FLANK],
+		"limbs": [
+			{"name": "maw", "hp": 16, "station": FRONT},
+			{"name": "vent", "hp": 12, "station": FLANK},
+			{"name": "gut", "hp": 12, "station": UNDER},
+		],
+		"attacks": [
+			{"limb": 0, "stations": [FRONT], "dmg": 3, "name": "lunges at"},
+			{"limb": 1, "stations": [FLANK, UNDER], "dmg": 3, "name": "sprays"},
 		],
 	},
 }

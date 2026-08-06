@@ -66,10 +66,15 @@ static var LADDER := [
 	{
 		"id": "boat1",
 		"kind": "scene",
-		"title": "Proto5 joins",
+		"title": "back on the rig",
 		"teaches": "cost_tiers",
 		"uses": ["goal", "stations", "air", "cost_tiers"],
-		"built": false,
+		"built": true,
+		"lines": [
+			{"role": "who", "text": "(placeholder) Proto5 comes down with you now. The big suit eats three lines of air every time it moves or swings."},
+			{"role": "want", "text": "(placeholder) Four lines a turn is all the pump gives. Spend them how you like."},
+			{"role": "controls", "text": "ENTER to descend"},
+		],
 	},
 	{
 		"id": "puzzle1",
@@ -80,18 +85,17 @@ static var LADDER := [
 	},
 	{
 		"id": "fight2",
-		"title": "conditions, via the drum",
-		"teaches": "backline",
-		"uses": ["stations", "air", "limbs", "telegraph", "cost_tiers", "backline"],
-		"built": false,
-		"note": "the drum works from range, so the station that exists for it opens with it",
-	},
-	{
-		"id": "fight3",
+		"kind": "combat",
+		"encounter": "spitter",
 		"title": "the drum fitted",
 		"teaches": "conditions",
-		"uses": ["stations", "air", "limbs", "telegraph", "cost_tiers", "backline", "conditions"],
-		"built": false,
+		# backline is a PART of this idea, not a separate one: "a diver who
+		# disables from safety" is one thing. Split apart, BACKLINE had no
+		# reason to be stood in and was a dead station by construction.
+		"parts": ["backline"],
+		"uses": ["stations", "air", "limbs", "telegraph", "cost_tiers", "conditions", "backline"],
+		"built": true,
+		"expect": {"encounter": "spitter", "divers": 3, "open_stations": 4, "limbs": 3},
 	},
 	{
 		"id": "boat2",

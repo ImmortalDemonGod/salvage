@@ -7,6 +7,7 @@ extends SceneTree
 # resolvable until the project is re-imported, which has now cost three
 # round trips in this run.
 const Run := preload("res://sim/run.gd")
+const Encounters := preload("res://content/encounters.gd")
 
 var findings: Array = []
 
@@ -19,34 +20,42 @@ const CASUAL_WIN_HI := 0.90
 const GREEDY_TURNS_MIN := 6.0
 const GREEDY_HP_MIN := 8.0
 
+# EVERY encounter is banded, not just the default one. PROGRESS says each
+# new enemy must pass the bands before the next one starts, and until this
+# loop existed a second anatomy could ship completely unmeasured.
 func check_bands(n: int) -> void:
-	var cw := 0
-	var gt := 0
-	var gh := 0
-	for s in range(n):
-		if Bots.run_fight(s, "casual").win: cw += 1
-		var g: Dictionary = Bots.run_fight(s, "greedy")
-		gt += g.turns
-		gh += g.hp_lost
-	var wr := float(cw) / n
-	var turns := float(gt) / n
-	var hp := float(gh) / n
-	print("G3 bands   casual win %.1f%% (band %.0f-%.0f)   greedy turns %.1f (min %.1f)   greedy hp lost %.1f (min %.1f)"
-		% [wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100, turns, GREEDY_TURNS_MIN, hp, GREEDY_HP_MIN])
-	if wr < CASUAL_WIN_LO or wr > CASUAL_WIN_HI:
-		fail("G3 casual win rate %.1f%% outside band %.0f-%.0f" % [wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100])
-	if turns < GREEDY_TURNS_MIN:
-		fail("G3 greedy clears in %.1f turns, floor is %.1f: the fight ends before it can teach" % [turns, GREEDY_TURNS_MIN])
-	if hp < GREEDY_HP_MIN:
-		fail("G3 greedy loses only %.1f HP, floor is %.1f" % [hp, GREEDY_HP_MIN])
+	for key in Encounters.ALL.keys():
+		var enc_id := String(key)
+		if bool((Encounters.ALL[key] as Dictionary).get("teaching", false)):
+			print("G3 %-9s SKIPPED: declared a teaching beat, not judged as a fight" % enc_id)
+			continue
+		var cw := 0
+		var gt := 0
+		var gh := 0
+		for s in range(n):
+			if Bots.run_fight(s, "casual", enc_id).win: cw += 1
+			var g: Dictionary = Bots.run_fight(s, "greedy", enc_id)
+			gt += int(g.turns)
+			gh += int(g.hp_lost)
+		var wr := float(cw) / n
+		var turns := float(gt) / n
+		var hp := float(gh) / n
+		print("G3 %-9s casual win %.1f%% (band %.0f-%.0f)   greedy turns %.1f (min %.1f)   greedy hp lost %.1f (min %.1f)"
+			% [enc_id, wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100, turns, GREEDY_TURNS_MIN, hp, GREEDY_HP_MIN])
+		if wr < CASUAL_WIN_LO or wr > CASUAL_WIN_HI:
+			fail("G3 %s casual win rate %.1f%% outside band %.0f-%.0f" % [enc_id, wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100])
+		if turns < GREEDY_TURNS_MIN:
+			fail("G3 %s greedy clears in %.1f turns, floor is %.1f: the fight ends before it can teach" % [enc_id, turns, GREEDY_TURNS_MIN])
+		if hp < GREEDY_HP_MIN:
+			fail("G3 %s greedy loses only %.1f HP, floor is %.1f" % [enc_id, hp, GREEDY_HP_MIN])
 
 # ---- dead / dominant station (SPEC 4.2) --------------------------------
-func check_stations(n: int) -> void:
-	var OPEN: Array = Combat.new().OPEN_STATIONS
+func check_stations(n: int, enc_id := "crab") -> void:
+	var OPEN: Array = Combat.new(enc_id).OPEN_STATIONS
 	var occ := [0, 0, 0, 0, 0]
 	var total := 0
 	for s in range(n):
-		var c := Combat.new()
+		var c := Combat.new(enc_id)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = s
 		while c.outcome == "ongoing" and c.turn <= 40:
@@ -70,10 +79,10 @@ func check_stations(n: int) -> void:
 		if not open_here:
 			continue
 		if pct == 0.0:
-			fail("DEAD STATION: %s is never occupied in optimal play" % Combat.STATION_NAMES[i])
-		if pct > 60.0:
-			fail("DOMINANT STATION: %s occupied %.1f%% of the time; positioning is theatre" % [Combat.STATION_NAMES[i], pct])
-	print("stations   " + "  ".join(parts))
+			fail("DEAD STATION in %s: %s is never occupied in optimal play" % [enc_id, Combat.STATION_NAMES[i]])
+		if pct > 60.0 and OPEN.size() > 1:
+			fail("DOMINANT STATION in %s: %s occupied %.1f%% of the time; positioning is theatre" % [enc_id, Combat.STATION_NAMES[i], pct])
+	print("stations %-9s " % enc_id + "  ".join(parts))
 
 # ---- G14: the telegraph never lies ------------------------------------
 func check_telegraph(n: int) -> void:
@@ -138,7 +147,8 @@ func _init() -> void:
 	var t := Time.get_ticks_usec()
 	check_bands(1000)
 	check_run(40)
-	check_stations(300)
+	for k in Encounters.ALL.keys():
+		check_stations(300, String(k))
 	check_telegraph(300)
 	print("ran in %.0f ms" % ((Time.get_ticks_usec() - t) / 1000.0))
 	if findings.is_empty():

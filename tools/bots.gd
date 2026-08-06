@@ -70,6 +70,12 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			score = float(min(d.dmg, c.limb_hp[limb])) / float(d.cost)
 			if d.dmg >= c.limb_hp[limb]:
 				score += 3.0   # finishing a limb changes the map
+			# shutting down the limb that is ABOUT to swing is worth the
+			# damage it would have dealt. Without this the judge cannot see
+			# prevention at all and would report the disabler dominated
+			# purely because it cannot value what the disabler does.
+			if d.disables and int(intent.get("limb", -1)) == limb and int(c.limb_stun[limb]) <= 0:
+				score += float(intent.get("dmg", 0)) * float(intent.get("stations", []).size()) / float(d.cost)
 		else:
 			var limb2: int = c.STATION_LIMB[a.s]
 			if limb2 >= 0 and not c.limb_broken[limb2]:
@@ -82,8 +88,8 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			best = a
 	return best if best_score > 0.0 else {}
 
-static func run_fight(seed_val: int, policy: String, cap := 40) -> Dictionary:
-	var c := Combat.new()
+static func run_fight(seed_val: int, policy: String, enc_id := "crab", cap := 40) -> Dictionary:
+	var c := Combat.new(enc_id)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_val
 	while c.outcome == "ongoing" and c.turn <= cap:
