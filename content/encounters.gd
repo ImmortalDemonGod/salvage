@@ -33,7 +33,7 @@ static var ALL := {
 		"open_stations": [FRONT],
 		"starts": [FRONT],
 		"limbs": [{"name": "maw", "hp": 6, "station": FRONT}],
-		"attacks": [{"limb": 0, "stations": [FRONT], "dmg": 2, "name": "snaps at"}],
+		"attacks": [{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "snaps at"}],
 	},
 	# Beat `fight1`. Three limbs, four stations, UNDER deliberately empty.
 	"crab": {
@@ -61,9 +61,9 @@ static var ALL := {
 			# swept after Proto5 became the efficient heavy (8 dmg for 3 Air)
 			# and the overdraft was cut. All three encounters land at limbs
 			# x1.45: crab 66.7% / 9.0 turns / 14.0 HP
-			{"name": "jaw", "hp": 23, "station": FRONT},
-			{"name": "claw", "hp": 19, "station": FLANK},
-			{"name": "tail", "hp": 19, "station": REAR},
+			{"name": "jaw", "hp": 13, "station": FRONT},
+			{"name": "claw", "hp": 11, "station": FLANK},
+			{"name": "tail", "hp": 11, "station": REAR},
 		],
 		# SPEC 2.6 verbatim: "the jaw only reaches FRONT, and the tail sweeps
 		# REAR and FLANK together. No conditions, no statuses, no special
@@ -73,8 +73,8 @@ static var ALL := {
 		# breaking EVERY limb, so it is a target either way, and its station
 		# is threatened by the tail so standing there still costs.
 		"attacks": [
-			{"limb": 0, "stations": [FRONT], "dmg": 2, "name": "snaps at"},
-			{"limb": 2, "stations": [REAR, FLANK], "dmg": 2, "name": "sweeps"},
+			{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "snaps at"},
+			{"limb": 2, "stations": [REAR, FLANK], "dmg": 4, "name": "sweeps"},
 		],
 	},
 	# Beat `fight2`. A DIFFERENT anatomy, which is the question the whole
