@@ -1030,6 +1030,19 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_T: player_move(Combat.BACKLINE)
 		KEY_SPACE: player_ability(0)
 		KEY_F: player_ability(1)
+		KEY_LEFT, KEY_RIGHT:
+			# step along the open stations, because a player who does not
+			# know the letters yet still knows the arrows
+			if combat != null:
+				var open: Array = combat.OPEN_STATIONS
+				var at: int = open.find(int(combat.divers[selected].station))
+				var step: int = -1 if k == KEY_LEFT else 1
+				if at >= 0:
+					player_move(int(open[posmod(at + step, open.size())]))
+		KEY_UP, KEY_DOWN:
+			if combat != null and combat.divers.size() > 1:
+				_select(posmod(selected + (1 if k == KEY_DOWN else -1), combat.divers.size()))
+				_refresh()
 		KEY_ENTER:
 			if combat == null:
 				run.advance(); combat = run.combat; selected = 0; _refresh()

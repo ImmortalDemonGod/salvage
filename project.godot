@@ -4,6 +4,9 @@ config_version=5
 config/name="SALVAGE"
 config/features=PackedStringArray("4.7")
 run/main_scene="res://game/main.tscn"
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0.02, 0.05, 0.08, 1)
+config/icon="res://icon.svg"
 
 [display]
 
