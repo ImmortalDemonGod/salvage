@@ -782,7 +782,7 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 		draw_line(Vector2(at.x, y), Vector2(at.x + 14, y), Color(0.55, 0.66, 0.74), 1.0)
 	var f: Font = ThemeDB.fallback_font
 	# above the tank, clear of the pipes that run below it
-	draw_string(f, at + Vector2(0, -30), "%s  %d of %d" % [name, filled, cap],
+	draw_string(f, at + Vector2(0, -8), "%s  %d of %d" % [name, filled, cap],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
 
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
@@ -796,7 +796,7 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 		var x0: float = at.x + wide * float(i) / 16.0
 		draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
 			Color(0.86, 0.78, 0.42, 0.75), 2.0)
-	draw_string(f, at + Vector2(0, -10), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
+	draw_string(f, at + Vector2(0, -46), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.86, 0.78, 0.42))
 
 func _valve_pos(i: int) -> Vector2:
@@ -868,12 +868,12 @@ func _draw_lock(p) -> void:
 		# interlock: it can only be turned while B is dry
 		var pipe_y := top + tall - 26.0
 		draw_line(Vector2(ax + wide, pipe_y), Vector2(bx, pipe_y),
-			OPEN_C if p.valve[p.CROSS] else STEEL, 8.0)
+			OPEN_C if p.valve[p.CROSS] else Color(0.42, 0.48, 0.55), 9.0)
 		_valve_dot(_valve_pos(p.CROSS), "4", p.valve[p.CROSS], p.reachable(p.CROSS))
 		for src in [[0, ax + 60.0], [1, ax + 170.0], [2, bx + 110.0]]:
 			var vp: Vector2 = _valve_pos(int(src[0]))
 			draw_line(vp + Vector2(0, -18), Vector2(float(src[1]), top + tall),
-				OPEN_C if p.valve[int(src[0])] else Color(0.22, 0.26, 0.30), 6.0)
+				OPEN_C if p.valve[int(src[0])] else Color(0.42, 0.48, 0.55), 7.0)
 		_valve_dot(_valve_pos(0), "1", p.valve[0], true)
 		_valve_dot(_valve_pos(1), "2", p.valve[1], true)
 		_valve_dot(_valve_pos(2), "3", p.valve[2], true)
@@ -890,7 +890,7 @@ func _draw_lock(p) -> void:
 	for src2 in [[0, x + 70.0], [1, x + 150.0]]:
 		var vp2: Vector2 = _valve_pos(int(src2[0]))
 		draw_line(vp2 + Vector2(0, -18), Vector2(float(src2[1]), top + tall),
-			OPEN_C if p.valve[int(src2[0])] else Color(0.22, 0.26, 0.30), 6.0)
+			OPEN_C if p.valve[int(src2[0])] else Color(0.42, 0.48, 0.55), 7.0)
 	_valve_dot(_valve_pos(0), "1", p.valve[0], p.reachable(0))
 	_valve_dot(_valve_pos(1), "2", p.valve[1], p.reachable(1))
 	_valve_dot(_valve_pos(p.SEIZED), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
