@@ -38,6 +38,7 @@ var selected := 0
 var ui_stations: Array = []
 var ui_divers: Array = []
 var ui_air: Label
+var ui_log: Label
 var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
@@ -207,6 +208,18 @@ func _build_ui() -> void:
 	help_panel.size = Vector2(1220, 40)
 	help_panel.position = Vector2(30, 166)
 	add_child(help_panel)
+	var log_panel := Panel.new()
+	log_panel.name = "log_panel"
+	log_panel.size = Vector2(392, 118)
+	log_panel.position = Vector2(24, 396)
+	add_child(log_panel)
+	ui_log = Label.new()
+	ui_log.name = "label"
+	ui_log.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_log.offset_left = 12; ui_log.offset_right = -12
+	ui_log.offset_top = 8; ui_log.offset_bottom = -8
+	ui_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	log_panel.add_child(ui_log)
 	ui_help = Label.new()
 	ui_help.name = "label"
 	ui_help.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -224,6 +237,20 @@ func _select(i: int) -> void:
 # Classification is not wiring: the log has to actually reach the voice.
 # The last project's audio was fully dead in the played game while its
 # tests were green, because the test asserted the disconnected side.
+func _recent() -> void:
+	if ui_log == null:
+		return
+	var src: Array = []
+	if combat != null:
+		src = combat.log_lines
+	elif run.puzzle != null:
+		src = run.puzzle.log_lines
+	var keep: Array = []
+	for i in range(max(0, src.size() - 4), src.size()):
+		keep.append(String(src[i]))
+	ui_log.get_parent().visible = not keep.is_empty()
+	ui_log.text = "\n".join(keep)
+
 func _voice() -> void:
 	# motion first, off the SAME lines and the SAME classifier the audio
 	# uses, so a thing you hear is a thing you see
@@ -311,17 +338,18 @@ func _motion(lines: Array, from: int) -> void:
 # document.title, so the capture driver can read where the replay actually
 # ended up instead of trusting the key sequence to have landed.
 var _title_ticks := 0
+var _clock := 0.0
 var fx := Fx.new()
 
 func _process(dt: float) -> void:
 	if _title_ticks < 120:
 		_title_ticks += 1
 		_stamp_title()
+	_clock += dt
 	fx.tick(dt)
 	# the board breathes even when nothing is happening, so a turn spent
 	# thinking is not a still image
-	if combat != null:
-		queue_redraw()
+	queue_redraw()
 
 func _stamp_title() -> void:
 	var b: Dictionary = run.current()
@@ -330,6 +358,12 @@ func _stamp_title() -> void:
 func _refresh() -> void:
 	_stamp_title()
 	_voice()
+	_recent()
+	if sfx != null:
+		var mood := "scene"
+		if run.puzzle != null: mood = "puzzle"
+		elif combat != null: mood = "deep" if _depth() > 0.72 else "combat"
+		sfx.set_mood(mood, _depth())
 	var scene_p: Control = ui_scene.get_parent()
 	if run.puzzle != null:
 		scene_p.position = Vector2(190, 620)
@@ -697,12 +731,74 @@ func _water() -> Color:
 	var d: float = _depth()
 	return Color(0.055, 0.135, 0.190).lerp(Color(0.014, 0.035, 0.070), d)
 
+# --- the water itself -----------------------------------------------------
+# The play field was flat navy with nothing in it, so a screenshot read as
+# an unfinished engine test and the enemy looked like it was floating in a
+# void. The last prototype had parallax, god rays and a mote field, and the
+# team's own comparison called this the single biggest step backwards.
+func _draw_water() -> void:
+	var d: float = _depth()
+	var w: Vector2 = size.max(DESIGN)
+	# a vertical gradient: brighter at the surface, black at the floor
+	var top: Color = Color(0.075, 0.185, 0.245).lerp(Color(0.020, 0.055, 0.095), d)
+	var bot: Color = Color(0.030, 0.075, 0.115).lerp(Color(0.005, 0.014, 0.030), d)
+	var bands := 24
+	for i in range(bands):
+		var f: float = float(i) / float(bands - 1)
+		draw_rect(Rect2(Vector2(0, w.y * f), Vector2(w.x, w.y / float(bands) + 1.0)), top.lerp(bot, f))
+	# light coming down from the surface, weaker the deeper you are
+	var lit: float = (1.0 - d) * 0.5
+	if lit > 0.02:
+		for i in range(5):
+			var x: float = w.x * (0.12 + 0.19 * float(i)) + sin(_clock * 0.25 + float(i)) * 26.0
+			var pts := PackedVector2Array([
+				Vector2(x - 40, 0), Vector2(x + 40, 0),
+				Vector2(x + 150, w.y), Vector2(x - 20, w.y)])
+			draw_colored_polygon(pts, Color(0.55, 0.85, 0.95, 0.030 * lit))
+	# silt drifting up, so the frame is never completely still
+	for i in range(34):
+		var sx: float = fmod(float(i) * 137.5 + sin(float(i)) * 40.0, w.x)
+		var sy: float = fmod(w.y - fmod(_clock * (7.0 + float(i % 5) * 3.0) + float(i) * 53.0, w.y + 60.0), w.y)
+		var r: float = 1.0 + float(i % 3) * 0.9
+		draw_circle(Vector2(sx, sy), r, Color(0.68, 0.86, 0.94, 0.10))
+
+# --- bars, because a fraction is not a picture ---------------------------
+func _bar(at: Vector2, wide: float, tall: float, frac: float, fill: Color) -> void:
+	var f: float = clampf(frac, 0.0, 1.0)
+	draw_rect(Rect2(at, Vector2(wide, tall)), Color(0.03, 0.07, 0.10, 0.85))
+	if f > 0.0:
+		draw_rect(Rect2(at + Vector2(1, 1), Vector2((wide - 2.0) * f, tall - 2.0)), fill)
+	draw_rect(Rect2(at, Vector2(wide, tall)), Color(0.62, 0.74, 0.82, 0.55), false, 1.0)
+
+const BAR_OK := Color(0.42, 0.78, 0.62)
+const BAR_LOW := Color(0.88, 0.52, 0.30)
+const BAR_LIMB := Color(0.82, 0.44, 0.34)
+
+func _draw_bars() -> void:
+	# one per live limb, sitting on its own ring rather than in a corner
+	for st in range(5):
+		if not combat.station_open(st):
+			continue
+		var lb: int = combat.STATION_LIMB[st]
+		if lb < 0 or combat.limb_broken[lb]:
+			continue
+		var maxhp: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
+		var at: Vector2 = place(st) + Vector2(-52, 34)
+		_bar(at, 104, 9, float(combat.limb_hp[lb]) / max(1.0, maxhp), BAR_LIMB)
+	# and one per diver, ON the diver, not in a card at the bottom of the screen
+	for d in combat.divers:
+		if d.down:
+			continue
+		var f: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
+		var frac: float = float(d.hp) / max(1.0, float(d.max_hp))
+		_bar(f + Vector2(-30, -DIVER_SCALE - 16), 60, 7, frac, BAR_OK if frac > 0.34 else BAR_LOW)
+
 func _draw() -> void:
 	# Paint the ACTUAL rect, not the design size. With stretch/expand the
 	# viewport grows past 720 and anything beyond it was left unpainted,
 	# which is the flat grey band a visual reviewer flagged as the game
 	# failing to fill its window.
-	draw_rect(Rect2(Vector2.ZERO, size.max(DESIGN)), _water())
+	_draw_water()
 	# the lock is inside the wreck, so it is lit by what you brought
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
@@ -745,6 +841,7 @@ func _draw() -> void:
 		if d.down:
 			continue
 		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
+	_draw_bars()
 	_draw_fx()
 
 # --- the effects themselves, painted over the board ---------------------
