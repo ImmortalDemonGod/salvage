@@ -1,6 +1,6 @@
 # SALVAGE overnight build log
 
-**State: BOOTSTRAP COMPLETE.** Sim core, judge bots and the per-commit verification
+**State: SLICE BUILT.** All eight ladder beats playable start to finish. Sim core, judge bots and the per-commit verification
 set exist and run headless. No presentation, no content, no art.
 
 Binding documents, in precedence order: this file, then `docs/SPEC.md`.
@@ -318,6 +318,43 @@ station-occupancy check before the next one starts.
 **Unbuilt content answers nothing.** A prototype that stops early to
 respect a shipping budget has spent the run without buying information,
 which is the exact failure prototype 1 was retired for.
+
+## Honest gate report
+
+Every claim carries its instrument. Reproduce the fast set with
+`./verify/fast.sh` and the deep set with
+`godot --headless --path ~/salvage --script verify/deep.gd -- 300`.
+
+| Gate | Verdict | Evidence |
+|---|---|---|
+| **G1 BUG-FREE** | GREEN | 16/16 scripts parse; fuzz 15,000 hostile actions with per-action invariants, air observed 0..5 against a 0..5 bound, 0 findings; web export loads with 0 page errors across every capture |
+| **G2 WINNABLE** | GREEN | 40/40 runs clear all eight beats, worst 95 actions. No softlock: positioning never stranded a diver |
+| **G3 BANDS** | GREEN | crab 66.5% / 6.0 turns / 10.0 HP; spitter 71.0% / 7.0 / 9.0; dredge 88.7% / 11.0 / 17.0. `descent` SKIPPED by declaration as a teaching beat |
+| **G4 PER-OPTION DOMINANCE** | GREEN | deep set: 0 dominance signatures across all fighting encounters. Was RED for five passes on `attack:Prototype1`; resolved by giving the disabler its verb |
+| **G5-MACHINE** | EVIDENCED | bands, station occupancy (no dead, none above 60%), 4 distinct anatomies, telegraph honest over 5,600 slots |
+| **G5-HUMAN** | **UNVERIFIED by definition** | No human has played it. This can only be closed by a person who did not build it |
+| **G6 VISUAL** | GREEN after fixes | Fresh-eyes reviewer, 6-image gallery, severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
+| **G7 AUDIO** | **UNVERIFIED** | No audio exists. Not attempted; a vacuous green would be worse than an honest red |
+| **G8 FIDELITY** | **UNVERIFIED** | No adversarial fidelity round has run against docs/SPEC.md. The G-TEACH cross-check covers the ladder only |
+| **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
+| **G10 LEGIBILITY** | GREEN on the diff | Three blind cold reads. First: 6 of 7 combat questions CANNOT TELL, no enemy HP anywhere on screen. Third: win condition, move cost, diver damage, limb maxima and occupancy all TOLD. Scored on the diff, per protocol |
+| **G11 TAUGHT LINE** | GREEN | taught 100% win / 10.0 HP lost vs naive 0% win / 8.0 HP. The taught line wins |
+| **G12 BYPASS** | GREEN | 8 built beats, 0 skippable without completing them. A ruling, not a deferral |
+| **G13 PILLAR** | GREEN | Generated matrix over 4 combat beats. Two mechanics introduced in the final beat are NOTED as unable to escalate in a slice this short: ruled, not deferred |
+| **G14 HARNESS FIDELITY** | GREEN | sim is `RefCounted` with no Node; differential drives one script down the bot path and the keyboard path with identical state, every commit |
+| **G-TEACH** | GREEN | 8 beats, 12 mechanics, each taught exactly once, cross-checked against what the sim actually builds |
+
+### Logged, not fixed
+
+From the G6 round, all MED or LOW, none blocking: the composition uses
+only the right 40 percent of the play field; HUD panels top-align a
+single line leaving dead space below; roster cards start 5px left of the
+HUD column; `Prototype1` reads as a debug identifier beside "Scuba"; the
+crab's eyes read as detached artifacts; `(placeholder)` repeated at the
+head of every opening line destroys the left-edge scan.
+
+From the G10 rounds: "beat 3/8" is never explained; diver HP has no
+maximum shown; the word "act" is not defined against the specific verbs.
 
 ## Feature log
 
