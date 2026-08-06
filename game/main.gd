@@ -91,7 +91,7 @@ func diver_rect(d) -> Rect2:
 # panel from being laid straight over the puzzle.
 const LOCK_RECT := Rect2(300, 214, 640, 400)
 const SCENE_PANEL_AT := Vector2(190, 220)
-const SCENE_PANEL_SIZE := Vector2(900, 200)
+const SCENE_PANEL_SIZE := Vector2(900, 216)
 
 func place(i: int) -> Vector2:
 	if combat != null:

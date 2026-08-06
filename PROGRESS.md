@@ -347,6 +347,37 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G14-DOOR** | GREEN | `verify/door.gd` reads the key map as text and holds it against the content: every ability slot any diver owns must be bound to a key, every bound key must call a function that exists, no key may point at a mechanic whose enable const is false, and any verifier claiming to drive the player must drive a bound door. Mutation-tested three ways, control clean. `tools/keypath.gd` extends this to the screen: it derives a key sequence per beat by playing the run with the judge bots, and fails if any beat is unreachable from the keyboard. **9 of 9 reachable** |
 | **G-TEACH** | GREEN | 8 beats, 12 mechanics, each taught exactly once, cross-checked against what the sim actually builds |
 
+### Abilities are earned now, and the measurement moved
+
+SPEC 2.9 gates the second verb behind clearing the first fight, and the
+build was handing every diver its whole kit on beat one. `sim/run.gd`
+owns progression (`abilities`, granted by a `grants_ability` field on a
+beat, so the ladder owns it as data), `Combat.new(enc, kit_size)` honours
+it, and `verify/teach.gd` asserts the ORDER: the first fight must offer
+one verb and some later fight must offer more. Both mutations caught.
+
+    earned  abilities on offer per fight -- descent:1 fight1:1 fight2:2 deep1:2
+
+That exposed the bands judging a fight nobody will play. `check_bands`
+built combat directly, so it measured fight one with both abilities while
+the player meets it with one. G14 says the judges enter through the
+player's door, and the door now has a lock on it. Judging as played moved
+the crab from **79.8% to 90.0%**, which sits on the pinned band's upper
+edge (55-90) rather than comfortably inside it. Recorded, not retuned:
+the band is a pinned failing test and moving it to fit a result is the
+overfit this project is built to avoid.
+
+The direction of that move is the interesting part. Taking an ability
+AWAY made the casual bot better. Double Knee deals the same 2 damage as
+Axe Kick and then steps, so a player choosing without a plan walks off
+the limb they were hitting and spends the next turn walking back. The
+card says "2 dmg, then move free", which reads as pure upside. That is
+the playtest complaint in miniature -- players ignored the later
+abilities -- pointed the other way: here the extra option is a trap for
+anyone not already planning. Flagged for Marc rather than silently
+retuned, since it is a design call about how much rope a first fight
+should give.
+
 ### What only looking could find
 
 Four defects in one session that no gate caught, every one of them found

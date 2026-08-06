@@ -99,7 +99,9 @@ var limb_stun: Array = []
 # turn that has several.
 var locked: Array = []
 
-func _init(encounter := "crab") -> void:
+# kit_size 0 means "everything this diver owns", which is what the bots and
+# the search want. The RUN passes the number actually earned so far.
+func _init(encounter := "crab", kit_size := 0) -> void:
 	enc_id = encounter
 	enc = (Encounters.ALL[encounter] as Dictionary)
 	STATION_LIMB = Encounters.station_limb(enc)
@@ -140,6 +142,8 @@ func _init(encounter := "crab") -> void:
 		var dv := Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start)
 		dv.disables = String(roster[i][0]) == "Prototype1" and bool(enc.get("drum", false))
 		dv.kit = (kits[i] as Array).duplicate(true)
+		if kit_size > 0 and dv.kit.size() > kit_size:
+			dv.kit.resize(kit_size)
 		divers.append(dv)
 	air = int(TUNE.air)
 	_lock_intent()

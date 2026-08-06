@@ -17,6 +17,9 @@ var carried_hp: Dictionary = {}    # diver name -> hp, carried across a dive
 var log_lines: Array = []
 var finished := false
 var salvage_lost := 0
+# how many abilities each diver has earned. The ladder grants it; nothing
+# else may. One at the start, so the first fight teaches one verb.
+var abilities := 1
 
 func _init() -> void:
 	_enter()
@@ -42,6 +45,17 @@ func current() -> Dictionary:
 		return {}
 	return bs[beat]
 
+# how many abilities a diver has earned by the time this encounter is met.
+# Progression lives in the ladder, so read it from the ladder rather than
+# letting each instrument guess.
+static func abilities_at(enc_id: String) -> int:
+	var n := 1
+	for b in Beats.LADDER:
+		n = max(n, int(b.get("grants_ability", 0)))
+		if String(b.get("encounter", "")) == enc_id:
+			return n
+	return n
+
 func _enter() -> void:
 	var b := current()
 	if b.is_empty():
@@ -49,6 +63,9 @@ func _enter() -> void:
 		combat = null
 		return
 	puzzle = null
+	if int(b.get("grants_ability", 0)) > int(abilities):
+		abilities = int(b.grants_ability)
+		log_lines.append("the squad brings a second way to use what it has")
 	# A3: a scene beat IS the boat. Surfacing restores the squad fully;
 	# nothing restores mid-dive. Before this, carried_hp was written and
 	# never cleared, so 1 HP followed the squad through every later fight.
@@ -62,7 +79,7 @@ func _enter() -> void:
 		log_lines.append("%s" % String(b.title))
 		return
 	if String(b.get("kind", "scene")) == "combat":
-		combat = Combat.new(String(b.encounter))
+		combat = Combat.new(String(b.encounter), abilities)
 		# HP is carried across a dive and restored only at the boat
 		# (SPEC 2b A3: the dive is the unit of attrition).
 		for d in combat.divers:

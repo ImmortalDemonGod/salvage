@@ -69,10 +69,15 @@ static var LADDER := [
 		"title": "the drum fitted",
 		"teaches": "conditions",
 		"uses": ["goal", "stations", "air", "conditions"],
+		# clearing the first fight pays for the second verb. The reward is
+		# the teaching: one new idea per beat, and this beat's idea is that
+		# what you already have can be spent a second way.
+		"grants_ability": 2,
 		"built": true,
 		"lines": [
 			{"role": "who", "text": "(placeholder) Prototype1 comes down with you now, and it brings the drum."},
 			{"role": "want", "text": "(placeholder) Point the drum at whatever is winding up and it stops. It reaches from the back line, so you do not have to be in front of the thing to shut it."},
+			{"role": "want", "text": "(placeholder) You all came back, so there is time to work. Everyone learns a second way to use what they already carry: press F for it."},
 			{"role": "controls", "text": "ENTER to descend"},
 		],
 	},

@@ -15,11 +15,54 @@ const Beats := preload("res://content/beats.gd")
 
 var findings: Array = []
 
+# The reward loop is a claim about the ORDER things arrive in, so check the
+# order. Every diver handed over its whole kit on beat one before this, and
+# nothing noticed, because "the ability exists" and "the ability is yours
+# yet" are different statements and only the first was ever tested.
+func check_earned() -> void:
+	var r := Run.new()
+	var seen: Array = []          # [beat id, widest kit on offer]
+	var guard := 0
+	while not r.finished and guard < 60:
+		guard += 1
+		var b: Dictionary = r.current()
+		if r.combat != null:
+			var widest := 0
+			for d in r.combat.divers:
+				widest = max(widest, int(d.kit.size()))
+			seen.append([String(b.get("id", "?")), widest])
+			for lb in range(r.combat.limb_hp.size()):
+				r.combat.limb_hp[lb] = 0
+				r.combat.limb_broken[lb] = true
+			r.combat.outcome = "victory"
+		elif r.puzzle != null:
+			if not Bots.solve_puzzle(r.puzzle):
+				fail("THE LOCK CANNOT BE SOLVED at stage %d" % r.puzzle.stage)
+				return
+		if not r.advance():
+			break
+	if seen.is_empty():
+		fail("EARNED: no fight was reached, so nothing was checked")
+		return
+	if int(seen[0][1]) != 1:
+		fail("NOTHING LEFT TO EARN: the first fight (%s) already offers %d abilities per diver. One new idea per beat means the first fight teaches ONE verb." % [seen[0][0], int(seen[0][1])])
+	var grew := false
+	for i in range(1, seen.size()):
+		if int(seen[i][1]) > int(seen[i - 1][1]):
+			grew = true
+	if not grew:
+		fail("NOTHING IS EVER EARNED: every fight offers %d abilities per diver and the ladder never grants another" % int(seen[0][1]))
+	var trail: Array = []
+	for e in seen:
+		trail.append("%s:%d" % [e[0], int(e[1])])
+	print("earned     abilities on offer per fight -- %s" % "  ".join(trail))
+
 func fail(s: String) -> void:
 	if not (s in findings):
 		findings.append(s)
 
 func _init() -> void:
+	check_earned()
 	var taught: Array = []
 	var rows: Array = []
 

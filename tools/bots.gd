@@ -191,8 +191,8 @@ static func solve_puzzle(p, cap := 64) -> bool:
 		steps += 1
 	return p.solved()
 
-static func run_fight(seed_val: int, policy: String, enc_id := "crab", cap := 40) -> Dictionary:
-	var c := Combat.new(enc_id)
+static func run_fight(seed_val: int, policy: String, enc_id := "crab", cap := 40, kit_size := 0) -> Dictionary:
+	var c := Combat.new(enc_id, kit_size)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_val
 	while c.outcome == "ongoing" and c.turn <= cap:

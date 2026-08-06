@@ -32,16 +32,19 @@ func check_bands(n: int) -> void:
 		var cw := 0
 		var gt := 0
 		var gh := 0
+		# with what the player will actually be carrying by this beat, not
+		# with the whole kit the sim can build
+		var kit: int = Run.abilities_at(enc_id)
 		for s in range(n):
-			if Bots.run_fight(s, "casual", enc_id).win: cw += 1
-			var g: Dictionary = Bots.run_fight(s, "greedy", enc_id)
+			if Bots.run_fight(s, "casual", enc_id, 40, kit).win: cw += 1
+			var g: Dictionary = Bots.run_fight(s, "greedy", enc_id, 40, kit)
 			gt += int(g.turns)
 			gh += int(g.hp_lost)
 		var wr := float(cw) / n
 		var turns := float(gt) / n
 		var hp := float(gh) / n
-		print("G3 %-9s casual win %.1f%% (band %.0f-%.0f)   greedy turns %.1f (min %.1f)   greedy hp lost %.1f (min %.1f)"
-			% [enc_id, wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100, turns, GREEDY_TURNS_MIN, hp, GREEDY_HP_MIN])
+		print("G3 %-9s casual win %.1f%% (band %.0f-%.0f)   greedy turns %.1f (min %.1f)   greedy hp lost %.1f (min %.1f)   [%d abilities earned by here]"
+			% [enc_id, wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100, turns, GREEDY_TURNS_MIN, hp, GREEDY_HP_MIN, kit])
 		if wr < CASUAL_WIN_LO or wr > CASUAL_WIN_HI:
 			fail("G3 %s casual win rate %.1f%% outside band %.0f-%.0f" % [enc_id, wr * 100, CASUAL_WIN_LO * 100, CASUAL_WIN_HI * 100])
 		if turns < GREEDY_TURNS_MIN:
