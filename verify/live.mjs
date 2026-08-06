@@ -23,7 +23,10 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 const spec = process.env.PLAYWRIGHT_CORE ?? "playwright-core";
 const { chromium } = await import(spec);
-const url = process.argv[2] ?? process.env.LIVE_URL ?? "https://immortaldemongod.github.io/salvage/";
+// the default is the URL the team hands out. README and PLAYTEST advertise
+// Vercel while GitHub Pages is in outage; when Pages recovers, flip the
+// docs and this default together, never one without the other.
+const url = process.argv[2] ?? process.env.LIVE_URL ?? "https://salvage-chi.vercel.app/";
 // Same discovery as capture.mjs, and it has to be: the first version knew
 // only the macOS cache path, so on any other machine findShell returned
 // nothing, the launch failed, and the one gate that watches the live link

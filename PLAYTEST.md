@@ -1,6 +1,6 @@
 # SALVAGE, for playtesters
 
-**Play it here: https://immortaldemongod.github.io/salvage/**
+**Play it here: https://salvage-chi.vercel.app/**
 
 Keyboard or mouse. It runs about ten minutes. Nine beats, four fights, two
 locks. There is no save; refreshing starts over.

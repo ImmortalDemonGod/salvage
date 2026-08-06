@@ -1,6 +1,6 @@
 # SALVAGE
 
-**▶ Play it in your browser: https://immortaldemongod.github.io/salvage/**
+**▶ Play it in your browser: https://salvage-chi.vercel.app/**
 
 No install, no download. It takes about ten minutes.
 
