@@ -126,8 +126,24 @@ static func _pts(xf: Transform2D, local: Array) -> PackedVector2Array:
 	return out
 
 
+# Godot's triangulator rejects self-intersecting polygons and silently
+# draws NOTHING, which is how the crab became invisible while every test
+# stayed green. Guard it: fall back to the convex hull so the shape still
+# reads, and COUNT the failures so verify/ can assert zero rather than
+# letting a hull quietly stand in for the real silhouette.
+static var bad_polys := 0
+
 static func _poly(ci: CanvasItem, xf: Transform2D, local: Array, col: Color) -> void:
-	ci.draw_colored_polygon(_pts(xf, local), col)
+	var pts: PackedVector2Array = _pts(xf, local)
+	if pts.size() < 3:
+		return
+	if Geometry2D.triangulate_polygon(pts).is_empty():
+		bad_polys += 1
+		var hull: PackedVector2Array = Geometry2D.convex_hull(pts)
+		if hull.size() >= 3:
+			ci.draw_colored_polygon(hull, col)
+		return
+	ci.draw_colored_polygon(pts, col)
 
 
 static func _box(ci: CanvasItem, xf: Transform2D, x0: float, y0: float, x1: float, y1: float, col: Color) -> void:

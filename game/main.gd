@@ -11,14 +11,19 @@ const DESIGN := Vector2(1280, 720)
 # Station screen positions, side-on 2.5D: the crab faces left, divers
 # approach from the left. UNDER is deliberately reachable and offensively
 # empty (SPEC 2.6).
+# Stations sit ON the limb they expose. These were placed before the art
+# existed and did not land on anything; the first as-played capture showed
+# FLANK floating over empty shell while the claw was elsewhere, which
+# silently breaks the "the limb IS the position" contract (SPEC 2.3).
 const STATION_POS := [
-	Vector2(640, 400),   # FRONT  - the jaw
-	Vector2(880, 250),   # FLANK  - the claw
-	Vector2(880, 570),   # UNDER  - nothing
-	Vector2(1090, 430),  # REAR   - the tail
-	Vector2(280, 400),   # BACKLINE - safe
+	Vector2(700, 430),   # FRONT  - the jaw
+	Vector2(752, 344),   # FLANK  - the raised claw, which the art puts forward
+	Vector2(880, 540),   # UNDER  - the soft belly, no limb
+	Vector2(1046, 372),  # REAR   - the tail
+	Vector2(300, 430),   # BACKLINE - out of reach
 ]
-const CRAB_POS := Vector2(880, 400)
+const CRAB_POS := Vector2(866, 350)
+const CRAB_SCALE := 150.0
 
 var combat: Combat
 var selected := 0
@@ -39,9 +44,10 @@ func _build_ui() -> void:
 	# never overlap and their labels stay inside them
 	for i in range(5):
 		var m := Panel.new()
+		m.visible = combat.station_open(i)
 		m.name = "station_" + Combat.STATION_NAMES[i]
 		m.size = Vector2(150, 46)
-		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 60)
+		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 54)
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
@@ -97,7 +103,7 @@ func _build_ui() -> void:
 	var help_panel := Panel.new()
 	help_panel.name = "help_panel"
 	help_panel.size = Vector2(1220, 40)
-	help_panel.position = Vector2(30, 570)
+	help_panel.position = Vector2(30, 516)
 	add_child(help_panel)
 	ui_help = Label.new()
 	ui_help.name = "label"
@@ -116,11 +122,19 @@ func _refresh() -> void:
 		for s in it.stations:
 			where.append(Combat.STATION_NAMES[s])
 		ui_intent.text = "NEXT: the %s %s %s for %d" % [Combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
-	for i in range(3):
+	# the party size is content, not a constant: fight one runs two divers.
+	# This loop assumed three and printed a raw format string on the third
+	# card, which the as-played capture caught on its first frame.
+	for i in range(ui_divers.size()):
+		var card: Panel = ui_divers[i]
+		if i >= combat.divers.size():
+			card.visible = false
+			continue
+		card.visible = true
 		var d = combat.divers[i]
 		var mark := ">" if i == selected else " "
 		var state := "DOWN" if d.down else "%s  %d HP" % [Combat.STATION_NAMES[d.station], d.hp]
-		ui_divers[i].get_node("label").text = "%s%d %s  (%d air)\n%s" % [mark, i + 1, d.dname, d.cost, state]
+		card.get_node("label").text = "%s%d %s  (%d air)\n%s" % [mark, i + 1, d.dname, d.cost, state]
 	ui_help.text = "1-3 pick a diver  ·  Q W E R T move to a station  ·  SPACE attack from where you stand  ·  ENTER end turn"
 	queue_redraw()
 
@@ -165,11 +179,15 @@ func _draw() -> void:
 		var limb: int = Combat.STATION_LIMB[i]
 		var safe: bool = limb < 0 or combat.limb_broken[limb]
 		var col := Color(0.25, 0.55, 0.6) if safe else Color(0.85, 0.35, 0.25)
-		draw_arc(STATION_POS[i], 52, 0, TAU, 40, col, 2.0)
-	Art.draw_crab(self, CRAB_POS + Vector2(0, 90), 1.6, combat.limb_broken)
+		draw_arc(STATION_POS[i], 46, 0, TAU, 40, col, 2.0)
+	# scale is PIXELS PER BODY UNIT, not a multiplier. Passing 1.6 made the
+	# crab under two pixels tall, its foot triangles sub-pixel, and the
+	# triangulator rejected them, so the enemy silently did not draw at all
+	# while every test stayed green. Caught by the first as-played capture.
+	Art.draw_crab(self, CRAB_POS + Vector2(0, 150), CRAB_SCALE, combat.limb_broken)
 	for i in range(combat.divers.size()):
 		var d = combat.divers[i]
 		if d.down:
 			continue
-		var p: Vector2 = STATION_POS[d.station] + Vector2(-24 + i * 34, 34)
-		Art.draw_diver(self, d.cost, p, 46.0, 1)
+		var p: Vector2 = STATION_POS[d.station] + Vector2(-22 + i * 34, 40)
+		Art.draw_diver(self, d.cost, p, 74.0, 1)

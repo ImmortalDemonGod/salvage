@@ -90,10 +90,16 @@ func _process(_d: float) -> bool:
 		for j in range(i + 1, panels.size()):
 			var pa: Panel = panels[i]
 			var pb: Panel = panels[j]
-			if not (String(pa.name).begins_with("station_") and String(pb.name).begins_with("station_")):
-				continue
-			if pa.get_global_rect().intersects(pb.get_global_rect()):
-				fail("STATIONS OVERLAP: %s and %s" % [pa.name, pb.name])
+			# ANY two visible panels overlapping is a finding, not just two
+			# stations. The as-played capture showed the UNDER marker
+			# sitting on the help bar while this check passed, because it
+			# only ever compared stations to stations.
+			var ra2: Rect2 = pa.get_global_rect()
+			var rb2: Rect2 = pb.get_global_rect()
+			if ra2.intersects(rb2):
+				var ov: Rect2 = ra2.intersection(rb2)
+				if ov.size.x > 2.0 and ov.size.y > 2.0:
+					fail("PANELS OVERLAP: %s and %s by %dx%d" % [pa.name, pb.name, int(ov.size.x), int(ov.size.y)])
 
 	print("layout     %d Controls walked (%d labels, %d panels)" % [controls.size(), labels.size(), panels.size()])
 	for f in findings:
