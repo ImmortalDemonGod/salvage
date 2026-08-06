@@ -584,7 +584,23 @@ func _next_step() -> String:
 				return "%s is about to be hit. Move to %s (press %s), or hit the %s with SPACE." % [
 					d.dname, Combat.STATION_NAMES[int(st)], ["Q", "W", "E", "R", "T"][int(st)],
 					String(combat.LIMB_NAMES[combat.target_limb(d)]).to_upper()]
+	# an attack that will land on an empty station costs the squad an air
+	# line, and he watched that happen repeatedly without ever being told
+	# why. Warn while it can still be avoided.
+	var empty_swing := false
+	for it in combat.intents():
+		if int(combat.limb_stun[int(it.limb)]) > 0 or combat.limb_broken[int(it.limb)]:
+			continue
+		var landed := false
+		for st in it.stations:
+			for dd in combat.divers:
+				if not dd.down and int(dd.station) == int(st):
+					landed = true
+		if not landed:
+			empty_swing = true
 	var lb2: int = combat.target_limb(d)
+	if empty_swing:
+		return "An attack will hit empty water and tear an air line: you lose 1 air next turn. Stand in it, or accept it."
 	if lb2 >= 0:
 		return "Press SPACE to hit the %s.   %s has %d air of the %d left." % [
 			String(combat.LIMB_NAMES[lb2]).to_upper(), d.dname, combat.air, combat.air_this_turn()]
@@ -921,7 +937,7 @@ var _won := ""
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
 		_won = ("%s IS DISABLED" % String(combat.enc.get("title", "the enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
-		_hold = 0.9
+		_hold = 2.6
 		run.advance()
 		combat = run.combat
 		selected = 0
