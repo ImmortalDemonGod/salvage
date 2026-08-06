@@ -6,6 +6,7 @@ extends Control
 
 const Art := preload("res://game/art.gd")
 const Run := preload("res://sim/run.gd")
+const Sfx := preload("res://game/sfx.gd")
 
 const DESIGN := Vector2(1280, 720)
 
@@ -38,10 +39,14 @@ var ui_scene: Label
 var ui_legend: Label
 var ui_goal: Label
 var refusal := ""
+var sfx: Node
+var _log_at := 0
 
 func _ready() -> void:
 	run = Run.new()
 	combat = run.combat
+	sfx = Sfx.new()
+	add_child(sfx)
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
 	_refresh()
@@ -163,7 +168,19 @@ func _select(i: int) -> void:
 		return
 	selected = clampi(i, 0, combat.divers.size() - 1)
 
+# Classification is not wiring: the log has to actually reach the voice.
+# The last project's audio was fully dead in the played game while its
+# tests were green, because the test asserted the disconnected side.
+func _voice() -> void:
+	if sfx == null:
+		return
+	if combat != null:
+		_log_at = sfx.drain(combat.log_lines, _log_at)
+	elif run.puzzle != null:
+		_log_at = sfx.drain(run.puzzle.log_lines, _log_at)
+
 func _refresh() -> void:
+	_voice()
 	if run.puzzle != null:
 		# The lock, drawn as its own state: a water line and three valves.
 		ui_air.get_parent().visible = false
@@ -318,6 +335,7 @@ func _after() -> void:
 		run.advance()
 		combat = run.combat
 		selected = 0
+		_log_at = 0
 	_refresh()
 
 func _unhandled_input(e: InputEvent) -> void:

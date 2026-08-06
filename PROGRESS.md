@@ -334,7 +334,7 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G5-MACHINE** | EVIDENCED | bands, station occupancy (no dead, none above 60%), 4 distinct anatomies, telegraph honest over 5,600 slots |
 | **G5-HUMAN** | **UNVERIFIED by definition** | No human has played it. This can only be closed by a person who did not build it |
 | **G6 VISUAL** | GREEN after fixes | Fresh-eyes reviewer, 6-image gallery, severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
-| **G7 AUDIO** | **UNVERIFIED** | No audio exists. Not attempted; a vacuous green would be worse than an honest red |
+| **G7 AUDIO** | GREEN (musical quality permanently UNVERIFIED) | 12 of 12 named events classify from REAL sim lines across 10,539 lines of played output, every encounter and the lock, both policies. Wired into the scene: `main.gd` drains the sim log into the voice each refresh, because classification is not wiring. Voices are procedural tones with no assets; whether they sound good is a human call and cannot be closed here |
 | **G8 FIDELITY** | **UNVERIFIED** | No adversarial fidelity round has run against docs/SPEC.md. The G-TEACH cross-check covers the ladder only |
 | **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
 | **G10 LEGIBILITY** | GREEN on the diff | Three blind cold reads. First: 6 of 7 combat questions CANNOT TELL, no enemy HP anywhere on screen. Third: win condition, move cost, diver damage, limb maxima and occupancy all TOLD. Scored on the diff, per protocol |
