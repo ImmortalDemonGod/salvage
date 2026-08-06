@@ -92,7 +92,10 @@ func diver_rect(d) -> Rect2:
 # the area _draw_lock() paints, declared so verify/layout.gd can hold the
 # Controls off it. A drawing is not a Control, so nothing was stopping a
 # panel from being laid straight over the puzzle.
-const LOCK_RECT := Rect2(280, 250, 700, 340)
+const LOCK_RECT := Rect2(280, 268, 700, 320)
+const LOCK_TOP := 322.0
+const LOCK_TALL := 168.0
+const LOCK_DROP := 84.0   # valves sit this far under the tank
 const SCENE_PANEL_AT := Vector2(190, 220)
 const SCENE_PANEL_SIZE := Vector2(900, 262)
 
@@ -782,7 +785,8 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 		draw_line(Vector2(at.x, y), Vector2(at.x + 14, y), Color(0.55, 0.66, 0.74), 1.0)
 	var f: Font = ThemeDB.fallback_font
 	# above the tank, clear of the pipes that run below it
-	draw_string(f, at + Vector2(0, -8), "%s  %d of %d" % [name, filled, cap],
+	# under the tank, where nothing else is written
+	draw_string(f, at + Vector2(0, tall + 26), "%s  %d of %d" % [name, filled, cap],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
 
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
@@ -801,8 +805,8 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 
 func _valve_pos(i: int) -> Vector2:
 	var p = run.puzzle
-	var tall := 168.0
-	var top := 250.0
+	var tall := LOCK_TALL
+	var top := LOCK_TOP
 	if p.stage == 2:
 		var ax := 300.0
 		var bx := 700.0
@@ -854,13 +858,18 @@ func _draw_rig() -> void:
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 112.0), "beat %d of %d" % [run.beat + 1, Beats.LADDER.size()],
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 17, Color(0.55, 0.66, 0.72))
 
+# _valve_pos and this function each kept their own copy of the tank
+# geometry, and they had drifted: the drawing moved to top 322 while the
+# click test still believed 250, so every valve was clickable 72px from
+# where it was drawn. One constant, read by both -- the same fix the ring
+# and the legend needed when they disagreed.
 func _draw_lock(p) -> void:
-	var tall := 180.0
+	var tall := LOCK_TALL
 	if p.stage == 2:
 		var ax := 300.0
 		var bx := 700.0
 		var wide := 240.0
-		var top := 288.0
+		var top := LOCK_TOP
 		_chamber(Vector2(ax, top), wide, tall, p.level_a(), 3, "chamber A")
 		_chamber(Vector2(bx, top), wide, tall, p.level_b(), 3, "chamber B")
 		_door(Vector2(ax, top - 30), wide, p.solved())
@@ -883,7 +892,7 @@ func _draw_lock(p) -> void:
 		return
 	var x := 430.0
 	var wide := 420.0
-	var top := 288.0
+	var top := LOCK_TOP
 	_chamber(Vector2(x, top), wide, tall, p.level(), p.VALVES, "the chamber")
 	_door(Vector2(x, top - 30), wide, p.solved())
 	# two inlets you can always reach, and the seized one down at the floor
