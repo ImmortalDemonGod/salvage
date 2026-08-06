@@ -108,6 +108,28 @@ func place(i: int) -> Vector2:
 			return Vector2(float(xy[0]), float(xy[1])) + BOARD_LIFT
 	return STATION_POS[i] + BOARD_LIFT
 
+# One design language, in one place. PRIMARY is for the things that change
+# every turn, QUIET for the things that never do, so the eye has somewhere
+# to go first.
+static func _skin(bg: Color, border: Color, radius := 6) -> StyleBoxFlat:
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = bg
+	sb.border_color = border
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(radius)
+	sb.content_margin_left = 12.0
+	sb.content_margin_right = 12.0
+	return sb
+
+static func skin_primary() -> StyleBoxFlat:
+	return _skin(Color(0.055, 0.115, 0.155, 0.94), Color(0.30, 0.50, 0.60, 0.75))
+
+static func skin_quiet() -> StyleBoxFlat:
+	return _skin(Color(0.040, 0.075, 0.105, 0.80), Color(0.20, 0.30, 0.38, 0.55))
+
+static func skin_card() -> StyleBoxFlat:
+	return _skin(Color(0.050, 0.100, 0.140, 0.92), Color(0.26, 0.44, 0.54, 0.70), 8)
+
 func _build_ui() -> void:
 	# station markers: one Control each, so the invariants can assert they
 	# never overlap and their labels stay inside them
@@ -116,6 +138,7 @@ func _build_ui() -> void:
 		m.name = "station_" + Combat.STATION_NAMES[i]
 		m.size = Vector2(232, 66)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
+		m.add_theme_stylebox_override("panel", skin_quiet())
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
@@ -134,6 +157,7 @@ func _build_ui() -> void:
 		p.name = "diver_card_" + str(i)
 		p.size = Vector2(392, 190)
 		p.position = Vector2(24 + i * 406, CARD_TOP)
+		p.add_theme_stylebox_override("panel", skin_card())
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
@@ -148,18 +172,22 @@ func _build_ui() -> void:
 	air_panel.name = "air_panel"
 	air_panel.size = Vector2(340, 76)
 	air_panel.position = Vector2(30, 24)
+	air_panel.add_theme_stylebox_override("panel", skin_primary())
 	add_child(air_panel)
 	ui_air = Label.new()
 	ui_air.name = "label"
 	ui_air.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_air.offset_left = 10; ui_air.offset_right = -10
 	ui_air.offset_top = 6; ui_air.offset_bottom = -6
+	ui_air.add_theme_font_size_override("font_size", 19)
+	ui_air.add_theme_color_override("font_color", Color(0.94, 0.96, 0.98))
 	air_panel.add_child(ui_air)
 
 	var tel := Panel.new()
 	tel.name = "telegraph_panel"
 	tel.size = Vector2(856, 76)
 	tel.position = Vector2(392, 24)
+	tel.add_theme_stylebox_override("panel", skin_primary())
 	add_child(tel)
 	ui_intent = Label.new()
 	ui_intent.name = "label"
@@ -167,6 +195,8 @@ func _build_ui() -> void:
 	ui_intent.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ui_intent.offset_left = 12; ui_intent.offset_right = -12
 	ui_intent.offset_top = 6; ui_intent.offset_bottom = -6
+	ui_intent.add_theme_font_size_override("font_size", 19)
+	ui_intent.add_theme_color_override("font_color", Color(0.94, 0.96, 0.98))
 	tel.add_child(ui_intent)
 
 	# built BEFORE the first _refresh, which runs on the opening scene beat
@@ -174,6 +204,7 @@ func _build_ui() -> void:
 	scene_panel.name = "scene_panel"
 	scene_panel.size = SCENE_PANEL_SIZE
 	scene_panel.position = SCENE_PANEL_AT
+	scene_panel.add_theme_stylebox_override("panel", skin_card())
 	add_child(scene_panel)
 	ui_scene = Label.new()
 	ui_scene.name = "label"
@@ -185,32 +216,38 @@ func _build_ui() -> void:
 
 	var legend_panel := Panel.new()
 	legend_panel.name = "legend_panel"
-	legend_panel.size = Vector2(640, 42)
+	legend_panel.size = Vector2(640, 46)
 	legend_panel.position = Vector2(30, 116)
+	legend_panel.add_theme_stylebox_override("panel", skin_quiet())
 	add_child(legend_panel)
 	ui_legend = Label.new()
 	ui_legend.name = "label"
 	ui_legend.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_legend.offset_left = 14; ui_legend.offset_right = -14
 	ui_legend.offset_top = 11; ui_legend.offset_bottom = -11
+	ui_legend.add_theme_font_size_override("font_size", 14)
+	ui_legend.add_theme_color_override("font_color", Color(0.58, 0.68, 0.75))
 	legend_panel.add_child(ui_legend)
 
 	var goal_panel := Panel.new()
 	goal_panel.name = "goal_panel"
 	goal_panel.size = Vector2(430, 42)
 	goal_panel.position = Vector2(700, 116)
+	goal_panel.add_theme_stylebox_override("panel", skin_quiet())
 	add_child(goal_panel)
 	ui_goal = Label.new()
 	ui_goal.name = "label"
 	ui_goal.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_goal.offset_left = 14; ui_goal.offset_right = -14
 	ui_goal.offset_top = 11; ui_goal.offset_bottom = -11
+	ui_goal.add_theme_color_override("font_color", Color(0.80, 0.87, 0.91))
 	goal_panel.add_child(ui_goal)
 
 	var help_panel := Panel.new()
 	help_panel.name = "help_panel"
 	help_panel.size = Vector2(1220, 40)
 	help_panel.position = Vector2(30, 166)
+	help_panel.add_theme_stylebox_override("panel", skin_quiet())
 	add_child(help_panel)
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
@@ -229,12 +266,16 @@ func _build_ui() -> void:
 	ui_log.offset_left = 12; ui_log.offset_right = -12
 	ui_log.offset_top = 8; ui_log.offset_bottom = -8
 	ui_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ui_log.add_theme_font_size_override("font_size", 15)
+	ui_log.add_theme_color_override("font_color", Color(0.72, 0.82, 0.88))
 	log_panel.add_child(ui_log)
 	ui_help = Label.new()
 	ui_help.name = "label"
 	ui_help.set_anchors_preset(Control.PRESET_FULL_RECT)
 	ui_help.offset_left = 12; ui_help.offset_right = -12
 	ui_help.offset_top = 7; ui_help.offset_bottom = -7
+	ui_help.add_theme_font_size_override("font_size", 14)
+	ui_help.add_theme_color_override("font_color", Color(0.58, 0.68, 0.75))
 	help_panel.add_child(ui_help)
 
 # Selecting a diver who is not on this dive left NOBODY selected: the party
