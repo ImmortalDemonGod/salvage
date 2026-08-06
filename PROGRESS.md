@@ -360,6 +360,40 @@ station-occupancy check before the next one starts.
 respect a shipping budget has spent the run without buying information,
 which is the exact failure prototype 1 was retired for.
 
+## The first human playtest, and what it cost
+
+Someone who did not build this played it and recorded himself doing it. He
+nearly quit twice and stopped at dive six: "this is painful." That session
+is worth more than every gate in this file, and it is the reason for
+everything below it.
+
+| What he hit | Verdict |
+|---|---|
+| Clicked to move, nothing happened | **My bug.** Every Control defaults to `MOUSE_FILTER_STOP`, so all nine panels and the root ate the mouse. The click layer I had committed and announced as working had never worked for anybody. Fixed; `verify/layout.gd` fails any Control that can swallow a click (15 when sabotaged), and `verify/live.mjs` clicks the deployed page |
+| Could not work out how to move; found WASD by accident | A prompt band names the next action every turn, by key and by ability name |
+| Could not switch divers when one went down: "I thought I was literally just about to quit" | The game never leaves you holding a downed diver. `verify/select.gd` |
+| "No indication that I'm doing anything on the enemy" | **The limb bars were not in the build.** That edit aborted on a failed anchor further down the same script and never reached the write, and the commit message claiming otherwise shipped. Restored, and they flash white on the frame they are struck |
+| "No indication that I won" | The kill is named on the descent between beats, where the gap actually is |
+| "Airline cut... how did I cut my airline?" | Warned before it happens, while it can still be acted on |
+| "Now it's F. I thought it was space" | The prompt names the key and the ability, and says when a diver has a second |
+| Thrown straight from story into combat | A descent between every beat: dark, silt tearing upward, the next place named |
+| "Do I even have health?" | Diver bars are the size of the limb bars, carry the name and numbers, and the prompt interrupts under a third |
+| No README | Written, leading with the play link |
+| "Not the right hook"; the prompt is left-justified | Opening reordered so the stake lands first; the prompt is a centred button that sizes to its text |
+| "The same crab creature" three beats running | One function drew all four enemies, differing only by a stretch and a tint. The worm and the dredge have their own bodies now |
+
+Two lessons outrank the fixes.
+
+**The gates could not see any of it.** Everything above was green through
+the entire session he spent stuck. Standing rule 26 said a gate that
+cannot see the screen cannot tell you the game is ready; this is what that
+costs when it is a person's afternoon rather than a paragraph.
+
+**Two of these were things I had asserted rather than checked** -- the
+mouse and the limb bars -- and both had a commit message stating they
+worked. Standing rules 27 and 28 were written the same morning I broke
+them both.
+
 ## The presentation pass
 
 The run met its stopping condition at 04:54 and the very next commit was

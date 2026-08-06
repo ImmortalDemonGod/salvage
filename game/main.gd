@@ -68,7 +68,8 @@ func _ready() -> void:
 # the last beat put it exactly: the words "ENTER end t" were painted on top
 # of Proto5's chest, and it read as HUD chrome rather than a unit on the
 # board. Declared here so verify/layout.gd can check it.
-const HUD_BOTTOM := 212.0   # the help bar ends at 206; bars clamp below it
+const HUD_BOTTOM := 212.0   # the lowest a diver SPRITE may reach
+const PANEL_FLOOR := 262.0  # the prompt band ends at 252; readouts clamp below it
 const DIVER_SCALE := 66.0
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
 const CARD_TOP := 522.0
@@ -1406,9 +1407,12 @@ func _draw_bars() -> void:
 			continue
 		var f: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 		var frac: float = float(d.hp) / max(1.0, float(d.max_hp))
-		_bar(f + Vector2(-52, -DIVER_SCALE - 8), 104, 13, frac, BAR_OK if frac > 0.34 else BAR_LOW)
+		# clamped under the prompt band, which is new and lower than the old
+		# control strip: Proto5's bar was being cut in half by it
+		var by: float = max(f.y - DIVER_SCALE - 8.0, PANEL_FLOOR)
+		_bar(Vector2(f.x - 52.0, by), 104, 13, frac, BAR_OK if frac > 0.34 else BAR_LOW)
 		var df: Font = ThemeDB.fallback_font
-		draw_string(df, f + Vector2(-48, -DIVER_SCALE + 2), "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)],
+		draw_string(df, Vector2(f.x - 48.0, by + 11.0), "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.96, 0.98, 1.0))
 
 func _draw() -> void:
