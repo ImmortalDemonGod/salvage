@@ -35,6 +35,22 @@ while IFS= read -r f; do
     | while read -r hit; do note "QUIT WITHOUT RETURN: $hit (quit only requests; code after it still runs)"; done
 done < <(find verify tools -name '*.gd' 2>/dev/null | sort)
 
+# --- 4. nobody outside the sim may write sim state directly ---------------
+# Three verifiers each hand-rolled "for i in range(p.VALVES): p.valve[i] =
+# true" to force a lock past. That writes past toggle() and reachable(), so
+# it proved nothing about the real lock, AND it used VALVES (3) when lock 2
+# has 4 valves, so it never actually solved stage 2. The walk stopped early
+# and every one of those checks still printed clean. Bots.solve_puzzle()
+# is the sanctioned way, and it presses what a player presses.
+while IFS= read -r f; do
+  # a mention in a comment is not a write, and a probe that DELIBERATELY
+  # constructs an unreachable state says so on the line: "# sim-write ok".
+  hit=$(grep -n '\.valve\[[^]]*\] *=' "$f" | grep -v '^[0-9]*:[[:space:]]*#' | grep -v 'sim-write ok')
+  if [ -n "$hit" ]; then
+    note "WRITES SIM STATE DIRECTLY: $f :: $(echo "$hit" | head -1 | sed 's/^ *//') -- use Bots.solve_puzzle(), which drives toggle() and respects reachability"
+  fi
+done < <(find verify tools game -name '*.gd' 2>/dev/null | sort)
+
 # --- the detectors, with 2. engine stderr gated ---------------------------
 for s in verify/checks.gd verify/teach.gd verify/pillar.gd verify/door.gd verify/audio.gd verify/layout.gd verify/fuzz.gd verify/differential.gd; do
   [ -f "$s" ] || continue

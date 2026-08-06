@@ -235,8 +235,8 @@ func _force(r) -> void:
 			r.combat.limb_broken[i] = true
 		r.combat.outcome = "victory"
 	elif r.puzzle != null:
-		for i in range(r.puzzle.VALVES):
-			r.puzzle.valve[i] = true
+		if not Bots.solve_puzzle(r.puzzle):
+			push_error("THE LOCK CANNOT BE SOLVED by the naive policy at stage %d" % r.puzzle.stage)
 	r.advance()
 
 func check_run(n: int) -> void:

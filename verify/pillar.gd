@@ -104,7 +104,7 @@ func _gated(pz) -> int:
 		var probe = Puzzle.new()
 		probe.stage = pz.stage
 		for j in range(probe.valves()):
-			probe.valve[j] = (j != i)
+			probe.valve[j] = (j != i)   # sim-write ok: the point is to BUILD the state reachable() would refuse, then ask whether it refuses
 		if not probe.reachable(i):
 			n += 1
 	return n

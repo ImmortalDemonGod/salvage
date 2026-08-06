@@ -330,8 +330,8 @@ func _force_complete(r) -> void:
 			r.combat.limb_broken[lb] = true
 		r.combat.outcome = "victory"
 	elif r.puzzle != null:
-		for i in range(r.puzzle.VALVES):
-			r.puzzle.valve[i] = true
+		if not Bots.solve_puzzle(r.puzzle):
+			push_error("THE LOCK CANNOT BE SOLVED by the naive policy at stage %d" % r.puzzle.stage)
 
 func _init() -> void:
 	# 400 states, MEASURED not guessed. At 150 the search reported

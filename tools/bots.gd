@@ -1,5 +1,5 @@
 # Pinned judge policies. Bots enter through the SAME functions the input
-# handler will call: act_attack, act_move, act_overdraft, end_turn.
+# handler will call: act_ability, act_move, end_turn.
 # Anything else is harness drift (SPEC 4.3, G14).
 class_name Bots
 extends RefCounted
@@ -174,6 +174,22 @@ static func solve_step(p) -> int:
 		if p.valve[i] and i != p.SEIZED:
 			return i
 	return -1
+
+# Forcing a lock past is something three verifiers all needed and all three
+# wrote by hand as `for i in range(p.VALVES): p.valve[i] = true`. That is
+# wrong twice over: it writes past toggle() and reachable(), so it proves
+# nothing about the real lock, and VALVES is 3 while lock 2 has 4, so on
+# stage 2 it opened three of four, never solved, and the walk stopped early
+# and still printed clean. One helper, driving the real API.
+static func solve_puzzle(p, cap := 64) -> bool:
+	var steps := 0
+	while not p.solved() and steps < cap:
+		var i: int = solve_step(p)
+		if i < 0:
+			break
+		p.toggle(i)
+		steps += 1
+	return p.solved()
 
 static func run_fight(seed_val: int, policy: String, enc_id := "crab", cap := 40) -> Dictionary:
 	var c := Combat.new(enc_id)

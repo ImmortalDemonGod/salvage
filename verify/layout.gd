@@ -82,8 +82,8 @@ func advance_to_next_beat() -> bool:
 			r.combat.limb_broken[lb] = true
 		r.combat.outcome = "victory"
 	elif r.puzzle != null:
-		for i in range(r.puzzle.VALVES):
-			r.puzzle.valve[i] = true
+		if not Bots.solve_puzzle(r.puzzle):
+			push_error("THE LOCK CANNOT BE SOLVED by the naive policy at stage %d" % r.puzzle.stage)
 	if not r.advance():
 		return false
 	scene.combat = r.combat

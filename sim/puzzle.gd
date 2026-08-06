@@ -19,9 +19,12 @@ extends RefCounted
 #
 # Lock 1: one chamber, three valves, and the low valve is under water.
 # Lock 2: TWO chambers joined by a crossover. Opening it equalises them, so
-#         the answer is no longer "open everything": you have to fill one
-#         side and keep the other dry, which means the crossover must be
-#         shut at the end and open in the middle to move water at all.
+#         chamber A's own two inlets total 2 against a target of 3, so the
+#         third unit has to come across from B and the crossover has to be
+#         OPEN at the end. It sits at the bottom of B, so it can only be
+#         turned while B is dry: fill B first and you have shut yourself
+#         out and have to drain to recover. Lock 1's lesson, across two
+#         chambers, where the order now spans both.
 var stage := 1
 
 const VALVES := 3
