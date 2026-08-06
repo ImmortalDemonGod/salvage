@@ -90,6 +90,24 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			best = a
 	return best if best_score > 0.0 else {}
 
+# The puzzle policy. Deliberately naive: open what you can reach, and if
+# nothing is reachable, drain. If a naive policy cannot solve the lock then
+# the lock is not readable, whatever the author thinks.
+static func solve_step(p) -> int:
+	if p.solved():
+		return -1
+	if not p.valve[p.SEIZED] and p.reachable(p.SEIZED):
+		return p.SEIZED
+	for i in range(p.VALVES):
+		if not p.valve[i] and p.reachable(i):
+			if i == p.SEIZED or p.valve[p.SEIZED]:
+				return i
+	# locked out: drain something so the low valve comes back into reach
+	for i in range(p.VALVES):
+		if p.valve[i] and i != p.SEIZED:
+			return i
+	return -1
+
 static func run_fight(seed_val: int, policy: String, enc_id := "crab", cap := 40) -> Dictionary:
 	var c := Combat.new(enc_id)
 	var rng := RandomNumberGenerator.new()

@@ -128,6 +128,13 @@ func check_run(n: int) -> void:
 		var acts := 0
 		while not r.finished and acts < 4000:
 			acts += 1
+			if r.puzzle != null:
+				var step: int = Bots.solve_step(r.puzzle)
+				if step < 0:
+					r.advance()
+				else:
+					r.puzzle.toggle(step)
+				continue
 			if r.combat == null:
 				r.advance()
 				continue

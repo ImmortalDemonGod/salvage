@@ -8,9 +8,11 @@ class_name Run
 extends RefCounted
 
 const Beats := preload("res://content/beats.gd")
+const Puzzle := preload("res://sim/puzzle.gd")
 
 var beat := 0
 var combat: Combat = null
+var puzzle: Puzzle = null
 var carried_hp: Dictionary = {}    # diver name -> hp, carried across a dive
 var log_lines: Array = []
 var finished := false
@@ -45,6 +47,12 @@ func _enter() -> void:
 		finished = true
 		combat = null
 		return
+	puzzle = null
+	if String(b.get("kind", "scene")) == "puzzle":
+		puzzle = Puzzle.new()
+		combat = null
+		log_lines.append("%s" % String(b.title))
+		return
 	if String(b.get("kind", "scene")) == "combat":
 		combat = Combat.new(String(b.encounter))
 		# HP is carried across a dive and restored only at the boat
@@ -68,6 +76,13 @@ func advance() -> bool:
 	if finished:
 		return false
 	var b := current()
+	if String(b.get("kind", "scene")) == "puzzle":
+		# a puzzle beat completes when the lock is open, not on a timer
+		if puzzle == null or not puzzle.solved():
+			return false
+		beat += 1
+		_enter()
+		return true
 	if String(b.get("kind", "scene")) == "combat":
 		if combat == null or combat.outcome == "ongoing":
 			return false

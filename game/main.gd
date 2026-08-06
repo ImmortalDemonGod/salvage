@@ -130,6 +130,19 @@ func _build_ui() -> void:
 	help_panel.add_child(ui_help)
 
 func _refresh() -> void:
+	if run.puzzle != null:
+		# The lock, drawn as its own state: a water line and three valves.
+		ui_air.get_parent().visible = false
+		ui_intent.text = run.state_line()
+		for card in ui_divers:
+			card.visible = false
+		for i in range(ui_stations.size()):
+			ui_stations[i].visible = false
+		ui_scene.get_parent().visible = true
+		ui_scene.text = run.puzzle.state_text() + "\n\n" + ("the way out is open" if run.puzzle.solved() else "(placeholder) The way out is above the waterline. Fill the chamber.")
+		ui_help.text = "1 2 3 turn a valve  ·  ENTER when the way is open"
+		queue_redraw()
+		return
 	if combat == null:
 		# A scene beat. The opening is a mechanic and gets rendered as one:
 		# who you are, what stands in the way, what you want, and what the
@@ -218,9 +231,18 @@ func _unhandled_input(e: InputEvent) -> void:
 		return
 	var k: int = (e as InputEventKey).keycode
 	match k:
-		KEY_1: selected = 0; _refresh()
-		KEY_2: selected = 1; _refresh()
-		KEY_3: selected = 2; _refresh()
+		KEY_1:
+			if run.puzzle != null: run.puzzle.toggle(0)
+			else: selected = 0
+			_refresh()
+		KEY_2:
+			if run.puzzle != null: run.puzzle.toggle(1)
+			else: selected = 1
+			_refresh()
+		KEY_3:
+			if run.puzzle != null: run.puzzle.toggle(2)
+			else: selected = 2
+			_refresh()
 		KEY_Q: player_move(Combat.FRONT)
 		KEY_W: player_move(Combat.FLANK)
 		KEY_E: player_move(Combat.UNDER)

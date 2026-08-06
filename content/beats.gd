@@ -78,10 +78,11 @@ static var LADDER := [
 	},
 	{
 		"id": "puzzle1",
+		"kind": "puzzle",
 		"title": "flood and drain",
 		"teaches": "water_level",
 		"uses": ["goal", "water_level"],
-		"built": false,
+		"built": true,
 	},
 	{
 		"id": "fight2",
