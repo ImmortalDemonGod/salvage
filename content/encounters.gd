@@ -42,12 +42,22 @@ static var ALL := {
 		# moves the bands, so it is declared rather than falling out of a loop.
 		"starts": [FRONT, UNDER],
 		"limbs": [
-			{"name": "jaw", "hp": 14, "station": FRONT},
-			{"name": "claw", "hp": 10, "station": FLANK},
-			{"name": "tail", "hp": 10, "station": REAR},
+			# Re-swept after the claw gained an attack, which made breaking
+			# it a strong play and shortened the fight below the teaching
+			# floor. Measured at these values: casual 69.7%, greedy 8.0
+			# turns, 8.0 squad HP lost.
+			{"name": "jaw", "hp": 18, "station": FRONT},
+			{"name": "claw", "hp": 12, "station": FLANK},
+			{"name": "tail", "hp": 12, "station": REAR},
 		],
+		# EVERY limb must DO something or breaking it accomplishes nothing.
+		# The claw had no attack, so FLANK was a station with no reason to
+		# be stood in and the dominance search called it dead. The claw now
+		# guards the head, which makes a real chain: break the claw from
+		# FLANK to make FRONT survivable, then break the jaw.
 		"attacks": [
 			{"limb": 0, "stations": [FRONT], "dmg": 2, "name": "snaps at"},
+			{"limb": 1, "stations": [FRONT], "dmg": 2, "name": "guards with"},
 			{"limb": 2, "stations": [REAR, FLANK], "dmg": 2, "name": "sweeps"},
 		],
 	},

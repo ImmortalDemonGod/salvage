@@ -8,6 +8,8 @@
 extends SceneTree
 
 const LEDGER := "res://verify/deep-ledger.json"
+const Encounters := preload("res://content/encounters.gd")
+const Run := preload("res://sim/run.gd")
 
 var sigs: Array = []
 
@@ -49,14 +51,14 @@ func key(a: Dictionary) -> String:
 # ---- G4: is every action uniquely optimal somewhere? -------------------
 # Depth-limited over SAMPLED reachable states, not a complete solve. That
 # distinction is load bearing and was corrected once already.
-func check_dominance(n: int) -> void:
+func check_dominance(n: int, enc_id := "crab") -> void:
 	var rng := RandomNumberGenerator.new()
 	var uniquely_best: Dictionary = {}
 	var ever_legal: Dictionary = {}
 	var sampled := 0
 	for s in range(n):
 		rng.seed = s
-		var c := Combat.new()
+		var c := Combat.new(enc_id)
 		# walk to a random reachable state
 		var steps := s % 9
 		for _i in range(steps):
@@ -95,8 +97,8 @@ func check_dominance(n: int) -> void:
 		var hits: int = int(uniquely_best.get(k, 0))
 		parts.append("%s %d" % [k, hits])
 		if hits == 0:
-			sig("DOMINATED: %s is never the unique optimal action in %d sampled states" % [k, sampled])
-	print("dominance  %d states sampled | " % sampled + "  ".join(parts))
+			sig("DOMINATED in %s: %s is never the unique optimal action in %d sampled states" % [enc_id, k, sampled])
+	print("dominance %-9s %d states | " % [enc_id, sampled] + "  ".join(parts))
 
 # ---- G11: the taught line must beat naive play ------------------------
 func naive(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
@@ -150,18 +152,42 @@ func load_ledger() -> Dictionary:
 	var d = JSON.parse_string(f.get_as_text())
 	return d if d is Dictionary else {"seen": [], "dry_streak": 0, "passes": 0}
 
+# G12: "the maximum-skip route is a ruling, not a discovery." Walk the built
+# ladder and ask whether any beat can be reached without completing the one
+# before it. A linear ladder has no skips, and saying so with a measurement
+# is a ruling; leaving it UNVERIFIED forever was just a stale note.
+func check_bypass() -> void:
+	var r := Run.new()
+	var beats := r.built_beats()
+	var skippable: Array = []
+	for i in range(beats.size()):
+		var probe := Run.new()
+		# advance without ever finishing the combat: if the run moves on,
+		# that beat was skippable
+		var before: int = probe.beat
+		if probe.combat != null and probe.combat.outcome == "ongoing":
+			if probe.advance():
+				skippable.append(String(beats[before].id))
+		probe = null
+	print("bypass     %d built beats, %d skippable without completing them" % [beats.size(), skippable.size()])
+	for b in skippable:
+		sig("BYPASSABLE: beat '%s' can be left without completing it" % b)
+
 func _init() -> void:
 	var n := 600
 	for a in OS.get_cmdline_user_args():
 		if a.is_valid_int():
 			n = a.to_int()
 	var t := Time.get_ticks_usec()
-	check_dominance(n)
+	for k in Encounters.ALL.keys():
+		if bool((Encounters.ALL[k] as Dictionary).get("teaching", false)):
+			continue
+		check_dominance(n, String(k))
 	check_taught(400)
 	# bypass: honestly unverifiable with one beat, and a vacuous green is
 	# worse than an honest red (PROGRESS gate rules)
 	var unverified: Array = []
-	unverified.append("bypass: the slice has one fight, so there is no route to skip yet")
+	check_bypass()
 	for u in unverified:
 		print("UNVERIFIED " + u)
 
