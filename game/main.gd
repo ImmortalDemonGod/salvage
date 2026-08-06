@@ -534,7 +534,11 @@ func _refresh() -> void:
 		var lb: int = combat.STATION_LIMB[i]
 		var lbl: Label = ui_stations[i].get_node("label")
 		if lb < 0:
-			lbl.text = "%s  [%s]%s\nnothing to hit here" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i)]
+			var reach := "nothing to hit here"
+			for dr in combat.divers:
+				if not dr.down and int(dr.station) == i and combat.can_attack(dr):
+					reach = "reaches from here"
+			lbl.text = "%s  [%s]%s\n%s" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), reach]
 		elif combat.limb_broken[lb]:
 			lbl.text = "%s  [%s]%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), String(combat.LIMB_NAMES[lb]).to_upper()]
 		else:
@@ -596,7 +600,7 @@ func _refresh() -> void:
 				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "no damage, ") + "the limb cannot attack for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
 			var onto := ""
 			if not combat.can_attack(d):
-				onto = "  --  nothing to hit from %s" % Combat.STATION_NAMES[int(d.station)]
+				onto = "  ·  nothing to hit from %s" % Combat.STATION_NAMES[int(d.station)]
 			else:
 				var tl: int = combat.target_limb(d)
 				if tl >= 0:
@@ -821,10 +825,12 @@ func _valve_pos(i: int) -> Vector2:
 	var x := 430.0
 	var wide1 := 420.0
 	if i == 0:
-		return Vector2(x + 70.0, top + tall + 60.0)
+		return Vector2(x + 70.0, top + tall + LOCK_DROP)
 	if i == 1:
-		return Vector2(x + 150.0, top + tall + 60.0)
-	return Vector2(x + wide1 - 40.0, top + tall - 30.0)
+		return Vector2(x + 150.0, top + tall + LOCK_DROP)
+	# the seized valve is ON the tank wall down at the floor, where the
+	# water covers it, not floating unattached in the middle of the chamber
+	return Vector2(x + wide1 + 26.0, top + tall - 26.0)
 
 func _draw_rig() -> void:
 	var f: Font = ThemeDB.fallback_font
@@ -902,6 +908,9 @@ func _draw_lock(p) -> void:
 			OPEN_C if p.valve[int(src2[0])] else Color(0.42, 0.48, 0.55), 7.0)
 	_valve_dot(_valve_pos(0), "1", p.valve[0], p.reachable(0))
 	_valve_dot(_valve_pos(1), "2", p.valve[1], p.reachable(1))
+	# a pipe for the seized valve too, so all three are visibly plumbed
+	draw_line(_valve_pos(p.SEIZED) - Vector2(18, 0), Vector2(x + wide, top + tall - 26.0),
+		OPEN_C if p.valve[p.SEIZED] else Color(0.42, 0.48, 0.55), 7.0)
 	_valve_dot(_valve_pos(p.SEIZED), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
 
 # how deep we are, 0 at the rig and 1 at the bottom
@@ -961,6 +970,14 @@ const BAR_LIMB := Color(0.82, 0.44, 0.34)
 func _draw_windup() -> void:
 	var f: Font = ThemeDB.fallback_font
 	var pulse: float = 0.55 + 0.45 * sin(_clock * 4.2)
+	# how much lands on each station THIS turn, totalled
+	var incoming: Dictionary = {}
+	for it0 in combat.intents():
+		if int(combat.limb_stun[int(it0.limb)]) > 0 or combat.limb_broken[int(it0.limb)]:
+			continue
+		for st0 in it0.stations:
+			incoming[int(st0)] = int(incoming.get(int(st0), 0)) + int(it0.dmg)
+	var drawn: Array = []
 	for it in combat.intents():
 		var lb: int = int(it.limb)
 		if int(combat.limb_stun[lb]) > 0 or combat.limb_broken[lb]:
@@ -976,9 +993,12 @@ func _draw_windup() -> void:
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
 				var pip0: Vector2 = dst + Vector2(46.0, -34.0)
+				if int(st) in drawn:
+					continue
+				drawn.append(int(st))
 				draw_circle(pip0, 15.0, Color(0.10, 0.05, 0.06, 0.92))
 				draw_arc(pip0, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
-				draw_string(f, pip0 + Vector2(-6, 7), str(int(it.dmg)),
+				draw_string(f, pip0 + Vector2(-6 if int(incoming.get(int(st), 0)) < 10 else -12, 7), str(int(incoming.get(int(st), 0))),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 				continue
 			var n: Vector2 = dir.normalized()
@@ -1006,9 +1026,12 @@ func _draw_windup() -> void:
 			# anchored to the RING it lands on, never to the middle of the
 			# line, so it can never read as belonging to another station
 			var pip: Vector2 = dst + Vector2(46.0, -34.0)
+			if int(st) in drawn:
+				continue
+			drawn.append(int(st))
 			draw_circle(pip, 15.0, Color(0.10, 0.05, 0.06, 0.92))
 			draw_arc(pip, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
-			draw_string(f, pip + Vector2(-6, 7), str(int(it.dmg)),
+			draw_string(f, pip + Vector2(-6 if int(incoming.get(int(st), 0)) < 10 else -12, 7), str(int(incoming.get(int(st), 0))),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 
 # A click means the obvious thing for whatever is under it: a station moves
@@ -1195,8 +1218,9 @@ func _draw_fx() -> void:
 						HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(e.col.r, e.col.g, e.col.b, 1.0 - k))
 			"float":
 				# a number that leaves the thing it happened to, so damage
-				# has a place as well as a value
-				var rise: Vector2 = e.at + Vector2(0, -46.0 * k)
+				# has a place as well as a value, and never climbs into the
+				# HUD where it overprints the words there
+				var rise: Vector2 = Vector2(e.at.x, max(e.at.y - 46.0 * k, HUD_BOTTOM + 16.0))
 				var a: float = 1.0 if k < 0.6 else (1.0 - (k - 0.6) / 0.4)
 				draw_string(f, rise, e.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 30,
 					Color(e.col.r, e.col.g, e.col.b, a))

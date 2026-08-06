@@ -39,7 +39,7 @@ static var ALL := {
 	"crab": {
 		"title": "the hunter crab",
 		"art": {"kind": "crab", "scale": 158.0, "pos": [872, 330], "tint": [1.0, 1.0, 1.0]},
-		"places": {"0": [610, 392], "1": [788, 244], "2": [900, 430], "3": [1122, 320]},
+		"places": {"0": [610, 392], "1": [788, 292], "2": [900, 430], "3": [1122, 320]},
 		# TWO divers. One was tried and REFUTED by measurement: the crab
 		# became unwinnable (G2 0/40), casual fell to 5.2 percent, and
 		# UNDER went dead because a lone diver never has a reason to stand
@@ -89,7 +89,7 @@ static var ALL := {
 		# a LONGER, thinner body: the stations sit further apart along it,
 		# so the board itself reads differently from the crab's
 		"art": {"kind": "worm", "scale": 188.0, "pos": [910, 312], "tint": [0.55, 0.85, 0.70]},
-		"places": {"0": [604, 386], "1": [886, 240], "2": [946, 430], "4": [286, 386]},
+		"places": {"0": [604, 386], "1": [886, 288], "2": [946, 430], "4": [286, 386]},
 		"party": 2,
 		# The drum is fitted before this fight, so it is declared HERE.
 		# While gear was a global set by the run, the bands measured the
@@ -123,7 +123,7 @@ static var ALL := {
 			{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "lunges at"},
 			{"limb": 1, "stations": [FLANK, UNDER], "dmg": 5, "name": "sprays"},
 			{"limb": 2, "stations": [BACKLINE], "dmg": 3, "name": "vents over"},
-			{"limb": 2, "stations": [UNDER], "dmg": 3, "name": "curls under"},
+			{"limb": 2, "stations": [UNDER], "dmg": 3, "name": "curls at"},
 		],
 	},
 	# Beat `deep1`. A MACHINE, not a creature: SPEC 2.4 says a machine reads
@@ -135,7 +135,7 @@ static var ALL := {
 	"dredge": {
 		"title": "the dredge",
 		"art": {"kind": "dredge", "scale": 168.0, "pos": [884, 320], "tint": [0.72, 0.62, 0.42]},
-		"places": {"0": [614, 400], "1": [828, 256], "3": [1128, 350], "4": [286, 400]},
+		"places": {"0": [614, 400], "1": [828, 300], "3": [1128, 350], "4": [286, 400]},
 		"party": 3,
 		"drum": true,
 		# UNDER is closed here. Every open station must either expose a limb
