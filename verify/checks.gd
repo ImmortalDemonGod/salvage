@@ -3,6 +3,11 @@
 # Usage: godot --headless --path ~/salvage --script verify/checks.gd
 extends SceneTree
 
+# preload, never rely on class_name: a newly added class_name is not
+# resolvable until the project is re-imported, which has now cost three
+# round trips in this run.
+const Run := preload("res://sim/run.gd")
+
 var findings: Array = []
 
 func fail(s: String) -> void:
@@ -100,9 +105,39 @@ func check_telegraph(n: int) -> void:
 					return
 	print("telegraph  %d hostile slots, announced == delivered" % checked)
 
+# G2: the slice is winnable start to finish, and a win exists from every
+# reachable state. Positioning adds a real softlock risk (a diver stranded
+# where it can neither act usefully nor retreat) and only playing the whole
+# ladder catches it.
+func check_run(n: int) -> void:
+	var cleared := 0
+	var worst := 0
+	for s in range(n):
+		var r := Run.new()
+		var rng := RandomNumberGenerator.new()
+		rng.seed = s
+		var acts := 0
+		while not r.finished and acts < 4000:
+			acts += 1
+			if r.combat == null:
+				r.advance()
+				continue
+			var a: Dictionary = Bots.greedy(r.combat, rng)
+			if a.is_empty() or not Bots.apply(r.combat, a):
+				r.combat.end_turn()
+			if r.combat.outcome != "ongoing":
+				r.advance()
+		if r.finished:
+			cleared += 1
+		worst = max(worst, acts)
+	print("G2 run       %d/%d cleared the built ladder, worst %d actions" % [cleared, n, worst])
+	if cleared < n:
+		fail("G2 NOT WINNABLE: %d of %d runs failed to reach the end of the built ladder" % [n - cleared, n])
+
 func _init() -> void:
 	var t := Time.get_ticks_usec()
 	check_bands(1000)
+	check_run(40)
 	check_stations(300)
 	check_telegraph(300)
 	print("ran in %.0f ms" % ((Time.get_ticks_usec() - t) / 1000.0))

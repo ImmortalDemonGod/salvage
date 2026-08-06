@@ -15,19 +15,23 @@ extends SceneTree
 var frames := 0
 var findings: Array = []
 
-# move Scuba to REAR, Proto5 attacks the claw, end turn, and so on
-const SCRIPT := [
-	{"kind": "move", "i": 0, "s": 3},
-	{"kind": "attack", "i": 2},
-	{"kind": "end", "i": 0, "s": 0},
-	{"kind": "move", "i": 1, "s": 1},
-	{"kind": "attack", "i": 1},
-	{"kind": "attack", "i": 0},
-	{"kind": "end", "i": 0, "s": 0},
-	{"kind": "move", "i": 2, "s": 0},
-	{"kind": "attack", "i": 2},
-	{"kind": "end", "i": 0, "s": 0},
-]
+# The script is DERIVED from whatever encounter the scene is actually on,
+# not hardcoded. A fixed script assumed the crab and started failing the
+# moment the run began on `descent` instead: the instrument was asserting
+# a constant it could measure, which is standing rule 3 pointed at a
+# test's inputs rather than its labels.
+func build_script(c: Combat) -> Array:
+	var out: Array = []
+	var n: int = c.divers.size()
+	var open: Array = c.OPEN_STATIONS
+	for round_i in range(3):
+		for i in range(n):
+			var target: int = int(open[(i + round_i) % open.size()])
+			if target != int(c.divers[i].station):
+				out.append({"kind": "move", "i": i, "s": target})
+			out.append({"kind": "attack", "i": i})
+		out.append({"kind": "end", "i": 0, "s": 0})
+	return out
 
 var scene: Control
 
@@ -52,10 +56,14 @@ func _process(_d: float) -> bool:
 	if frames < 3:
 		return false
 
-	var a := Combat.new()          # path A: what the bots drive
 	var b: Combat = scene.combat   # path B: what the keyboard drives
+	if b == null:
+		print("differential  scene has no combat on this beat; nothing to compare")
+		quit(0)
+		return true
+	var a := Combat.new(b.enc_id)  # path A: what the bots drive, SAME encounter
 	var steps := 0
-	for step in SCRIPT:
+	for step in build_script(b):
 		var ra := false
 		var rb := false
 		match step.kind:

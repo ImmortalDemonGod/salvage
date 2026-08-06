@@ -5,6 +5,7 @@
 extends Control
 
 const Art := preload("res://game/art.gd")
+const Run := preload("res://sim/run.gd")
 
 const DESIGN := Vector2(1280, 720)
 
@@ -25,6 +26,7 @@ const STATION_POS := [
 const CRAB_POS := Vector2(866, 350)
 const CRAB_SCALE := 150.0
 
+var run: Run
 var combat: Combat
 var selected := 0
 var ui_stations: Array = []
@@ -34,7 +36,8 @@ var ui_intent: Label
 var ui_help: Label
 
 func _ready() -> void:
-	combat = Combat.new()
+	run = Run.new()
+	combat = run.combat
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
 	_refresh()
@@ -113,15 +116,28 @@ func _build_ui() -> void:
 	help_panel.add_child(ui_help)
 
 func _refresh() -> void:
+	if combat == null:
+		# a scene beat, or the run is complete
+		ui_air.text = ""
+		ui_intent.text = run.state_line()
+		ui_help.text = "ENTER to continue"
+		for card in ui_divers:
+			card.visible = false
+		for i in range(ui_stations.size()):
+			ui_stations[i].visible = false
+		queue_redraw()
+		return
+	for i in range(ui_stations.size()):
+		ui_stations[i].visible = combat.station_open(i)
 	ui_air.text = "AIR  %d / %d" % [combat.air, combat.air_this_turn()]
 	var it: Dictionary = combat.intent()
 	if it.is_empty():
-		ui_intent.text = "the crab is spent"
+		ui_intent.text = "%s   spent" % run.state_line()
 	else:
 		var where: Array = []
 		for s in it.stations:
 			where.append(Combat.STATION_NAMES[s])
-		ui_intent.text = "NEXT: the %s %s %s for %d" % [combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
+		ui_intent.text = "%s   NEXT: the %s %s %s for %d" % [run.state_line(), combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third
 	# card, which the as-played capture caught on its first frame.
@@ -141,7 +157,7 @@ func _refresh() -> void:
 # ---- the player's door. The bot calls these same Combat methods. -------
 func player_attack() -> bool:
 	var ok := combat.act_attack(selected)
-	if ok: _refresh()
+	if ok: _after()
 	return ok
 
 func player_move(station: int) -> bool:
@@ -151,6 +167,15 @@ func player_move(station: int) -> bool:
 
 func player_end_turn() -> void:
 	combat.end_turn()
+	_after()
+
+# A finished fight advances the ladder. The run owns progression; the
+# scene only asks it to move.
+func _after() -> void:
+	if combat != null and combat.outcome != "ongoing":
+		run.advance()
+		combat = run.combat
+		selected = 0
 	_refresh()
 
 func _unhandled_input(e: InputEvent) -> void:
@@ -167,12 +192,18 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_R: player_move(Combat.REAR)
 		KEY_T: player_move(Combat.BACKLINE)
 		KEY_SPACE: player_attack()
-		KEY_ENTER: player_end_turn()
+		KEY_ENTER:
+			if combat == null:
+				run.advance(); combat = run.combat; selected = 0; _refresh()
+			else:
+				player_end_turn()
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, DESIGN), Color(0.04, 0.11, 0.16))
 	# station rings: red while the limb they expose is live, teal once it is
 	# broken or absent. This is the map changing, drawn.
+	if combat == null:
+		return
 	for i in range(5):
 		if not combat.station_open(i):
 			continue
@@ -184,6 +215,8 @@ func _draw() -> void:
 	# crab under two pixels tall, its foot triangles sub-pixel, and the
 	# triangulator rejected them, so the enemy silently did not draw at all
 	# while every test stayed green. Caught by the first as-played capture.
+	if combat == null:
+		return
 	Art.draw_crab(self, CRAB_POS + Vector2(0, 150), CRAB_SCALE, combat.limb_broken)
 	for i in range(combat.divers.size()):
 		var d = combat.divers[i]

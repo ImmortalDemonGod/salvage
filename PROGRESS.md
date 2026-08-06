@@ -168,6 +168,10 @@ the reason to move at all.** Rule on it, with numbers, and log the ruling.
     reported that a blanket `git add -A` here committed their in-progress
     work; one commit contains a known-bad version of the art. Isolate
     them instead of racing them.
+25. **Preload, never rely on `class_name`.** A newly added `class_name`
+    is not resolvable until the project is re-imported, and importing
+    headless can hang. This cost three round trips before it was named.
+    `const X := preload("res://path.gd")` always works.
 24. **When a capture or a human finds something the detectors missed,
     extend the detector in the SAME commit.** Measured twice: the layout
     check only ever compared station panels to station panels, so it
