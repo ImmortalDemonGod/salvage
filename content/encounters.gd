@@ -123,6 +123,7 @@ static var ALL := {
 			{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "lunges at"},
 			{"limb": 1, "stations": [FLANK, UNDER], "dmg": 5, "name": "sprays"},
 			{"limb": 2, "stations": [BACKLINE], "dmg": 3, "name": "vents over"},
+			{"limb": 2, "stations": [UNDER], "dmg": 3, "name": "curls under"},
 		],
 	},
 	# Beat `deep1`. A MACHINE, not a creature: SPEC 2.4 says a machine reads
@@ -146,14 +147,21 @@ static var ALL := {
 		"limbs": [
 			# swept after the boiler widened to three stations. Measured:
 			# casual 63.3%, greedy 7.0 turns, 8.0 squad HP lost.
-			{"name": "arm", "hp": 12, "station": FRONT},
-			{"name": "boiler", "hp": 10, "station": FLANK},
-			{"name": "winch", "hp": 10, "station": REAR},
+			# re-swept after the limbs gained alternating arcs. Splitting the
+			# boiler's three-station vent into two smaller ones bought the
+			# player safe ground and handed back too much: casual 92.5%,
+			# outside the pinned band. Paid for in limb HP and damage, not
+			# by moving the band.
+			{"name": "arm", "hp": 14, "station": FRONT},
+			{"name": "boiler", "hp": 12, "station": FLANK},
+			{"name": "winch", "hp": 12, "station": REAR},
 		],
 		"attacks": [
 			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},
-			{"limb": 1, "stations": [FLANK, REAR, BACKLINE], "dmg": 3, "name": "vents over"},
-			{"limb": 2, "stations": [REAR], "dmg": 4, "name": "lashes"},
+			{"limb": 0, "stations": [FRONT], "dmg": 6, "name": "hammers"},
+			{"limb": 1, "stations": [FLANK, REAR], "dmg": 4, "name": "vents over"},
+			{"limb": 1, "stations": [BACKLINE], "dmg": 4, "name": "vents back over"},
+			{"limb": 2, "stations": [REAR], "dmg": 5, "name": "lashes"},
 		],
 	},
 }

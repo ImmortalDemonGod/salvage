@@ -23,6 +23,46 @@ const GREEDY_HP_MIN := 8.0
 # EVERY encounter is banded, not just the default one. PROGRESS says each
 # new enemy must pass the bands before the next one starts, and until this
 # loop existed a second anatomy could ship completely unmeasured.
+# A playtest review put it plainly: "no ring is ever blue", so movement is a
+# 1-air tax on nothing and the whole spatial layer switches off. Measured,
+# and it was true where it mattered: the spitter left nowhere safe on 3 of 8
+# turns and the dredge on 11 of 17. One turn with nowhere safe is tension.
+# Two in a row means the player has no move, so that is the line.
+func check_safe_ground() -> void:
+	for enc_id in Encounters.ALL.keys():
+		var enc: Dictionary = Encounters.ALL[enc_id]
+		if bool(enc.get("teaching", false)):
+			print("safe %-9s SKIPPED: a teaching beat with one place to stand" % enc_id)
+			continue
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 3
+		var c := Combat.new(String(enc_id))
+		var turns := 0
+		var nowhere := 0
+		var worst_run := 0
+		var run_len := 0
+		while c.outcome == "ongoing" and turns < 40:
+			var th: Array = c.threatened_stations()
+			var free := 0
+			for st in c.OPEN_STATIONS:
+				if not (int(st) in th):
+					free += 1
+			if free == 0:
+				nowhere += 1
+				run_len += 1
+				worst_run = max(worst_run, run_len)
+			else:
+				run_len = 0
+			turns += 1
+			for _i in range(6):
+				var act: Dictionary = Bots.greedy(c, rng)
+				if act.is_empty() or not Bots.apply(c, act):
+					break
+			c.end_turn()
+		print("safe %-9s %d of %d turns had nowhere safe to stand, worst run %d" % [enc_id, nowhere, turns, worst_run])
+		if worst_run >= 2:
+			fail("NOWHERE TO GO: %s leaves every open station threatened for %d turns running, so moving cannot help and the blue ring means nothing" % [enc_id, worst_run])
+
 func check_bands(n: int) -> void:
 	for key in Encounters.ALL.keys():
 		var enc_id := String(key)
@@ -277,6 +317,7 @@ func check_run(n: int) -> void:
 func _init() -> void:
 	var t := Time.get_ticks_usec()
 	check_station_design()
+	check_safe_ground()
 	check_bands(1000)
 	check_run(40)
 	check_run_rules()

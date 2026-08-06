@@ -155,11 +155,29 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 func attacks() -> Array:
 	return enc.attacks
 
+# A limb may carry more than one arc, and it takes them in turn. Without
+# this every live limb swung at the same stations every round, so the union
+# of the arcs never changed: the safe station was either permanent or, on
+# the later encounters, absent. Measured before changing anything -- the
+# spitter left nowhere safe on 3 of 8 turns and the dredge on 11 of 17, so
+# the blue ring stopped meaning anything exactly as the game escalated.
+#
+# Alternating by TURN keeps SPEC 2.11: there is no hidden roll between the
+# announcement and the outcome, because the turn number is on the screen
+# and the telegraph names the arc it picked.
 func live_attacks() -> Array:
-	var out: Array = []
+	var by_limb: Dictionary = {}
 	for a in attacks():
-		if not limb_broken[a.limb] and int(limb_stun[a.limb]) <= 0:
-			out.append(a)
+		if limb_broken[a.limb] or int(limb_stun[a.limb]) > 0:
+			continue
+		var key := int(a.limb)
+		if not by_limb.has(key):
+			by_limb[key] = []
+		by_limb[key].append(a)
+	var out: Array = []
+	for key in by_limb.keys():
+		var opts: Array = by_limb[key]
+		out.append(opts[turn % opts.size()])
 	return out
 
 # The telegraph. Deterministic, shown at the START of the player's turn,
