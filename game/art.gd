@@ -180,22 +180,23 @@ static func _broken(flags: Array, i: int) -> bool:
 	return false
 
 
-# A torn-off end: a zigzag across the break, plus the raw wound behind it.
+# A wound at a break: a saw-toothed band across the joint. Built as a
+# zigzag front edge plus a straight back edge so it is always a simple
+# polygon; a naive zigzag self-intersects and the triangulator refuses it.
 static func _break_face(ci: CanvasItem, xf: Transform2D, a: Vector2, b: Vector2, depth: float, teeth: int) -> void:
 	var d := b - a
-	var n := d.normalized()
-	var side := Vector2(-n.y, n.x)
-	var pts: Array = [a]
-	for i in range(teeth):
-		var t0: float = (float(i) + 0.5) / float(teeth)
-		var t1: float = float(i + 1) / float(teeth)
-		var bite := depth
+	var side := d.orthogonal().normalized()
+	var pts: Array = []
+	for i in range(teeth * 2 + 1):
+		var t: float = float(i) / float(teeth * 2)
+		var off := 0.0
 		if i % 2 == 1:
-			bite = depth * 0.55
-		pts.append(a + d * t0 + side * bite)
-		pts.append(a + d * t1)
+			off = depth
+		pts.append(a + d * t + side * off)
+	pts.append(b - side * (depth * 0.42))
+	pts.append(a - side * (depth * 0.42))
 	_poly(ci, xf, pts, WOUND)
-	_seg(ci, xf, a, b, 0.012, WOUND_DK)
+	_seg(ci, xf, a - side * (depth * 0.42), b - side * (depth * 0.42), 0.016, WOUND_DK)
 
 
 static func _crack(ci: CanvasItem, xf: Transform2D, a: Vector2, b: Vector2) -> void:
@@ -210,9 +211,11 @@ static func _crack(ci: CanvasItem, xf: Transform2D, a: Vector2, b: Vector2) -> v
 # ground and a ponytail streaming back. Nothing on this figure is round or
 # blocky, because those belong to the other two tiers.
 static func _scuba(ci: CanvasItem, xf: Transform2D) -> void:
-	# far leg + far fin, dark, behind the body
-	_fin(ci, xf, Vector2(-0.055, -0.078), 0.235, SUIT_DK)
-	_tube(ci, xf, Vector2(-0.020, -0.400), Vector2(-0.045, -0.090), 0.052, 0.038, SKIN_DK)
+	# Far leg + far fin. The two fins point OPPOSITE ways on purpose: one
+	# flat plank at the ground reads as a surfboard, two splayed blades read
+	# as fins, and the wide low footprint is half of this tier's silhouette.
+	_fin(ci, xf, Vector2(-0.085, -0.078), 0.195, -1.0, SUIT_DK)
+	_tube(ci, xf, Vector2(-0.020, -0.400), Vector2(-0.078, -0.090), 0.052, 0.038, SKIN_DK)
 
 	# tank: a single slim bottle, deliberately narrow so the outline stays thin
 	_box(ci, xf, -0.108, -0.605, -0.052, -0.440, RUBBER)
@@ -220,8 +223,8 @@ static func _scuba(ci: CanvasItem, xf: Transform2D) -> void:
 	_seg(ci, xf, Vector2(-0.080, -0.628), Vector2(-0.010, -0.672), 0.020, RUBBER)
 
 	# near leg + near fin
-	_fin(ci, xf, Vector2(0.070, -0.078), 0.300, SUIT)
-	_tube(ci, xf, Vector2(0.020, -0.400), Vector2(0.070, -0.090), 0.058, 0.042, SKIN)
+	_fin(ci, xf, Vector2(0.085, -0.078), 0.265, 1.0, SUIT)
+	_tube(ci, xf, Vector2(0.020, -0.400), Vector2(0.085, -0.090), 0.058, 0.042, SKIN)
 
 	# hips and torso: narrow, tapering to the shoulders
 	_poly(ci, xf, [
@@ -244,11 +247,11 @@ static func _scuba(ci: CanvasItem, xf: Transform2D) -> void:
 	# hair: cap plus a ponytail that streams backwards. The trailing spike
 	# is what tells you at 64px that this one has no helmet.
 	_poly(ci, xf, [
-		Vector2(0.060, -0.762), Vector2(0.010, -0.792),
-		Vector2(-0.048, -0.772), Vector2(-0.066, -0.716),
-		Vector2(-0.140, -0.706), Vector2(-0.235, -0.742),
-		Vector2(-0.196, -0.700), Vector2(-0.108, -0.664),
-		Vector2(-0.050, -0.668), Vector2(-0.056, -0.734),
+		Vector2(0.060, -0.762), Vector2(0.010, -0.794),
+		Vector2(-0.048, -0.774), Vector2(-0.072, -0.724),
+		Vector2(-0.160, -0.744), Vector2(-0.258, -0.796),
+		Vector2(-0.248, -0.726), Vector2(-0.150, -0.664),
+		Vector2(-0.050, -0.648), Vector2(-0.056, -0.734),
 	], HAIR)
 	# goggles: a band across the eyes, no helmet
 	_poly(ci, xf, [
@@ -261,14 +264,14 @@ static func _scuba(ci: CanvasItem, xf: Transform2D) -> void:
 	], GLASS)
 
 
-static func _fin(ci: CanvasItem, xf: Transform2D, ankle: Vector2, length: float, col: Color) -> void:
+static func _fin(ci: CanvasItem, xf: Transform2D, ankle: Vector2, length: float, dir: float, col: Color) -> void:
 	_poly(ci, xf, [
-		ankle + Vector2(-0.046, -0.034),
-		ankle + Vector2(0.032, -0.030),
-		ankle + Vector2(length, 0.046),
-		ankle + Vector2(length + 0.014, 0.078),
-		ankle + Vector2(length - 0.088, 0.078),
-		ankle + Vector2(-0.054, 0.020),
+		ankle + Vector2(-0.046 * dir, -0.034),
+		ankle + Vector2(0.032 * dir, -0.030),
+		ankle + Vector2(length * dir, 0.046),
+		ankle + Vector2((length + 0.014) * dir, 0.078),
+		ankle + Vector2((length - 0.088) * dir, 0.078),
+		ankle + Vector2(-0.054 * dir, 0.020),
 	], col)
 
 
@@ -315,9 +318,9 @@ static func _proto1(ci: CanvasItem, xf: Transform2D) -> void:
 
 	# arms: back arm hangs, front arm carries the drum
 	_tube(ci, xf, Vector2(-0.140, -0.648), Vector2(-0.185, -0.470), 0.088, 0.070, SUIT_DK)
-	_tube(ci, xf, Vector2(0.140, -0.648), Vector2(0.225, -0.552), 0.092, 0.074, SUIT)
-	_tube(ci, xf, Vector2(0.225, -0.552), Vector2(0.292, -0.512), 0.078, 0.066, SUIT)
-	_dot(ci, xf, Vector2(0.300, -0.508), 0.044, RUBBER)
+	_tube(ci, xf, Vector2(0.140, -0.648), Vector2(0.215, -0.552), 0.092, 0.074, SUIT)
+	_tube(ci, xf, Vector2(0.215, -0.552), Vector2(0.262, -0.512), 0.078, 0.066, SUIT)
+	_dot(ci, xf, Vector2(0.270, -0.508), 0.044, RUBBER)
 
 	# collar ring and round helmet
 	_box(ci, xf, -0.072, -0.700, 0.078, -0.650, GOLD_DK)
@@ -330,7 +333,7 @@ static func _proto1(ci: CanvasItem, xf: Transform2D) -> void:
 	_box(ci, xf, -0.030, -0.938, 0.020, -0.900, GOLD_DK)
 	_seg(ci, xf, Vector2(-0.006, -0.930), Vector2(-0.150, -0.660), 0.024, RUBBER)
 
-	_drum(ci, xf, Vector2(0.372, -0.505), 0.104)
+	_drum(ci, xf, Vector2(0.318, -0.505), 0.104)
 
 
 # The three-lens drum from the reference render, drawn end-on so the three
@@ -341,7 +344,7 @@ static func _drum(ci: CanvasItem, xf: Transform2D, c: Vector2, r: float) -> void
 		var dir := Vector2(cos(ang), sin(ang))
 		var n := dir.orthogonal()
 		var a := c + dir * (r * 0.55)
-		var b := c + dir * (r * 1.72)
+		var b := c + dir * (r * 1.60)
 		_poly(ci, xf, [
 			a + n * 0.030, b + n * 0.034,
 			b - n * 0.034, a - n * 0.030,
@@ -361,23 +364,23 @@ static func _proto5(ci: CanvasItem, xf: Transform2D) -> void:
 	# far leg and boot
 	_box(ci, xf, -0.215, -0.430, -0.070, -0.150, PLATE_DK)
 	_poly(ci, xf, [
-		Vector2(-0.235, -0.165), Vector2(-0.050, -0.165),
-		Vector2(-0.040, 0.000), Vector2(-0.250, 0.000),
+		Vector2(-0.250, -0.165), Vector2(-0.050, -0.165),
+		Vector2(-0.040, 0.000), Vector2(-0.268, 0.000),
 	], PLATE_DK)
 
 	# backpack: blocky rebreather with two bottles
 	_box(ci, xf, -0.345, -0.790, -0.195, -0.455, PLATE_DK)
 	_box(ci, xf, -0.330, -0.735, -0.210, -0.700, GOLD_DK)
-	_box(ci, xf, -0.400, -0.740, -0.330, -0.500, RUBBER)
+	_box(ci, xf, -0.402, -0.775, -0.332, -0.590, RUBBER)
 
 	# near leg, knee plate, boot
 	_box(ci, xf, -0.060, -0.430, 0.105, -0.150, PLATE)
 	_box(ci, xf, -0.075, -0.330, 0.120, -0.268, PLATE_LT)
 	_poly(ci, xf, [
-		Vector2(-0.080, -0.170), Vector2(0.130, -0.170),
-		Vector2(0.150, 0.000), Vector2(-0.095, 0.000),
+		Vector2(-0.080, -0.170), Vector2(0.145, -0.170),
+		Vector2(0.172, 0.000), Vector2(-0.100, 0.000),
 	], PLATE)
-	_box(ci, xf, -0.095, -0.055, 0.150, -0.020, GOLD_DK)
+	_box(ci, xf, -0.100, -0.055, 0.172, -0.020, GOLD_DK)
 
 	# tassets over the hips
 	_poly(ci, xf, [
@@ -399,24 +402,25 @@ static func _proto5(ci: CanvasItem, xf: Transform2D) -> void:
 
 	# pauldrons: the widest thing on the board
 	_poly(ci, xf, [
-		Vector2(-0.180, -0.870), Vector2(-0.335, -0.855),
-		Vector2(-0.375, -0.775), Vector2(-0.350, -0.690),
+		Vector2(-0.180, -0.870), Vector2(-0.372, -0.855),
+		Vector2(-0.418, -0.775), Vector2(-0.390, -0.690),
 		Vector2(-0.180, -0.700),
 	], PLATE_DK)
 	_poly(ci, xf, [
-		Vector2(0.175, -0.870), Vector2(0.335, -0.858),
-		Vector2(0.380, -0.775), Vector2(0.352, -0.680),
+		Vector2(0.175, -0.870), Vector2(0.372, -0.858),
+		Vector2(0.420, -0.775), Vector2(0.392, -0.680),
 		Vector2(0.175, -0.695),
 	], PLATE)
-	_box(ci, xf, 0.190, -0.800, 0.372, -0.760, GOLD)
-	_box(ci, xf, -0.368, -0.800, -0.190, -0.760, GOLD_DK)
+	_box(ci, xf, 0.192, -0.800, 0.412, -0.760, GOLD)
+	_box(ci, xf, -0.408, -0.800, -0.190, -0.760, GOLD_DK)
 
 	# arms: thick, square, ending in blocks
-	_tube(ci, xf, Vector2(-0.268, -0.760), Vector2(-0.300, -0.585), 0.135, 0.115, PLATE_DK)
-	_box(ci, xf, -0.365, -0.600, -0.235, -0.455, PLATE_DK)
-	_tube(ci, xf, Vector2(0.270, -0.760), Vector2(0.312, -0.580), 0.145, 0.125, PLATE)
-	_box(ci, xf, 0.240, -0.600, 0.385, -0.440, PLATE)
-	_box(ci, xf, 0.245, -0.535, 0.382, -0.498, GOLD_DK)
+	_tube(ci, xf, Vector2(-0.300, -0.762), Vector2(-0.336, -0.600), 0.130, 0.108, PLATE_DK)
+	_box(ci, xf, -0.404, -0.612, -0.272, -0.462, PLATE_DK)
+	_box(ci, xf, -0.398, -0.566, -0.278, -0.532, GOLD_DK)
+	_tube(ci, xf, Vector2(0.302, -0.762), Vector2(0.348, -0.580), 0.145, 0.125, PLATE)
+	_box(ci, xf, 0.272, -0.600, 0.424, -0.440, PLATE)
+	_box(ci, xf, 0.277, -0.535, 0.420, -0.498, GOLD_DK)
 
 	# neck and a deliberately undersized helmet
 	_box(ci, xf, -0.075, -0.860, 0.075, -0.800, PLATE_DK)
@@ -538,24 +542,36 @@ static func _crab_jaw(ci: CanvasItem, xf: Transform2D) -> void:
 
 
 static func _crab_jaw_broken(ci: CanvasItem, xf: Transform2D) -> void:
-	# The head plate survives, greyed, with the mandibles torn away and the
-	# lower one lying on the seabed where it fell.
+	# The gape is what made FRONT dangerous, so breaking the jaw closes the
+	# gape: the upper mandible is snapped to a stub and the lower one hangs
+	# dead off its hinge with the tip in the silt. Nothing is deleted, so
+	# the player can still see which limb this was.
 	_crab_head_plate(ci, xf, DEAD, DEAD_DK)
-	_break_face(ci, xf, Vector2(-0.665, -0.475), Vector2(-0.638, -0.200), 0.075, 5)
-	_crack(ci, xf, Vector2(-0.640, -0.430), Vector2(-0.520, -0.330))
-	# a stub of upper mandible left on the joint
+	# upper mandible, snapped short
 	_poly(ci, xf, [
-		Vector2(-0.660, -0.470), Vector2(-0.760, -0.452),
-		Vector2(-0.735, -0.392), Vector2(-0.645, -0.392),
+		Vector2(-0.660, -0.470), Vector2(-0.808, -0.452),
+		Vector2(-0.792, -0.384), Vector2(-0.645, -0.392),
 	], DEAD)
-	_break_face(ci, xf, Vector2(-0.762, -0.450), Vector2(-0.737, -0.390), 0.045, 3)
-	# the severed lower mandible, dropped and rolled
-	var piece: Array = [
+	_break_face(ci, xf, Vector2(-0.812, -0.450), Vector2(-0.795, -0.382), 0.062, 3)
+	# lower mandible, still hinged but limp
+	var lower: Array = [
 		Vector2(-0.640, -0.256), Vector2(-0.812, -0.228),
 		Vector2(-0.995, -0.118), Vector2(-0.940, -0.078),
 		Vector2(-0.775, -0.170), Vector2(-0.630, -0.206),
 	]
-	_poly(ci, xf, _place(piece, Vector2(-0.640, -0.230), deg_to_rad(24.0), Vector2(-0.760, -0.045)), DEAD)
+	var hinge := Vector2(-0.640, -0.230)
+	var droop := deg_to_rad(-20.0)
+	_poly(ci, xf, _place(lower, hinge, droop, hinge), DEAD)
+	# the teeth go with it, or nobody can tell this used to be the jaw
+	for i in range(3):
+		var t: float = 0.22 + 0.28 * float(i)
+		var lx: float = -0.690 - 0.280 * t
+		var ly: float = -0.212 + 0.088 * t
+		_poly(ci, xf, _place([
+			Vector2(lx - 0.030, ly), Vector2(lx + 0.030, ly), Vector2(lx, ly - 0.070),
+		], hinge, droop, hinge), BELLY_DK)
+	_break_face(ci, xf, Vector2(-0.612, -0.192), Vector2(-0.652, -0.278), 0.060, 3)
+	_crack(ci, xf, Vector2(-0.560, -0.500), Vector2(-0.660, -0.400))
 	_crab_eyes(ci, xf, true)
 
 
@@ -577,42 +593,39 @@ static func _crab_eyes(ci: CanvasItem, xf: Transform2D, hurt: bool) -> void:
 		_tube(ci, xf, Vector2(-0.545, -0.545), Vector2(-0.585, -0.610), 0.032, 0.026, DEAD_DK)
 		_dot(ci, xf, Vector2(-0.590, -0.620), 0.036, DEAD_DK)
 		return
-	_tube(ci, xf, Vector2(-0.600, -0.540), Vector2(-0.712, -0.672), 0.036, 0.030, CHITIN)
-	_dot(ci, xf, Vector2(-0.722, -0.686), 0.048, SHELL_DK)
-	_dot(ci, xf, Vector2(-0.728, -0.694), 0.026, EYE)
-	_tube(ci, xf, Vector2(-0.540, -0.548), Vector2(-0.612, -0.640), 0.032, 0.026, CHITIN)
-	_dot(ci, xf, Vector2(-0.620, -0.652), 0.040, SHELL_DK)
-	_dot(ci, xf, Vector2(-0.626, -0.658), 0.022, EYE)
+	_tube(ci, xf, Vector2(-0.596, -0.530), Vector2(-0.722, -0.612), 0.036, 0.030, CHITIN)
+	_dot(ci, xf, Vector2(-0.736, -0.622), 0.048, SHELL_DK)
+	_dot(ci, xf, Vector2(-0.742, -0.630), 0.026, EYE)
+	_tube(ci, xf, Vector2(-0.532, -0.542), Vector2(-0.622, -0.598), 0.032, 0.026, CHITIN)
+	_dot(ci, xf, Vector2(-0.632, -0.608), 0.040, SHELL_DK)
+	_dot(ci, xf, Vector2(-0.638, -0.614), 0.022, EYE)
 
 
 static func _crab_claw(ci: CanvasItem, xf: Transform2D) -> void:
-	# Raised over the shell, which is the pose that makes FLANK look
-	# dangerous before the rules have said anything.
-	_tube(ci, xf, Vector2(-0.150, -0.390), Vector2(-0.300, -0.735), 0.150, 0.125, CHITIN)
-	_tube(ci, xf, Vector2(-0.300, -0.735), Vector2(-0.585, -0.855), 0.140, 0.110, CHITIN)
-	_dot(ci, xf, Vector2(-0.300, -0.735), 0.078, CHITIN_DK)
-	_crab_pincer(ci, xf, Vector2(0.0, 0.0), 0.0, CHITIN, CHITIN_DK)
+	# Raised and cocked over the front, which is the pose that makes FLANK
+	# look dangerous before the rules have said anything. It rises at the
+	# shoulder rather than crossing the shell, so the shell stays readable.
+	_dot(ci, xf, Vector2(-0.290, -0.330), 0.090, CHITIN_DK)
+	_tube(ci, xf, Vector2(-0.290, -0.345), Vector2(-0.395, -0.735), 0.142, 0.120, CHITIN)
+	_tube(ci, xf, Vector2(-0.395, -0.735), Vector2(-0.605, -0.895), 0.134, 0.106, CHITIN)
+	_dot(ci, xf, Vector2(-0.395, -0.735), 0.078, CHITIN_DK)
+	_crab_pincer_at(ci, xf, Vector2(-0.605, -0.895), 0.0, CHITIN, CHITIN_DK)
 
 
 static func _crab_claw_broken(ci: CanvasItem, xf: Transform2D) -> void:
-	# Snapped mid-arm. The stump still points up, so you can see what USED
-	# to be there, and the pincer is on the seabed under it.
-	_tube(ci, xf, Vector2(-0.150, -0.390), Vector2(-0.255, -0.632), 0.150, 0.120, DEAD)
-	_break_face(ci, xf, Vector2(-0.318, -0.605), Vector2(-0.198, -0.662), 0.070, 5)
-	_crack(ci, xf, Vector2(-0.170, -0.430), Vector2(-0.230, -0.560))
-	# the severed forearm, fallen forward and lying flat
-	var arm: Array = [
-		Vector2(-0.300, -0.735), Vector2(-0.585, -0.855),
-		Vector2(-0.585, -0.775), Vector2(-0.300, -0.655),
-	]
-	var drop := Vector2(-0.640, -0.070)
-	_poly(ci, xf, _place(arm, Vector2(-0.300, -0.700), deg_to_rad(-58.0), drop), DEAD)
-	_crab_pincer_at(ci, xf, _place([Vector2(-0.585, -0.855)], Vector2(-0.300, -0.700), deg_to_rad(-58.0), drop)[0], deg_to_rad(-58.0), DEAD, DEAD_DK)
-	_break_face(ci, xf, Vector2(-0.700, -0.150), Vector2(-0.610, -0.028), 0.060, 4)
-
-
-static func _crab_pincer(ci: CanvasItem, xf: Transform2D, _unused: Vector2, ang: float, col: Color, dk: Color) -> void:
-	_crab_pincer_at(ci, xf, Vector2(-0.585, -0.855), ang, col, dk)
+	# Not deleted: collapsed. The whole arm has dropped off the shoulder and
+	# the pincer lies open on the seabed, so you can still see WHICH limb
+	# went and that FLANK is no longer a threat.
+	var elbow := Vector2(-0.430, -0.078)
+	var wrist := Vector2(-0.680, -0.098)
+	_dot(ci, xf, Vector2(-0.290, -0.330), 0.086, DEAD_DK)
+	_tube(ci, xf, Vector2(-0.290, -0.345), elbow, 0.142, 0.116, DEAD)
+	_tube(ci, xf, elbow, wrist, 0.124, 0.100, DEAD)
+	_dot(ci, xf, elbow, 0.070, DEAD_DK)
+	_crab_pincer_at(ci, xf, wrist, deg_to_rad(-18.0), DEAD, DEAD_DK)
+	# the joint that failed, teeth pointing away from the shell
+	_break_face(ci, xf, Vector2(-0.352, -0.376), Vector2(-0.236, -0.290), 0.055, 4)
+	_crack(ci, xf, Vector2(-0.330, -0.180), Vector2(-0.398, -0.098))
 
 
 static func _crab_pincer_at(ci: CanvasItem, xf: Transform2D, wrist: Vector2, ang: float, col: Color, dk: Color) -> void:
@@ -652,8 +665,20 @@ static func _crab_tail(ci: CanvasItem, xf: Transform2D) -> void:
 	]
 	var w: Array = [0.230, 0.190, 0.150, 0.115, 0.080]
 	for i in range(spine.size() - 1):
-		_tube(ci, xf, spine[i], spine[i + 1], w[i], w[i + 1], CHITIN)
-		_seg(ci, xf, spine[i + 1], spine[i + 1] + (spine[i + 1] - spine[i]).orthogonal().normalized() * w[i + 1] * 0.5, 0.020, CHITIN_DK)
+		var a: Vector2 = spine[i]
+		var b: Vector2 = spine[i + 1]
+		var n := (b - a).orthogonal().normalized()
+		_tube(ci, xf, a, b, w[i], w[i + 1], CHITIN)
+		# joint ring, so it reads as segments and not as one smooth horn
+		_seg(ci, xf, b - n * w[i + 1] * 0.55, b + n * w[i + 1] * 0.55, 0.024, CHITIN_DK)
+		# dorsal spike per segment: the same mutation language as the shell
+		var mid := (a + b) * 0.5
+		var along := (b - a).normalized() * 0.048
+		_poly(ci, xf, [
+			mid - along - n * w[i] * 0.35,
+			mid + along - n * w[i] * 0.35,
+			mid - n * (w[i] * 0.5 + 0.085),
+		], CHITIN_DK)
 	# barb
 	_poly(ci, xf, [
 		Vector2(1.020, -0.880), Vector2(1.090, -0.830),

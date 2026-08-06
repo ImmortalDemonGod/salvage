@@ -53,12 +53,18 @@ static var TUNE := {
 	# G3 in band; this is the one with the smallest numbers, per
 	# Glass_Goat's directive that results stay countable like chess.
 	# Measured at these values: casual 73.0%, greedy 7.0 turns, 22.0 HP lost.
+	# Re-swept after G-TEACH forced fight one down to two divers. Of 48
+	# cells only ONE lands G3 in band, which is worth knowing: the
+	# two-diver fight is a narrow design space and the next content change
+	# will likely knock it out. Measured here: casual 66.3%, greedy 6.0
+	# turns (floor 6.0), 10.0 squad HP lost (floor 8.0).
 	"limb_hp": [14, 10, 10],
-	"diver_hp": [6, 10, 16],
+	"diver_hp": [8, 14, 16],
 	"diver_dmg": [2, 2, 5],
-	"jaw_dmg": 3,
+	"jaw_dmg": 2,
 	"tail_dmg": 2,
 	"air": 4,
+	"party": 2,   # fight one is two divers; Proto5 joins at the boat
 }
 
 var divers: Array = []
@@ -75,11 +81,15 @@ var overdrafted := false      # the valve opens once per turn, not endlessly
 func _init() -> void:
 	var hp: Array = TUNE.diver_hp
 	var dm: Array = TUNE.diver_dmg
+	# SPEC 2.8's ladder: fight one is TWO divers. Proto5 joins at the boat,
+	# because "a diver who costs 3 is a commitment" is its own idea and has
+	# to be taught alone. G-TEACH caught the sim building three.
 	divers = [
 		Diver.new(0, "Scuba", 1, int(hp[0]), int(dm[0]), FRONT),
 		Diver.new(1, "Prototype1", 2, int(hp[1]), int(dm[1]), UNDER),
-		Diver.new(2, "Proto5", 3, int(hp[2]), int(dm[2]), FLANK),
 	]
+	if int(TUNE.party) >= 3:
+		divers.append(Diver.new(2, "Proto5", 3, int(hp[2]), int(dm[2]), FLANK))
 	limb_hp = (TUNE.limb_hp as Array).duplicate()
 	air = int(TUNE.air)
 

@@ -235,6 +235,8 @@ func fuzz() -> void:
 			bump("try_move")
 			if int(d.station) == s:
 				bump("ill_same")
+			if not (s in Combat.OPEN_STATIONS):
+				bump("ill_closed")
 			if c.air < Combat.MOVE_COST:
 				bump("ill_air")
 			expected = expect_move(c, i, s)
@@ -348,13 +350,13 @@ func _init() -> void:
 	probe_station_bounds()
 	print(("fuzz %d actions, %d random and %d steered by Bots.greedy  %d accepted %d rejected (end_turn %d, always legal) | tried: attack %d  move %d  overdraft %d  end_turn %d"
 		+ " | illegal by construction, counted: fight already over %d, downed diver %d, not enough Air %d, station with no live limb %d,"
-		+ " move to the station already occupied %d, overdraft at hp<=%d %d, second overdraft in one turn %d, end_turn twice in a row %d"
+		+ " move to the station already occupied %d, move to a station not open in this encounter %d, overdraft at hp<=%d %d, second overdraft in one turn %d, end_turn twice in a row %d"
 		+ " | %d fights: %d victory %d defeat %d hit the %d-turn cap | %d invariant sweeps, air seen %d..%d (bound 0..%d)"
 		+ " | plus %d off-the-board move probes on throwaway sims | ran in %.0f ms")
 		% [ACTIONS, ACTIONS - got("guided"), got("guided"), got("accepted"), got("rejected"), got("ok_end"),
 			got("try_attack"), got("try_move"), got("try_over"), got("try_end"),
 			got("ill_over"), got("ill_down"), got("ill_air"), got("ill_nolimb"),
-			got("ill_same"), Combat.OVERDRAFT_HP, got("ill_lowhp"), got("ill_od_twice"), got("ill_end_repeat"),
+			got("ill_same"), got("ill_closed"), Combat.OVERDRAFT_HP, got("ill_lowhp"), got("ill_od_twice"), got("ill_end_repeat"),
 			got("fights"), got("end_victory"), got("end_defeat"), got("capped"), FIGHT_CAP,
 			got("sweeps"), air_floor, air_peak, air_max, got("probes"),
 			(Time.get_ticks_usec() - t) / 1000.0])

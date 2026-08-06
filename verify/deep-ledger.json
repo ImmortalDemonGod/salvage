@@ -1,5 +1,7 @@
 {
   "dry_streak": 0,
-  "passes": 2,
-  "seen": []
+  "passes": 3,
+  "seen": [
+    "DOMINATED: attack:Prototype1 is never the unique optimal action in 400 sampled states"
+  ]
 }

@@ -107,7 +107,11 @@ func _init() -> void:
 	print("ran in %.0f ms" % ((Time.get_ticks_usec() - t) / 1000.0))
 	if findings.is_empty():
 		print("VERIFY: clean")
+		# quit() only REQUESTS a quit; without the return the clean path falls
+		# through and re-quits with 1. Found by the fuzz agent: a fully
+		# green fast set was reporting a false red on its exit code.
 		quit(0)
+		return
 	for f in findings:
 		print("FINDING  " + f)
 	print("VERIFY: %d finding(s)" % findings.size())

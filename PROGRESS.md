@@ -289,6 +289,56 @@ which is the exact failure prototype 1 was retired for.
 
 ## Feature log
 
+- **G-TEACH built and BLOCKING.** `content/beats.gd` declares the ladder
+  as data; `verify/teach.gd` checks one-new-idea-per-beat, no mechanic
+  taught twice, every mechanic placed somewhere, AND cross-checks the
+  declaration against what the sim actually builds so the document cannot
+  quietly agree with itself. It fired immediately with 5 findings,
+  including the one it was built to catch: **the ladder declared two
+  divers for fight one and the sim built three.** Also caught: overdraft
+  and umbilical existed as mechanics with no beat introducing them, and
+  backline was smuggled into the conditions beat. All placed. Ladder is
+  now 9 beats, 12 mechanics, clean.
+- Beats may declare `parts`: mechanics that ARE the taught idea rather
+  than separate ideas (SPEC 2.3 says "the limb IS the position", so limbs
+  and stations are one idea with two names). Declaring a part costs a
+  line someone can argue with, so smuggling is auditable rather than free.
+- **A third bug found by the fuzz agent, in a file I own.** `checks.gd`
+  called `quit(0)` without returning, so the clean path fell through and
+  re-quit with 1: a fully green fast set was reporting a false red on its
+  exit code. `fast.sh` survived only because it greps for FINDING instead
+  of reading the exit code. Fixed.
+- **G3 re-tuned for the two-diver fight** after G-TEACH forced the party
+  down. Of 48 swept cells only ONE lands in band. Measured: casual 62.2
+  percent, greedy 6.0 turns (exactly the floor), 10.0 squad HP lost.
+  **Logged as fragile:** a band satisfied by 1 cell in 48 will fall over
+  at the next content change.
+
+### OPEN, escalated rather than explained away (standing rule 7)
+
+**G4: `attack:Prototype1` is never the unique optimal action in 400
+sampled states.** It costs 2 Air for 2 damage against Scuba's 1 Air for 2,
+so it is strictly worse at attacking, which is Tail Strike again.
+
+The cause is structural, not numeric: **SPEC 2.9 gives Prototype1 the
+verb *disable*, and conditions are not built until beat `fight3`.** Until
+then it has no reason to exist beyond being a second body, and no damage
+number fixes that, because with a shared Air pool and no per-diver action
+limit, 4 Air buys the same total damage whoever spends it.
+
+The fork, for the user:
+  (a) fight one runs ONE diver, and Prototype1 arrives at `boat1` with
+      the drum that gives it its verb. Cleanest ladder: one diver, then
+      two, then three, each arriving with a reason. Costs another re-tune.
+  (b) fight one keeps two divers and Prototype1 stays dominated until
+      `fight3`, accepted as a known-open finding with a date.
+  (c) give Prototype1 a non-damage reason that IS the station lesson,
+      such as being the only diver who can hold FRONT against the jaw.
+
+I have not picked. This is a design fork that moves the ladder and the
+bands, and rule 7 says a finding may be fixed, escalated, or ruled on by
+the user, but not closed by my explanation.
+
 - RUN START. Bootstrap 1-5 complete. Godot 4.7.1, pure GDScript (Q12
   closed on measurement: 10k fights in ~6.5s).
 - **Bootstrap 3, layout invariants over the scene tree.** Built BEFORE

@@ -14,9 +14,9 @@ func band(n: int) -> Dictionary:
 
 func _init() -> void:
 	print("limb        dhp          jaw/tail  casual%  turns  hpLost   in band?")
-	for limbs in [[8,6,6], [14,10,10], [20,14,14], [26,18,18]]:
-		for dhp in [[6,10,16], [10,16,24], [14,22,32]]:
-			for en in [[4,3], [3,2], [2,2]]:
+	for limbs in [[6,4,4], [8,6,6], [10,8,8], [14,10,10]]:
+		for dhp in [[6,10,16], [8,14,16], [10,18,16], [12,22,16]]:
+			for en in [[3,2], [2,2], [2,1]]:
 				Combat.TUNE.limb_hp = limbs
 				Combat.TUNE.diver_hp = dhp
 				Combat.TUNE.jaw_dmg = en[0]
