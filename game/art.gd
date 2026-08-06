@@ -287,6 +287,12 @@ static func _scuba(ci: CanvasItem, xf: Transform2D) -> void:
 	# neck and head
 	_box(ci, xf, -0.024, -0.660, 0.032, -0.612, SKIN_DK)
 	_dot(ci, xf, Vector2(0.012, -0.726), 0.062, SKIN)
+	# dive mask: the crew's shared piece of kit
+	_box(ci, xf, -0.030, -0.756, 0.070, -0.706, GLASS_DK)
+	_box(ci, xf, -0.022, -0.748, 0.062, -0.714, GLASS)
+	_seg(ci, xf, Vector2(-0.030, -0.734), Vector2(-0.062, -0.728), 0.016, RUBBER)
+	# and the tank gets a brass collar so it reads as equipment, not shadow
+	_box(ci, xf, -0.112, -0.618, -0.048, -0.596, GOLD_DK)
 	# hair: cap plus a ponytail that streams backwards. The trailing spike
 	# is what tells you at 64px that this one has no helmet.
 	_poly(ci, xf, [
