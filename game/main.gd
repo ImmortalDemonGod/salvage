@@ -533,6 +533,11 @@ func _process(dt: float) -> void:
 		_stamp_title()
 	_clock += dt
 	fx.tick(dt)
+	if _dive > 0.0:
+		_dive -= dt
+		queue_redraw()
+		if _dive <= 0.0:
+			_refresh()
 	if _hold > 0.0:
 		_hold -= dt
 		if _hold <= 0.0:
@@ -624,6 +629,11 @@ func _next_step() -> String:
 	return "Press ENTER to end the turn."
 
 # never leave the player holding a diver who cannot act
+func _hud(v: bool) -> void:
+	for c in get_children():
+		if c is Panel:
+			(c as Panel).visible = v
+
 func _auto_select() -> void:
 	if combat == null:
 		return
@@ -952,10 +962,13 @@ func player_end_turn() -> void:
 # Winning cut straight to the next screen, so the moment you won was the
 # moment the thing you won against vanished. Hold it.
 var _hold := 0.0
+var _dive := 0.0        # seconds left of the descent between beats
 var _won := ""
 
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
+		_dive = 1.7
+		_hud(false)
 		_won = ("%s IS DISABLED" % String(combat.enc.get("title", "the enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
 		_hold = 2.6
 		run.advance()
@@ -1197,6 +1210,25 @@ func _water() -> Color:
 # an unfinished engine test and the enemy looked like it was floating in a
 # void. The last prototype had parallax, god rays and a mote field, and the
 # team's own comparison called this the single biggest step backwards.
+# the descent: what the story keeps saying happens between beats and the
+# game never showed. Silt tears upward, the light narrows, and the place
+# you are going is named on the way down.
+func _draw_dive(k: float) -> void:
+	var f: Font = ThemeDB.fallback_font
+	var w: Vector2 = size.max(DESIGN)
+	var fade: float = min(1.0, k * 2.2) if k < 0.5 else min(1.0, (1.0 - k) * 2.2)
+	draw_rect(Rect2(Vector2.ZERO, w), Color(0.01, 0.03, 0.055, 0.92 * fade))
+	for i in range(80):
+		var x: float = fmod(float(i) * 211.7, w.x)
+		var y: float = fmod(float(i) * 97.3 + (1.0 - k) * 2600.0, w.y)
+		var len: float = 30.0 + float(i % 5) * 26.0
+		draw_line(Vector2(x, y), Vector2(x, y + len), Color(0.62, 0.82, 0.92, 0.30 * fade), 2.0)
+	var b: Dictionary = run.current()
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.46), "DESCENDING",
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 26, Color(0.72, 0.86, 0.92, fade))
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.46 + 42.0), String(b.get("title", "")).to_upper(),
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.92, 0.95, 0.97, fade))
+
 func _draw_water() -> void:
 	var d: float = _depth()
 	var w: Vector2 = size.max(DESIGN)
@@ -1482,6 +1514,8 @@ func _draw() -> void:
 	_draw_windup()
 	_draw_bars()
 	_draw_fx()
+	if _dive > 0.0:
+		_draw_dive(1.0 - clampf(_dive / 1.7, 0.0, 1.0))
 
 # --- the effects themselves, painted over the board ---------------------
 func _draw_fx() -> void:
