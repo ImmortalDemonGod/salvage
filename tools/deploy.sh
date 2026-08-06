@@ -21,13 +21,16 @@ git -c commit.gpgsign=false commit -q -m "web export" || true
 git push -q origin HEAD
 
 if command -v vercel >/dev/null 2>&1; then
-  (cd site && vercel deploy --prod --yes >/dev/null 2>&1) && echo "deployed: https://salvage-chi.vercel.app/"
+  (cd site && vercel deploy --prod --yes >/dev/null 2>&1) && echo "deployed to the mirror: https://salvage-chi.vercel.app/"
 fi
 
 # and then ASK it, rather than announcing it. This script used to print the
-# URL and stop; the first person to open that URL got a 404.
-#
+# URL and stop; the first person to open that URL got a 404. live.mjs asks
+# the link the team actually shares (the GitHub Pages URL in README.md);
+# the Pages deploy runs through Actions after the push, so straight after a
+# push a red here can mean "still deploying". Re-ask before believing a
+# red; never skip the ask.
 if command -v node >/dev/null 2>&1; then
   PLAYWRIGHT_CORE=${PLAYWRIGHT_CORE:-$HOME/node_modules/playwright-core/index.mjs} \
-    node "$(dirname "$0")/../verify/live.mjs" 2>&1 | tail -2
+    node "$(dirname "$0")/../verify/live.mjs" 2>&1 | tail -3
 fi
