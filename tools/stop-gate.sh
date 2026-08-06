@@ -9,8 +9,18 @@
 # Exit 0  -> allow stop.  Exit 2 -> block, stderr goes back to the model.
 LEDGER="$HOME/salvage/verify/deep-ledger.json"
 GUARD="$HOME/salvage/verify/.stop-blocks"
+ARMED="$HOME/salvage/verify/.run-armed"
 NEED=3
 MAX_BLOCKS=400   # safety valve so a broken ledger cannot loop forever
+
+# A blocking Stop hook is a loaded gun. It does nothing unless the run has
+# been explicitly armed, so ordinary sessions in this repo (setup, review,
+# a quick fix) are never trapped. Arming and aborting are both one file op:
+#   arm:   touch verify/.run-armed
+#   abort: rm    verify/.run-armed
+if [ ! -f "$ARMED" ]; then
+  exit 0
+fi
 
 n=$(cat "$GUARD" 2>/dev/null || echo 0)
 if [ "$n" -ge "$MAX_BLOCKS" ]; then
