@@ -880,9 +880,9 @@ func _valve_dot(at: Vector2, key: String, is_open: bool, reachable: bool) -> voi
 		draw_line(at + dirv * 4.0, at + dirv * 15.0, col, 3.0)
 	draw_circle(at, 5.0, col)
 	var f: Font = ThemeDB.fallback_font
-	draw_string(f, at + Vector2(-5, 34), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.82, 0.86, 0.90))
+	draw_string(f, at + Vector2(24, 6), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.86, 0.90, 0.94))
 	if not is_open and not reachable:
-		draw_string(f, at + Vector2(-34, 38), "under water", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.75, 0.72, 0.80))
+		draw_string(f, at + Vector2(-40, -26), "under water", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.78, 0.74, 0.68))
 
 func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name: String) -> void:
 	# steel walls with rivets down them, not a wireframe
@@ -911,8 +911,8 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 	# above the tank, clear of the pipes that run below it
 	# under the tank, where nothing else is written
 	# clear of the pipes, which run from the tank floor down to the valves
-	draw_string(f, at + Vector2(0, -12), "%s  %d of %d" % [name, filled, cap],
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
+	draw_string(f, at + Vector2(10, 26), "%s  %d of %d" % [name, filled, cap],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.80, 0.86, 0.90))
 
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
 	var f: Font = ThemeDB.fallback_font
