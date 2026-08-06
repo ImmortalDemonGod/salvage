@@ -966,9 +966,10 @@ func _draw_windup() -> void:
 				# it bites where it stands: ring the station instead
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
-				draw_circle(dst + Vector2(0, -60.0), 15.0, Color(0.10, 0.05, 0.06, 0.92))
-				draw_arc(dst + Vector2(0, -60.0), 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
-				draw_string(f, dst + Vector2(-6, -53.0), str(int(it.dmg)),
+				var pip0: Vector2 = dst + Vector2(46.0, -34.0)
+				draw_circle(pip0, 15.0, Color(0.10, 0.05, 0.06, 0.92))
+				draw_arc(pip0, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
+				draw_string(f, pip0 + Vector2(-6, 7), str(int(it.dmg)),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 				continue
 			var n: Vector2 = dir.normalized()
@@ -985,7 +986,7 @@ func _draw_windup() -> void:
 					Color(0.98, 0.46, 0.34, 0.55 + 0.45 * pulse), 6.0)
 			# anchored to the RING it lands on, never to the middle of the
 			# line, so it can never read as belonging to another station
-			var pip: Vector2 = dst + Vector2(0, -60.0)
+			var pip: Vector2 = dst + Vector2(46.0, -34.0)
 			draw_circle(pip, 15.0, Color(0.10, 0.05, 0.06, 0.92))
 			draw_arc(pip, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
 			draw_string(f, pip + Vector2(-6, 7), str(int(it.dmg)),
@@ -1047,7 +1048,7 @@ func _draw_bars() -> void:
 			continue
 		var maxhp: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
 		var frac2: float = float(combat.limb_hp[lb]) / max(1.0, maxhp)
-		var at: Vector2 = place(st) + Vector2(-88, 30)
+		var at: Vector2 = place(st) + Vector2(-88, -74)
 		_bar(at, 176, 16, frac2, BAR_LIMB)
 		# and the name of what you are breaking, on the bar itself
 		var f2: Font = ThemeDB.fallback_font
