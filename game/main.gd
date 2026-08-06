@@ -17,6 +17,10 @@ const DESIGN := Vector2(1280, 720)
 # existed and did not land on anything; the first as-played capture showed
 # FLANK floating over empty shell while the claw was elsewhere, which
 # silently breaks the "the limb IS the position" contract (SPEC 2.3).
+# Fallback only. The real positions come from the ENCOUNTER, because a
+# second hardcoded list in the scene is exactly the "two lists that agree"
+# failure the station-limb contract exists to prevent, and it made the vent
+# worm and the dredge stand on crab anatomy.
 const STATION_POS := [
 	Vector2(700, 386),   # FRONT  - the jaw
 	Vector2(752, 300),   # FLANK  - the raised claw, which the art puts forward
@@ -51,6 +55,16 @@ func _ready() -> void:
 	_build_ui()
 	_refresh()
 
+# where this encounter puts a station, falling back to the default ring
+func place(i: int) -> Vector2:
+	if combat != null:
+		var places: Dictionary = combat.enc.get("places", {})
+		var key := str(i)
+		if places.has(key):
+			var xy: Array = places[key]
+			return Vector2(float(xy[0]), float(xy[1]))
+	return STATION_POS[i]
+
 func _build_ui() -> void:
 	# station markers: one Control each, so the invariants can assert they
 	# never overlap and their labels stay inside them
@@ -58,7 +72,7 @@ func _build_ui() -> void:
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
 		m.size = Vector2(210, 66)
-		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 56)
+		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
@@ -232,6 +246,8 @@ func _refresh() -> void:
 		ui_stations[i].visible = combat.station_open(i)
 		if not combat.station_open(i):
 			continue
+		var mk: Panel = ui_stations[i]
+		mk.position = place(i) - mk.size * 0.5 + Vector2(0, 56)
 		# The limb IS the position, so the marker has to SAY the limb and
 		# how much of it is left. A blind reviewer found no enemy health
 		# readout anywhere on screen, which made the whole limb system
@@ -398,18 +414,30 @@ func _draw() -> void:
 		var limb: int = combat.STATION_LIMB[i]
 		var safe: bool = limb < 0 or combat.limb_broken[limb]
 		var col := Color(0.25, 0.55, 0.6) if safe else Color(0.85, 0.35, 0.25)
-		draw_arc(STATION_POS[i], 46, 0, TAU, 40, col, 2.0)
+		draw_arc(place(i), 46, 0, TAU, 40, col, 2.0)
 	# scale is PIXELS PER BODY UNIT, not a multiplier. Passing 1.6 made the
 	# crab under two pixels tall, its foot triangles sub-pixel, and the
 	# triangulator rejected them, so the enemy silently did not draw at all
 	# while every test stayed green. Caught by the first as-played capture.
 	if combat == null:
 		return
-	Art.draw_crab(self, CRAB_POS + Vector2(0, 150), CRAB_SCALE, combat.limb_broken)
+	var art: Dictionary = combat.enc.get("art", {})
+	var ap: Array = art.get("pos", [878, 316])
+	var asc: float = float(art.get("scale", CRAB_SCALE))
+	var tint: Array = art.get("tint", [1.0, 1.0, 1.0])
+	Art.tint = Color(float(tint[0]), float(tint[1]), float(tint[2]))
+	Art.stretch = 1.0
+	if String(art.get("kind", "crab")) == "worm":
+		Art.stretch = 1.55        # long and thin
+	elif String(art.get("kind", "crab")) == "dredge":
+		Art.stretch = 0.78        # squat and blocky
+	Art.draw_crab(self, Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150), asc, combat.limb_broken)
+	Art.tint = Color(1, 1, 1)
+	Art.stretch = 1.0
 	for i in range(combat.divers.size()):
 		var d = combat.divers[i]
 		if d.down:
 			continue
 		# above the ring, so the station card below never slices a sprite
-		var p: Vector2 = STATION_POS[d.station] + Vector2(-22 + i * 36, -8)
+		var p: Vector2 = place(d.station) + Vector2(-22 + i * 36, -8)
 		Art.draw_diver(self, d.cost, p, 74.0, 1)

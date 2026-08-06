@@ -113,10 +113,13 @@ static func draw_crab(ci: CanvasItem, pos: Vector2, scale: float, limb_broken: A
 # ---- primitives --------------------------------------------------------
 
 static func _xf(pos: Vector2, scale: float, facing: int) -> Transform2D:
+	# stretch lengthens or squats the body without new geometry
 	var fx := 1.0
 	if facing < 0:
 		fx = -1.0
-	return Transform2D(Vector2(fx * scale, 0.0), Vector2(0.0, scale), pos)
+	# stretch > 1 lengthens the body, < 1 squats it, and the vertical axis
+	# compensates so the creature keeps roughly its footprint
+	return Transform2D(Vector2(fx * scale * stretch, 0.0), Vector2(0.0, scale / sqrt(stretch)), pos)
 
 
 static func _pts(xf: Transform2D, local: Array) -> PackedVector2Array:
@@ -133,6 +136,12 @@ static func _pts(xf: Transform2D, local: Array) -> PackedVector2Array:
 # letting a hull quietly stand in for the real silhouette.
 static var bad_polys := 0
 
+# Per-encounter silhouette variation. One creature drawn three ways is still
+# a placeholder, but a LONG one and a SQUAT one read as different bodies,
+# which is the thing the station design is being tested against.
+static var tint := Color(1, 1, 1)
+static var stretch := 1.0
+
 static func _poly(ci: CanvasItem, xf: Transform2D, local: Array, col: Color) -> void:
 	var pts: PackedVector2Array = _pts(xf, local)
 	if pts.size() < 3:
@@ -141,9 +150,9 @@ static func _poly(ci: CanvasItem, xf: Transform2D, local: Array, col: Color) -> 
 		bad_polys += 1
 		var hull: PackedVector2Array = Geometry2D.convex_hull(pts)
 		if hull.size() >= 3:
-			ci.draw_colored_polygon(hull, col)
+			ci.draw_colored_polygon(hull, col * tint)
 		return
-	ci.draw_colored_polygon(pts, col)
+	ci.draw_colored_polygon(pts, col * tint)
 
 
 static func _box(ci: CanvasItem, xf: Transform2D, x0: float, y0: float, x1: float, y1: float, col: Color) -> void:
