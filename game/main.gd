@@ -89,14 +89,14 @@ func _build_ui() -> void:
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(392, 96)
-		p.position = Vector2(24 + i * 406, 600)
+		p.size = Vector2(392, 146)
+		p.position = Vector2(24 + i * 406, 566)
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
 		l.set_anchors_preset(Control.PRESET_FULL_RECT)
 		l.offset_left = 14; l.offset_right = -14
-		l.offset_top = 12; l.offset_bottom = -12
+		l.offset_top = 8; l.offset_bottom = -8
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		p.add_child(l)
 		ui_divers.append(p)
@@ -274,9 +274,9 @@ func _refresh() -> void:
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
 	if combat.air_penalty > 0:
-		ui_air.text = "AIR  %d of %d left this turn   (%d line cut)" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
+		ui_air.text = "AIR  %d of %d left this turn\na swing hit nobody: %d line cut" % [combat.air, Combat.AIR_PER_TURN, combat.air_penalty]
 	else:
-		ui_air.text = "AIR  %d of %d left this turn" % [combat.air, combat.air_this_turn()]
+		ui_air.text = "AIR  %d of %d left this turn\none shared pool, no banking" % [combat.air, combat.air_this_turn()]
 	var live := 0
 	for lb in range(combat.limb_broken.size()):
 		if not combat.limb_broken[lb]:
@@ -305,10 +305,20 @@ func _refresh() -> void:
 		card.visible = true
 		var d = combat.divers[i]
 		var mark := ">" if i == selected else " "
-		var state := "DOWN" if d.down else "%s  %d HP" % [Combat.STATION_NAMES[d.station], d.hp]
+		var state := "DOWN" if d.down else "at %s   %d/%d HP" % [Combat.STATION_NAMES[d.station], d.hp, d.max_hp]
 		var afford := "" if combat.air >= d.cost else "   cannot afford"
-		var verb := "shuts a limb down for a turn" if d.disables else "hits for %d" % d.dmg
-		card.get_node("label").text = "%s%d %s  %d air to act, %s%s\n%s" % [mark, i + 1, d.dname, d.cost, verb, afford, state]
+		var lines: Array = []
+		for slot in range(d.kit.size()):
+			var ab: Dictionary = d.kit[slot]
+			var key := "SPACE" if slot == 0 else "F"
+			var what := ""
+			match String(ab.kind):
+				"hit": what = "%d dmg" % int(ab.dmg)
+				"hit_and_step": what = "%d dmg, then step" % int(ab.dmg)
+				"hit_wide": what = "%d dmg here and either side" % int(ab.dmg)
+				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "") + "shuts the limb for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
+			lines.append("%s %s: %s" % [key, String(ab.name), what])
+		card.get_node("label").text = "%s%d %s  %d air per action%s\n%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, "\n".join(lines), state]
 	ui_help.text = (refusal + "        ") if refusal != "" else ""
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []
@@ -316,13 +326,32 @@ func _refresh() -> void:
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
 	var pick := "1 diver only" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
-	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE attack  ·  ENTER end turn" % [pick, "  ".join(moves)]
+	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE / F use an ability  ·  ENTER end turn" % [pick, "  ".join(moves)]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
 # A refused input must say WHY. Silence is how a player concludes the game
 # is broken rather than that they cannot afford the action.
-func player_attack() -> bool:
+# Half the kit was unreachable: six abilities existed in the sim and the
+# bots used all six, while the player had one key. A blind reviewer put it
+# plainly: "there is nothing on screen indicating a second or alternate
+# attack for either character."
+func player_ability(slot: int) -> bool:
+	var ok := combat.act_ability(selected, slot)
+	if ok:
+		refusal = ""
+		_after()
+	else:
+		var d = combat.divers[selected]
+		if slot >= d.kit.size(): refusal = "%s has no second ability" % d.dname
+		elif d.down: refusal = "%s is down" % d.dname
+		elif combat.air < d.cost: refusal = "not enough air: %s needs %d, you have %d" % [d.dname, d.cost, combat.air]
+		elif not combat.can_attack(d): refusal = "nothing to hit from %s" % Combat.STATION_NAMES[d.station]
+		else: refusal = "that action is not available"
+		_refresh()
+	return ok
+
+func _dead_player_attack() -> bool:
 	var ok := combat.act_attack(selected)
 	if ok:
 		refusal = ""
@@ -352,7 +381,9 @@ func player_move(station: int) -> bool:
 # H1: act_overdraft existed in the sim, was bound to no key, and appeared in
 # no bot's legal-action list, so a whole row of the Air economy was dead code
 # under a green gate.
-func player_overdraft() -> bool:
+# Unbound when OVERDRAFT_ENABLED went false. Kept so the sim entry point
+# still has a presentation-side caller if the mechanic is ever revived.
+func _dead_player_overdraft() -> bool:
 	var ok := combat.act_overdraft(selected)
 	refusal = "" if ok else "cannot burn HP for air: needs more than %d HP, and once per turn" % Combat.OVERDRAFT_HP
 	_refresh()
@@ -397,8 +428,8 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_E: player_move(Combat.UNDER)
 		KEY_R: player_move(Combat.REAR)
 		KEY_T: player_move(Combat.BACKLINE)
-		KEY_SPACE: player_attack()
-		KEY_X: player_overdraft()
+		KEY_SPACE: player_ability(0)
+		KEY_F: player_ability(1)
 		KEY_ENTER:
 			if combat == null:
 				run.advance(); combat = run.combat; selected = 0; _refresh()

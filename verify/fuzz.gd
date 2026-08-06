@@ -230,7 +230,7 @@ func fuzz() -> void:
 			if lim < 0 or bool(c.limb_broken[lim]):
 				bump("ill_nolimb")
 			expected = expect_attack(c, i)
-			accepted = c.act_attack(i)
+			accepted = c.act_ability(i, rng.randi_range(0, 1))
 			last_was_end = false
 		elif mode == "move":
 			kind = "move to %s" % Combat.STATION_NAMES[s]

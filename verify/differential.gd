@@ -80,9 +80,14 @@ func _process(_d: float) -> bool:
 		var rb := false
 		match step.kind:
 			"attack":
-				ra = Bots.apply(a, {"kind": "attack", "i": step.i})
+				# Drive the key the player actually presses. This read
+				# scene.player_attack() while the key map routed SPACE to
+				# player_ability(0), so the differential was comparing the
+				# bots against a door no player could open.
+				var slot: int = int(step.get("slot", 0))
+				ra = Bots.apply(a, {"kind": "attack", "i": step.i, "slot": slot})
 				scene.selected = int(step.i)
-				rb = scene.player_attack()
+				rb = scene.player_ability(slot)
 			"move":
 				ra = Bots.apply(a, {"kind": "move", "i": step.i, "s": step.s})
 				scene.selected = int(step.i)
