@@ -27,6 +27,15 @@ func _init() -> void:
 		var t: String = beat.teaches
 		var uses: Array = beat.uses
 		var parts: Array = beat.get("parts", [])
+		# A beat may teach NOTHING new: that is what escalation looks like,
+		# a mechanic recurring in a harder shape. G13 checks that it really
+		# is harder; G-TEACH only cares that nothing arrives unannounced.
+		if t == "":
+			for m in uses:
+				if not (m in taught):
+					fail("UNTAUGHT IN A RECURRENCE: %s uses '%s' which no earlier beat introduced" % [beat.id, m])
+			rows.append("%-9s recurs %-13s%s" % [beat.id, "(" + str(uses) + ")", "" if beat.built else "   [UNBUILT]"])
+			continue
 
 		# 1. exactly one new IDEA per beat. Components of that idea are
 		#    allowed but must be declared in `parts`, so smuggling a mechanic

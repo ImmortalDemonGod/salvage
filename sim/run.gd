@@ -57,6 +57,7 @@ func _enter() -> void:
 		log_lines.append("back on the rig: the squad patches up")
 	if String(b.get("kind", "scene")) == "puzzle":
 		puzzle = Puzzle.new()
+		puzzle.stage = int(b.get("stage", 1))
 		combat = null
 		log_lines.append("%s" % String(b.title))
 		return

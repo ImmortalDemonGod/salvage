@@ -148,6 +148,21 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 static func solve_step(p) -> int:
 	if p.solved():
 		return -1
+	if p.stage == 2:
+		# open the crossover FIRST while B is dry, then everything else.
+		# A naive order locks itself out, which is the point of the lock;
+		# a naive policy still has to be able to recover, or the lock is
+		# not readable whatever the author thinks.
+		if not p.valve[p.CROSS]:
+			if p.reachable(p.CROSS):
+				return p.CROSS
+			for i in range(p.B_VALVES):
+				if i != p.CROSS and p.valve[i]:
+					return i          # drain until the crossover is reachable
+		for i in range(p.B_VALVES):
+			if i != p.CROSS and not p.valve[i]:
+				return i
+		return -1
 	if not p.valve[p.SEIZED] and p.reachable(p.SEIZED):
 		return p.SEIZED
 	for i in range(p.VALVES):

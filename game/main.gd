@@ -208,7 +208,11 @@ func _refresh() -> void:
 			ui_stations[i].visible = false
 		ui_scene.get_parent().visible = true
 		ui_scene.text = run.puzzle.state_text() + "\n\n" + ("the way out is open" if run.puzzle.solved() else "(placeholder) The way out is above the waterline. Fill the chamber.")
-		ui_help.text = "1 2 3 turn a valve  ·  ENTER when the way is open"
+		var vk := ["1", "2", "3", "4"]
+		var labels: Array = []
+		for i in range(run.puzzle.valves()):
+			labels.append("%s=%s" % [vk[i], "crossover" if (run.puzzle.stage == 2 and i == run.puzzle.CROSS) else "valve %d" % (i + 1)])
+		ui_help.text = "turn a valve: " + "  ".join(labels) + "  ·  ENTER when the way is open"
 		queue_redraw()
 		return
 	if combat == null:
@@ -384,6 +388,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_3:
 			if run.puzzle != null: run.puzzle.toggle(2)
 			else: _select(2)
+			_refresh()
+		KEY_4:
+			if run.puzzle != null: run.puzzle.toggle(3)
 			_refresh()
 		KEY_Q: player_move(Combat.FRONT)
 		KEY_W: player_move(Combat.FLANK)

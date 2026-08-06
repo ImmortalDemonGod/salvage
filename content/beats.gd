@@ -95,6 +95,16 @@ static var LADDER := [
 		"expect": {"encounter": "spitter", "divers": 2, "open_stations": 4, "limbs": 3},
 	},
 	{
+		"id": "puzzle2",
+		"kind": "puzzle",
+		"stage": 2,
+		"title": "two chambers",
+		"teaches": "",
+		"uses": ["goal", "water_level"],
+		"built": true,
+		"note": "the same grammar, harder: A cannot fill itself, so the crossover is required, and the crossover is under B",
+	},
+	{
 		"id": "boat2",
 		"kind": "scene",
 		"title": "the big suit",
