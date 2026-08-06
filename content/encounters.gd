@@ -134,7 +134,7 @@ static var ALL := {
 	# the umbilical rule and the HP overdraft finally bite.
 	"dredge": {
 		"title": "the dredge",
-		"art": {"kind": "dredge", "scale": 168.0, "pos": [884, 320], "tint": [0.72, 0.62, 0.42]},
+		"art": {"kind": "dredge", "scale": 168.0, "pos": [884, 320], "tint": [0.46, 0.40, 0.30]},
 		"places": {"0": [614, 400], "1": [828, 300], "3": [1128, 350], "4": [286, 400]},
 		"party": 3,
 		"drum": true,
