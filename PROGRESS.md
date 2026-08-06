@@ -180,17 +180,52 @@ harness fidelity           instruments enter through the player's door
 godot --headless --path ~/salvage --script verify/checks.gd
 ```
 
-**Nightly deep set** (must be scheduled, not run by hand; an unscheduled
-nightly is an orphaned detector):
+**Deep set** (owns dominance, the taught line, and bypass):
 
 ```
-godot --headless --path ~/salvage --script tools/bench.gd -- 100000
-godot --headless --path ~/salvage --script verify/deep.gd        # to be built
+godot --headless --path ~/salvage --script verify/deep.gd -- 600
 ```
 
-The deep set owns: the dominance search (does a reachable state exist
-where each ability is uniquely optimal), the taught-line comparison, the
-bypass route search, and the cold-read batch.
+It writes `verify/deep-ledger.json`, which is what makes DRY computable:
+the ledger holds the union of every finding signature ever seen, and a
+pass is dry when it introduces none. **A pass with any UNVERIFIED check
+can never be dry**, so a thin deep set cannot fake coverage. Without that
+clause the very first pass at SCAFFOLD counted as dry, which is the
+vacuous-done failure this whole mechanism exists to prevent.
+
+Day-zero deep pass:
+
+```
+dominance  300 states sampled | attack:Proto5 1  attack:Prototype1 3  attack:Scuba 12
+                                move->BACKLINE 1  move->FLANK 21  move->FRONT 15
+                                move->REAR 102  move->UNDER 3
+taught     taught win 100.0% hp 15.0   naive win 0.0% hp 16.0
+UNVERIFIED bypass: the slice has one fight, so there is no route to skip yet
+DEEP pass 1: 0 signature(s), 0 NEW, 1 UNVERIFIED  ->  dry streak 0 of 3
+```
+
+G4 and G11 both pass at scaffold: every action is uniquely optimal in
+some sampled state, and the taught line beats naive play 100 percent to 0.
+Neither result means much until content exists, which is exactly why the
+UNVERIFIED clause blocks the streak.
+
+## The stop gate
+
+`tools/stop-gate.sh` is the Stop hook. It reads the ledger and blocks
+stopping until the streak reaches 3, with a safety valve at 400 blocks in
+case the ledger breaks. **This makes the stopping rule executable rather
+than written**, which matters because the rules that survived the last
+project survived by being checkable, not by being written down.
+
+Install:
+
+```json
+"hooks": { "Stop": [ { "hooks": [
+  { "type": "command", "command": "$HOME/salvage/tools/stop-gate.sh" }
+] } ] }
+```
+
+Verified both directions: blocks at streak 0, allows at streak 3.
 
 **Q12 is ANSWERED and closed: pure GDScript.** 10,000 fights run in about
 6.5 seconds across both policies, which fits inside a commit loop

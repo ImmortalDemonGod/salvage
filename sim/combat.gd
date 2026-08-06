@@ -168,3 +168,17 @@ func end_turn() -> void:
 		log_lines.append("the squad is lost")
 	turn += 1
 	air = air_this_turn()
+
+# Deep-set rollouts need to try an action and unwind. Cloning keeps the sim
+# pure: no undo stack, no hidden state to get out of sync.
+func clone() -> Combat:
+	var c := Combat.new()
+	for i in range(divers.size()):
+		var a = divers[i]
+		var b = c.divers[i]
+		b.hp = a.hp; b.station = a.station; b.down = a.down
+	c.limb_hp = limb_hp.duplicate()
+	c.limb_broken = limb_broken.duplicate()
+	c.air = air; c.air_penalty = air_penalty; c.turn = turn
+	c.outcome = outcome; c._rotation = _rotation
+	return c
