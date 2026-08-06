@@ -448,6 +448,60 @@ mouse and the limb bars -- and both had a commit message stating they
 worked. Standing rules 27 and 28 were written the same morning I broke
 them both.
 
+## The second human playtest (Aug 6, 14:44)
+
+He played again, mid fun pass, and recorded it: 25 minutes, quit at dive
+eight. "The TIDESONG combat was fun. This one is just tedious, and I feel
+like I'm being punished for playing it." He called it the last playtest
+before he shares the build with the team.
+
+**Which build he played matters.** The recording is stamped 14:44; the
+deploy he was on was 14:38. He had tiers, analyze and traits, the audio,
+and the click layer. He did not have anything from 15:01 onward: the
+genre affordances (selection ring, move halos, reticle, damage preview),
+the legend removal, the nameplate and anchoring fixes. His live
+commentary was in fact the source of the mid-block "why is there so much
+text" direction, and part of this session answered it after he stopped
+recording. Those items need his eyes on the current build, not more work.
+
+### Verified still true in the 16:00 build (each checked against source)
+
+| Finding | Evidence |
+|---|---|
+| **The team rig is in the repo and the game uses none of it.** "They look a little different than what Glass_Goat actually gave us... you have to be using it because you were talking about the names" | Exactly right. `art/rigs/Main_Team_Rigging.fbx` has been in the repo since the scaffold: three rigged divers, fifteen clips, including two attacks and a damaged reaction per character. INPUTS.md Part 2e analyzes it in detail. I took the names and none of the meshes or motion. The two things he asks for most, attack animation and hit reaction, already exist as clips in that file |
+| **Mash dominance is real.** "I'm just gonna use one player and just click space a bunch of times, as seems to be the dominant strategy" | `act_ability` has no per diver, per turn limit; air is the only economy, so one cheap diver can attack four times a turn and the squad is optional. This is the tedium core and it is a design decision, not a bug fix: changing it moves the pinned bands and must be paid for in content |
+| **Mouse parity is broken.** "Why can't I just play the game by clicking? I also have to click the screen AND use the keys" | `_click` on your own station or the creature fires ability 0 only. There is no click path to the second ability or to analyze. A misclick on empty board space also fires ability 0 and wastes air |
+| **The off-centre box is an aspect bug, not a copy bug.** Both playtests reported it | `aspect="expand"` grows the canvas rightward on any window wider than 16:9 while every panel sits at absolute 1280-space coordinates. The opening panel is mathematically centred at design size and left of centre on his screen |
+| **The gallery cannot see it.** | `verify/capture.mjs` shoots at 1280x800, where the canvas is exactly design width. The evidence pipeline is blind to the player's aspect. Rule 26 again, in a new place |
+| "80% of the screen is nothing but a panel" | Not measured before; panels do dominate. The affordance pass moved teaching onto the board but did not shrink the chrome |
+| The valve puzzle "felt like a test of can you read instructions... had I understood if I could actually visually SEE the water flowing" | The puzzle is still taught by text. Water level and flow are not drawn |
+| "Press F for it. I'm pressing F, and nothing happens" | The interlude that grants the second ability says press F on a screen where F is inert. The teaching moment the beat exists for cannot happen on it |
+| "Playing around with the keys wastes my turn. There's no way to strategize" | No undo. The sim is pure, so snapshot and restore is cheap; moves could be undoable until an ability or a read locks the turn |
+| "I have no idea which diver is which" | The card does carry the number ("1 Scuba...") but inside the dense status line he read aloud on stream and could not parse. Present and illegible |
+| Interlude copy incoherent: "Prototype one comes with you now. They were already on the rig"; "what did I even do? Why did I even go down there?" | Placeholder words are Marc's to replace, but ours must carry cause and effect. They do not |
+| "No winning screen, just directly to another puzzle thing" | A victory banner has existed since morning and he still did not see a win at the dredge. Claimed fixed, contradicted as played. Must be reproduced at that transition, not asserted |
+
+### What he asked for that is new
+
+| Ask | Note |
+|---|---|
+| **A tiny tutorial fight.** "One stage where you defeat a very tiny enemy... the red ring pops up, boom. I don't need to show that ever again" | He designed the replacement for the legend himself: teach each rule once, by play, then never print it again |
+| **Mouse first, keys second.** "We're removing keyboard controls entirely... you can keep them, I guess, or rework them" | Prompts phrased around clicking, keys in parentheses. `verify/hint.gd` audits keyboard phrasing and must move in lockstep or it will fight the change |
+| A HUD analysis of the kin games (Into the Breach, Slay the Spire, Darkest Dungeon, Monster Hunter, Fallout, Vagrant Story, Zelda) | He is sending one from his own agent. Expect it; audit our HUD against the same list before it arrives |
+
+What he liked, so it does not get lost: the music registering at all, the
+audio feedback ("at least I know things are happening"), the improved
+opening copy, clicking the valves, and "when touching it actually feels
+like a decent game."
+
+### Standing rule 31
+
+**The evidence pipeline must look at the game through the player's
+window, not the developer's.** The gallery shot at one aspect ratio and
+the off-centre UI both playtests reported was invisible at exactly that
+aspect. Capture at 16:9 and at least one wider aspect, or the gallery is
+testimony from a witness who was not at the scene.
+
 ## The presentation pass
 
 The run met its stopping condition at 04:54 and the very next commit was
