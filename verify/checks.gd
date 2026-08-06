@@ -123,33 +123,67 @@ func check_stations(n: int, enc_id := "crab") -> void:
 
 # ---- G14: the telegraph never lies ------------------------------------
 func check_telegraph(n: int) -> void:
+	# Capture the announcement BEFORE the player acts, and test EVERY
+	# encounter. The old version read intent() after the player's actions
+	# and ran only on the crab, which has no drum: it was structurally
+	# incapable of catching a shutdown substituting an unannounced attack,
+	# and it reported 5,600 honest slots while the telegraph was lying.
 	var checked := 0
-	for s in range(n):
-		var c := Combat.new()
-		var rng := RandomNumberGenerator.new()
-		rng.seed = s + 9000
-		while c.outcome == "ongoing" and c.turn <= 20:
-			var a: Dictionary = Bots.casual(c, rng)
-			if not a.is_empty(): Bots.apply(c, a)
-			if c.outcome != "ongoing": break
-			var announced := c.intent()
-			var before: Array = []
-			for d in c.divers: before.append(d.hp)
-			c.end_turn()
-			if announced.is_empty(): continue
-			checked += 1
-			for d in c.divers:
-				var dealt: int = int(before[d.id]) - d.hp
-				# expected is CLAMPED by remaining HP: an overkill blow deals
-				# what is left, not its nominal number. The first version of this
-				# check reported "announced 3, dealt 1" against a diver on 1 HP,
-				# which was the detector lying, not the telegraph.
-				var nominal: int = int(announced.dmg) if (d.station in announced.stations) else 0
-				var expected: int = min(nominal, int(before[d.id]))
-				if dealt != expected:
-					fail("TELEGRAPH LIES: announced %d to %s, dealt %d" % [expected, Combat.STATION_NAMES[d.station], dealt])
-					return
-	print("telegraph  %d hostile slots, announced == delivered" % checked)
+	for key in Encounters.ALL.keys():
+		for s in range(n):
+			var c := Combat.new(String(key))
+			var rng := RandomNumberGenerator.new()
+			rng.seed = s + 9000
+			var guard := 0
+			while c.outcome == "ongoing" and guard < 30:
+				guard += 1
+				var announced: Array = c.intents().duplicate()
+				var inner := 0
+				while inner < 8:
+					inner += 1
+					var a: Dictionary = Bots.casual(c, rng)
+					if a.is_empty() or not Bots.apply(c, a):
+						break
+				if c.outcome != "ongoing":
+					break
+				var before: Array = []
+				for d in c.divers:
+					before.append(d.hp)
+				# Snapshot the limb state BEFORE resolution: end_turn ticks
+				# stun down, so reading it afterwards showed a limb that was
+				# shut down during the turn as having been able to swing.
+				var was_stunned: Array = c.limb_stun.duplicate()
+				var was_broken: Array = c.limb_broken.duplicate()
+				c.end_turn()
+				if announced.is_empty():
+					continue
+				checked += 1
+				for d in c.divers:
+					var dealt: int = int(before[d.id]) - d.hp
+					# EVERY announced attack can reach this diver, so the
+					# expectation is the SUM. Reading only the first one
+					# reported the telegraph lying when it was telling the
+					# truth about a second swing.
+					# Attacks resolve IN ORDER, and a diver that goes down
+					# is skipped by every later swing. Summing blindly
+					# expected damage the sim correctly never dealt.
+					var nominal := 0
+					var pool: int = int(before[d.id])
+					for an in announced:
+						var lb: int = int(an.limb)
+						if bool(was_broken[lb]) or int(was_stunned[lb]) > 0:
+							continue
+						if pool <= 0:
+							break
+						if int(d.station) in an.stations:
+							var bite: int = min(int(an.dmg), pool)
+							nominal += bite
+							pool -= bite
+					var expected: int = nominal
+					if dealt != expected:
+						fail("TELEGRAPH LIES in %s: announced %d to %s, delivered %d" % [String(key), expected, Combat.STATION_NAMES[d.station], dealt])
+						return
+	print("telegraph  %d hostile slots across %d encounters, announced == delivered" % [checked, Encounters.ALL.size()])
 
 # G2: the slice is winnable start to finish, and a win exists from every
 # reachable state. Positioning adds a real softlock risk (a diver stranded

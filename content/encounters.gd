@@ -54,18 +54,21 @@ static var ALL := {
 		"limbs": [
 			# Swept after every limb gained an attack. Measured: casual
 			# 69.3%, greedy 6.0 turns, 10.0 squad HP lost.
-			{"name": "jaw", "hp": 12, "station": FRONT},
-			{"name": "claw", "hp": 10, "station": FLANK},
-			{"name": "tail", "hp": 10, "station": REAR},
+			# swept at divers [16,24,28] with every limb swinging:
+			# casual 67.5%, greedy 7.0 turns, 10.0 squad HP lost
+			{"name": "jaw", "hp": 16, "station": FRONT},
+			{"name": "claw", "hp": 13, "station": FLANK},
+			{"name": "tail", "hp": 13, "station": REAR},
 		],
-		# EVERY limb must DO something or breaking it accomplishes nothing.
-		# The claw had no attack, so FLANK was a station with no reason to
-		# be stood in and the dominance search called it dead. The claw now
-		# guards the head, which makes a real chain: break the claw from
-		# FLANK to make FRONT survivable, then break the jaw.
+		# SPEC 2.6 verbatim: "the jaw only reaches FRONT, and the tail sweeps
+		# REAR and FLANK together. No conditions, no statuses, no special
+		# rules." A third attack had crept in (the claw guarding the head),
+		# which a fidelity review caught as a spec violation. The claw needs
+		# no attack of its own to be worth breaking: the win condition is
+		# breaking EVERY limb, so it is a target either way, and its station
+		# is threatened by the tail so standing there still costs.
 		"attacks": [
 			{"limb": 0, "stations": [FRONT], "dmg": 2, "name": "snaps at"},
-			{"limb": 1, "stations": [FRONT], "dmg": 2, "name": "guards with"},
 			{"limb": 2, "stations": [REAR, FLANK], "dmg": 2, "name": "sweeps"},
 		],
 	},
@@ -92,9 +95,14 @@ static var ALL := {
 		"starts": [FRONT, BACKLINE],
 		"limbs": [
 			# swept at the played configuration, drum fitted
-			{"name": "maw", "hp": 14, "station": FRONT},
-			{"name": "vent", "hp": 10, "station": FLANK},
-			{"name": "gut", "hp": 10, "station": UNDER},
+			# swept: casual 60.0%, greedy 6.0 turns, 14.0 squad HP lost.
+			# Chose the harder-hitting variant so damage CLIMBS across the
+			# ladder (crab 2s, worm 5/5/3, dredge 4/3/4) rather than the
+			# gentler one that would have made fight two easier than fight
+			# one.
+			{"name": "maw", "hp": 10, "station": FRONT},
+			{"name": "vent", "hp": 7, "station": FLANK},
+			{"name": "gut", "hp": 7, "station": UNDER},
 		],
 		# Every limb attacks, so every station is threatened by something and
 		# breaking any of them changes the map. The gut had no attack, which
@@ -103,9 +111,9 @@ static var ALL := {
 		# without taking a scratch. Same defect as the crab's claw, found the
 		# same way.
 		"attacks": [
-			{"limb": 0, "stations": [FRONT], "dmg": 3, "name": "lunges at"},
-			{"limb": 1, "stations": [FLANK, UNDER], "dmg": 3, "name": "sprays"},
-			{"limb": 2, "stations": [BACKLINE], "dmg": 2, "name": "vents over"},
+			{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "lunges at"},
+			{"limb": 1, "stations": [FLANK, UNDER], "dmg": 5, "name": "sprays"},
+			{"limb": 2, "stations": [BACKLINE], "dmg": 3, "name": "vents over"},
 		],
 	},
 	# Beat `deep1`. A MACHINE, not a creature: SPEC 2.4 says a machine reads

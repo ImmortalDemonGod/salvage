@@ -80,7 +80,7 @@ func check_dominance(n: int, enc_id := "crab") -> void:
 		var ties := 0
 		for a in opts:
 			ever_legal[key(a)] = true
-			var t := c.clone()
+			var t: Combat = c.clone()
 			if not Bots.apply(t, a):
 				continue
 			var r2 := RandomNumberGenerator.new()
@@ -161,28 +161,52 @@ func load_ledger() -> Dictionary:
 # before it. A linear ladder has no skips, and saying so with a measurement
 # is a ruling; leaving it UNVERIFIED forever was just a stale note.
 func check_bypass() -> void:
-	var r := Run.new()
-	var beats := r.built_beats()
+	# The old version wrote `for i in range(...)` and never used `i`, so it
+	# probed beat 0 on a fresh Run every iteration. Beat 0 is a scene, so
+	# the guard never fired and `skippable` was unconditionally empty: a
+	# constant reported as a measurement.
+	var beats := Run.new().built_beats()
 	var skippable: Array = []
 	for i in range(beats.size()):
+		# a scene beat's completion condition IS pressing on: advancing
+		# through one is the design, not a bypass. Only fights and locks
+		# can be skipped in a way that matters.
+		if String(beats[i].get("kind", "scene")) == "scene":
+			continue
 		var probe := Run.new()
-		# advance without ever finishing the combat: if the run moves on,
-		# that beat was skippable
+		# walk to beat i by completing everything before it
+		var hops := 0
+		while probe.beat < i and hops < 40:
+			hops += 1
+			_force_complete(probe)
+			if not probe.advance():
+				break
+		if probe.beat != i:
+			continue
+		# now try to leave WITHOUT completing it
 		var before: int = probe.beat
-		if probe.combat != null and probe.combat.outcome == "ongoing":
-			if probe.advance():
-				skippable.append(String(beats[before].id))
-		probe = null
+		if probe.advance() and probe.beat != before:
+			skippable.append(String(beats[i].id))
 	print("bypass     %d built beats, %d skippable without completing them" % [beats.size(), skippable.size()])
 	for b in skippable:
 		sig("BYPASSABLE: beat '%s' can be left without completing it" % b)
+
+func _force_complete(r) -> void:
+	if r.combat != null:
+		for lb in range(r.combat.limb_hp.size()):
+			r.combat.limb_hp[lb] = 0
+			r.combat.limb_broken[lb] = true
+		r.combat.outcome = "victory"
+	elif r.puzzle != null:
+		for i in range(r.puzzle.VALVES):
+			r.puzzle.valve[i] = true
 
 func _init() -> void:
 	var n := 600
 	for a in OS.get_cmdline_user_args():
 		if a.is_valid_int():
 			n = a.to_int()
-	var t := Time.get_ticks_usec()
+	var t0: int = Time.get_ticks_usec()
 	for k in Encounters.ALL.keys():
 		if bool((Encounters.ALL[k] as Dictionary).get("teaching", false)):
 			continue
@@ -264,7 +288,7 @@ func _init() -> void:
 	f.store_string(JSON.stringify(led, "  "))
 	f.close()
 
-	print("ran in %.0f ms" % ((Time.get_ticks_usec() - t) / 1000.0))
+	print("ran in %.0f ms" % ((Time.get_ticks_usec() - t0) / 1000.0))
 	for s in sigs:
 		print("FINDING  " + s)
 	print("DEEP pass %d: %d signature(s), %d NEW, %d UNVERIFIED  ->  dry streak %d of 3"

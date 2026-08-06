@@ -54,7 +54,9 @@ static var TUNE := {
 	# two-diver fight is a narrow design space and the next content change
 	# will likely knock it out. Measured here: casual 66.3%, greedy 6.0
 	# turns (floor 6.0), 10.0 squad HP lost (floor 8.0).
-	"diver_hp": [8, 14, 16],
+	# Re-swept after every live limb began swinging, which roughly tripled
+	# incoming damage. SPEC 2.10 licenses these being moved by the bands.
+	"diver_hp": [24, 34, 40],
 	"diver_dmg": [2, 2, 5],
 	"air": 4,
 }
@@ -74,6 +76,16 @@ var overdrafted := false      # the valve opens once per turn, not endlessly
 # the telegraph ACTIONABLE: you see the jaw winding up and you shut it. That
 # is the counterplay the whole information design was missing.
 var limb_stun: Array = []
+# The announced attack, fixed at the start of the player's turn. Recomputing
+# it at resolution let a shutdown SUBSTITUTE a different, never-announced
+# attack: announced 'the maw lunges at FRONT for 3', delivered 'Scuba took 3
+# at FLANK'. That is the determinism contract broken, not a balance issue.
+# EVERY live limb swings, and all of them are announced. With one attack a
+# turn, shutting down that single limb prevented the entire enemy turn for
+# 2 Air, and the greedy bot finished the vent worm without taking a scratch.
+# A shutdown should be a PARTIAL answer: it removes one limb's swing from a
+# turn that has several.
+var locked: Array = []
 
 func _init(encounter := "crab") -> void:
 	enc_id = encounter
@@ -101,6 +113,7 @@ func _init(encounter := "crab") -> void:
 		dv.disables = String(roster[i][0]) == "Prototype1" and bool(enc.get("drum", false))
 		divers.append(dv)
 	air = int(TUNE.air)
+	_lock_intent()
 
 # ---- enemy anatomy: fight one, the hunter crab -------------------------
 # Three limbs. UNDER is deliberately empty, which is what proves the
@@ -118,11 +131,16 @@ func live_attacks() -> Array:
 
 # The telegraph. Deterministic, shown at the START of the player's turn,
 # and it is exactly what will happen (SPEC 2.11).
+# the whole announced turn
+func intents() -> Array:
+	return locked
+
+# the first announced attack, for callers that want one
 func intent() -> Dictionary:
-	var live := live_attacks()
-	if live.is_empty():
-		return {}
-	return live[_rotation % live.size()]
+	return {} if locked.is_empty() else locked[0]
+
+func _lock_intent() -> void:
+	locked = live_attacks().duplicate()
 
 func air_this_turn() -> int:
 	return max(0, int(TUNE.air) - air_penalty)
@@ -141,14 +159,18 @@ func can_attack(d) -> bool:
 	# at range a decision rather than a retreat, and it is why BACKLINE and
 	# conditions are one idea rather than two (SPEC 2.7 parts).
 	if d.disables and d.station == BACKLINE:
-		return not intent().is_empty()
+		return not locked.is_empty()
 	return STATION_LIMB[d.station] >= 0 and not limb_broken[STATION_LIMB[d.station]]
 
 # which limb this diver would hit from where it stands
 func target_limb(d) -> int:
 	if d.disables and d.station == BACKLINE:
-		var it: Dictionary = intent()
-		return int(it.limb) if not it.is_empty() else -1
+		# from range the drum shuts down whichever announced limb is not
+		# already down: the first one still able to swing
+		for it in locked:
+			if int(limb_stun[int(it.limb)]) <= 0 and not limb_broken[int(it.limb)]:
+				return int(it.limb)
+		return -1
 	return int(STATION_LIMB[d.station])
 
 func afford(cost: int) -> bool:
@@ -221,29 +243,37 @@ func _check_victory() -> void:
 func end_turn() -> void:
 	if outcome != "ongoing":
 		return
-	var a := intent()
 	air_penalty = 0
-	if not a.is_empty():
+	var any_hit := false
+	var any_swing := false
+	for a in locked:
+		# a shut-down or broken limb simply does not swing. It is prevented,
+		# not replaced, and a prevented attack is not "hitting empty water".
+		if limb_broken[a.limb] or int(limb_stun[a.limb]) > 0:
+			log_lines.append("the %s cannot swing" % LIMB_NAMES[a.limb])
+			continue
+		any_swing = true
 		var hit := false
 		for d in divers:
 			if d.down:
 				continue
 			if d.station in a.stations:
 				hit = true
-				d.hp -= a.dmg
-				log_lines.append("the %s %s %s for %d" % [LIMB_NAMES[a.limb], a.name, d.dname, a.dmg])
+				any_hit = true
+				d.hp -= int(a.dmg)
+				log_lines.append("the %s %s %s for %d" % [LIMB_NAMES[a.limb], a.name, d.dname, int(a.dmg)])
 				if d.hp <= 0:
 					d.hp = 0
 					d.down = true
 					log_lines.append("%s is down" % d.dname)
-		# The vacate rule. Without this, three divers can empty every
-		# targeted station for 3 of 4 Air every turn and the enemy never
-		# connects: a dominant strategy of exactly the class G4 exists to
-		# catch. A strike into empty water cuts the umbilicals instead.
 		if not hit:
-			air_penalty = 1
 			log_lines.append("the %s hits empty water and cuts an air line" % LIMB_NAMES[a.limb])
-		_rotation += 1
+	# The vacate rule: a swing that lands on nobody cuts the umbilicals.
+	# Without it three divers empty every targeted station every turn and
+	# the enemy never connects.
+	if any_swing and not any_hit:
+		air_penalty = 1
+	_rotation += 1
 	if alive().is_empty():
 		outcome = "defeat"
 		log_lines.append("the squad is lost")
@@ -253,18 +283,4 @@ func end_turn() -> void:
 	turn += 1
 	overdrafted = false
 	air = air_this_turn()
-
-# Deep-set rollouts need to try an action and unwind. Cloning keeps the sim
-# pure: no undo stack, no hidden state to get out of sync.
-func clone() -> Combat:
-	var c := Combat.new(enc_id)
-	for i in range(divers.size()):
-		var a = divers[i]
-		var b = c.divers[i]
-		b.hp = a.hp; b.station = a.station; b.down = a.down
-	c.limb_hp = limb_hp.duplicate()
-	c.limb_broken = limb_broken.duplicate()
-	c.limb_stun = limb_stun.duplicate()
-	c.air = air; c.air_penalty = air_penalty; c.turn = turn; c.overdrafted = overdrafted
-	c.outcome = outcome; c._rotation = _rotation
-	return c
+	_lock_intent()

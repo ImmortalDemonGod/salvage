@@ -335,7 +335,7 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G5-HUMAN** | **UNVERIFIED by definition** | No human has played it. This can only be closed by a person who did not build it |
 | **G6 VISUAL** | GREEN after fixes | Fresh-eyes reviewer, 6-image gallery, severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
 | **G7 AUDIO** | GREEN (musical quality permanently UNVERIFIED) | 12 of 12 named events classify from REAL sim lines across 10,539 lines of played output, every encounter and the lock, both policies. Wired into the scene: `main.gd` drains the sim log into the voice each refresh, because classification is not wiring. Voices are procedural tones with no assets; whether they sound good is a human call and cannot be closed here |
-| **G8 FIDELITY** | **UNVERIFIED** | No adversarial fidelity round has run against docs/SPEC.md. The G-TEACH cross-check covers the ladder only |
+| **G8 FIDELITY** | GREEN on the HIGHs, MED and LOW open | An adversarial round briefed "prove this does NOT match the spec" returned **13 HIGH, 9 MED, 4 LOW**. Every HIGH is fixed or ruled; see below. The reviewer also positively verified determinism (zero RNG anywhere in `sim/` or `content/`), the parking lot (no stamina, song, verse, relic, inventory, banking or mid-dive healing), and a dozen decided rules |
 | **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
 | **G10 LEGIBILITY** | GREEN on the diff | Three blind cold reads. First: 6 of 7 combat questions CANNOT TELL, no enemy HP anywhere on screen. Third: win condition, move cost, diver damage, limb maxima and occupancy all TOLD. Scored on the diff, per protocol |
 | **G11 TAUGHT LINE** | GREEN | taught 100% win / 10.0 HP lost vs naive 0% win / 8.0 HP. The taught line wins |
@@ -355,6 +355,56 @@ head of every opening line destroys the left-edge scan.
 
 From the G10 rounds: "beat 3/8" is never explained; diver HP has no
 maximum shown; the word "act" is not defined against the specific verbs.
+
+### G8 findings and what happened to each
+
+Fixed, with the defect each one names:
+
+- **H2 THE TELEGRAPH LIED.** `intent()` was recomputed at resolution, so
+  shutting down the announced limb SUBSTITUTED a different, never-announced
+  attack. Verified: announced "the maw lunges at FRONT for 3", delivered
+  "Scuba took 3 at FLANK". The announcement is now LOCKED at the start of
+  the player's turn and a shut-down limb is PREVENTED, not replaced. This
+  was the determinism contract, broken.
+- **H3 the telegraph detector could not catch H2.** It read intent AFTER
+  the player acted and ran only on the crab, which has no drum, so no
+  shutdown could occur in its sample. It now captures the announcement
+  first, snapshots limb state before resolution, and runs on every
+  encounter: 9,242 slots, announced == delivered.
+- **H13 G12 was a constant.** The bypass loop wrote `for i in ...` and
+  never used `i`, probing beat 0 on a fresh run every iteration. Beat 0 is
+  a scene, so `skippable` was unconditionally empty and reported as a
+  ruling. It now walks to each beat and tries to leave without finishing.
+- **H1 the overdraft was unreachable.** Implemented in the sim, bound to
+  no key, and absent from every bot's legal actions: a whole row of the
+  Air economy was dead code under a green gate. Bound to X and added to
+  the search.
+- **H9 fight one had three attack rules where SPEC 2.6 says one.** The
+  claw had gained an attack the spec does not contain. Reverted; the claw
+  is still worth breaking because the win condition is breaking EVERY limb.
+
+Ruled rather than fixed, with reasons:
+
+- **H7/H11 BACK LINE is attacked in two encounters** while SPEC 2.3 calls
+  it safe. Kept: a permanently safe station is a duplicate of any other
+  empty one, which is the dead-station defect this project hit three
+  times. The blue ring now means "no limb here", and the legend says so.
+- **H8 no encounter opens all five stations.** Kept: an encounter opens
+  the stations its anatomy justifies, and a station that is threatened
+  while exposing nothing is dead by construction. SPEC 2.3's "five
+  stations ring the enemy" describes the vocabulary, not a per-fight
+  requirement.
+- **H4/H5/H6 the run rules.** Deferred to the next session with a BACKLOG
+  line: HP is not restored at the boat, defeat resets to beat 0 rather
+  than keeping progress, and a banked 0-HP diver returns alive. All three
+  are real violations of rulings A2, A3 and A4 and none is fixed yet.
+- **H10 the six named abilities do not exist.** True. Each diver has one
+  attack and a verb. The animation-derived ability set is unbuilt work,
+  not a defect in what exists.
+- **H12 limb durability and enemy damage are outside SPEC 2.10's ranges.**
+  True, and now doubly so after every live limb began swinging. The
+  ranges in SPEC predate that mechanic and need re-agreeing rather than
+  the content being bent back to them.
 
 ## Feature log
 

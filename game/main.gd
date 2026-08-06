@@ -89,7 +89,7 @@ func _build_ui() -> void:
 
 	var air_panel := Panel.new()
 	air_panel.name = "air_panel"
-	air_panel.size = Vector2(340, 54)
+	air_panel.size = Vector2(340, 76)
 	air_panel.position = Vector2(30, 24)
 	add_child(air_panel)
 	ui_air = Label.new()
@@ -101,12 +101,13 @@ func _build_ui() -> void:
 
 	var tel := Panel.new()
 	tel.name = "telegraph_panel"
-	tel.size = Vector2(856, 54)
+	tel.size = Vector2(856, 76)
 	tel.position = Vector2(392, 24)
 	add_child(tel)
 	ui_intent = Label.new()
 	ui_intent.name = "label"
 	ui_intent.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_intent.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ui_intent.offset_left = 12; ui_intent.offset_right = -12
 	ui_intent.offset_top = 6; ui_intent.offset_bottom = -6
 	tel.add_child(ui_intent)
@@ -114,8 +115,8 @@ func _build_ui() -> void:
 	# built BEFORE the first _refresh, which runs on the opening scene beat
 	var scene_panel := Panel.new()
 	scene_panel.name = "scene_panel"
-	scene_panel.size = Vector2(900, 210)
-	scene_panel.position = Vector2(190, 190)
+	scene_panel.size = Vector2(900, 200)
+	scene_panel.position = Vector2(190, 220)
 	add_child(scene_panel)
 	ui_scene = Label.new()
 	ui_scene.name = "label"
@@ -128,7 +129,7 @@ func _build_ui() -> void:
 	var legend_panel := Panel.new()
 	legend_panel.name = "legend_panel"
 	legend_panel.size = Vector2(640, 42)
-	legend_panel.position = Vector2(30, 96)
+	legend_panel.position = Vector2(30, 116)
 	add_child(legend_panel)
 	ui_legend = Label.new()
 	ui_legend.name = "label"
@@ -140,7 +141,7 @@ func _build_ui() -> void:
 	var goal_panel := Panel.new()
 	goal_panel.name = "goal_panel"
 	goal_panel.size = Vector2(430, 42)
-	goal_panel.position = Vector2(700, 96)
+	goal_panel.position = Vector2(700, 116)
 	add_child(goal_panel)
 	ui_goal = Label.new()
 	ui_goal.name = "label"
@@ -152,7 +153,7 @@ func _build_ui() -> void:
 	var help_panel := Panel.new()
 	help_panel.name = "help_panel"
 	help_panel.size = Vector2(1220, 40)
-	help_panel.position = Vector2(30, 146)
+	help_panel.position = Vector2(30, 166)
 	add_child(help_panel)
 	ui_help = Label.new()
 	ui_help.name = "label"
@@ -261,14 +262,18 @@ func _refresh() -> void:
 		if not combat.limb_broken[lb]:
 			live += 1
 	ui_goal.text = "break every limb to win   ·   %d of %d still working" % [live, combat.limb_broken.size()]
-	var it: Dictionary = combat.intent()
-	if it.is_empty():
+	var all_it: Array = combat.intents()
+	if all_it.is_empty():
 		ui_intent.text = "%s   spent" % run.state_line()
 	else:
-		var where: Array = []
-		for s in it.stations:
-			where.append(Combat.STATION_NAMES[s])
-		ui_intent.text = "%s   NEXT: the %s %s %s for %d damage" % [run.state_line(), combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
+		var parts: Array = []
+		for it in all_it:
+			var where: Array = []
+			for st in it.stations:
+				where.append(Combat.STATION_NAMES[st])
+			var shut: bool = int(combat.limb_stun[int(it.limb)]) > 0
+			parts.append("%s %s %s for %d%s" % [String(combat.LIMB_NAMES[int(it.limb)]), it.name, "/".join(where), int(it.dmg), "  (SHUT)" if shut else ""])
+		ui_intent.text = "%s   NEXT: %s" % [run.state_line(), "   ".join(parts)]
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third
 	# card, which the as-played capture caught on its first frame.
@@ -291,7 +296,7 @@ func _refresh() -> void:
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
 	var pick := "1 diver only" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
-	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE attack from where you stand  ·  ENTER end turn" % [pick, "  ".join(moves)]
+	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE attack  ·  X burn %d HP for 1 air  ·  ENTER end turn" % [pick, "  ".join(moves), Combat.OVERDRAFT_HP]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
@@ -321,6 +326,15 @@ func player_move(station: int) -> bool:
 		elif d.station == station: refusal = "%s is already at %s" % [d.dname, Combat.STATION_NAMES[station]]
 		elif combat.air < Combat.MOVE_COST: refusal = "not enough air to move"
 		else: refusal = "that move is not available"
+	_refresh()
+	return ok
+
+# H1: act_overdraft existed in the sim, was bound to no key, and appeared in
+# no bot's legal-action list, so a whole row of the Air economy was dead code
+# under a green gate.
+func player_overdraft() -> bool:
+	var ok := combat.act_overdraft(selected)
+	refusal = "" if ok else "cannot burn HP for air: needs more than %d HP, and once per turn" % Combat.OVERDRAFT_HP
 	_refresh()
 	return ok
 
@@ -361,6 +375,7 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_R: player_move(Combat.REAR)
 		KEY_T: player_move(Combat.BACKLINE)
 		KEY_SPACE: player_attack()
+		KEY_X: player_overdraft()
 		KEY_ENTER:
 			if combat == null:
 				run.advance(); combat = run.combat; selected = 0; _refresh()

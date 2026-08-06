@@ -11,6 +11,8 @@ static func legal(c: Combat) -> Array:
 			continue
 		if c.afford(d.cost) and c.can_attack(d):
 			out.append({"kind": "attack", "i": d.id})
+		if not c.overdrafted and d.hp > Combat.OVERDRAFT_HP:
+			out.append({"kind": "overdraft", "i": d.id})
 		if c.afford(Combat.MOVE_COST):
 			for s in c.OPEN_STATIONS:
 				if s != d.station:
@@ -46,9 +48,17 @@ static func casual(c: Combat, rng: RandomNumberGenerator) -> Dictionary:
 		return {}
 	var attacks: Array = []
 	var moves: Array = []
+	var burns: Array = []
 	for a in opts:
 		if a.kind == "attack": attacks.append(a)
+		elif a.kind == "overdraft": burns.append(a)
 		else: moves.append(a)
+	# Burning HP for air is a desperate act; a novice does it occasionally,
+	# not one time in three. Leaving it in the uniform pool dropped casual
+	# from 65 to 31 percent, which measured the bot's recklessness rather
+	# than the fight's difficulty. Same judge pathology as the first sweep.
+	if not burns.is_empty() and rng.randf() < 0.06:
+		return burns[rng.randi() % burns.size()]
 	var want_move: bool = attacks.is_empty() or (not moves.is_empty() and rng.randf() < CASUAL_MOVE_CHANCE)
 	var pool: Array = moves if want_move else attacks
 	if pool.is_empty():
@@ -58,8 +68,12 @@ static func casual(c: Combat, rng: RandomNumberGenerator) -> Dictionary:
 # greedy: break limbs fast, and step out of a telegraphed station when it
 # is cheap to do so. Pinned BEFORE any tuning.
 static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
-	var intent := c.intent()
-	var threatened: Array = intent.get("stations", [])
+	var all_intents: Array = c.intents()
+	var threatened: Array = []
+	for it in all_intents:
+		for st in it.stations:
+			if not (st in threatened):
+				threatened.append(st)
 	var best := {}
 	var best_score := -1.0
 	for a in legal(c):
@@ -76,8 +90,25 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			# damage it would have dealt. Without this the judge cannot see
 			# prevention at all and would report the disabler dominated
 			# purely because it cannot value what the disabler does.
-			if d.disables and limb >= 0 and int(intent.get("limb", -1)) == limb and int(c.limb_stun[limb]) <= 0:
-				score += float(intent.get("dmg", 0)) * float(intent.get("stations", []).size()) / float(d.cost)
+			# shutting down a limb that is ABOUT to swing is worth the damage
+			# it would have dealt to bodies actually standing in its arc
+			if d.disables and limb >= 0 and int(c.limb_stun[limb]) <= 0:
+				for it in all_intents:
+					if int(it.limb) != limb:
+						continue
+					var would := 0
+					for dd in c.divers:
+						if not dd.down and int(dd.station) in it.stations:
+							would += int(it.dmg)
+					score += float(would) / float(d.cost)
+		elif a.kind == "overdraft":
+			# The greedy judge NEVER burns HP, deliberately. Scored at all,
+			# it fired every turn air ran short and doubled its own damage
+			# taken, so the difficulty floor measured the bot's recklessness
+			# instead of the fight. Pinned HP-averse for the same reason the
+			# last project pinned its judge heal-averse: a floor should
+			# measure pressure, not self-harm.
+			continue
 		else:
 			var limb2: int = c.STATION_LIMB[a.s]
 			if limb2 >= 0 and not c.limb_broken[limb2]:
