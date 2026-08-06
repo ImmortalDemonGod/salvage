@@ -54,6 +54,24 @@ func _init() -> void:
 		var pstr: String = ("  (parts: %s)" % str(parts)) if parts.size() > 0 else ""
 		rows.append("%-9s teaches %-13s%s%s" % [beat.id, t, pstr, "" if beat.built else "   [UNBUILT]"])
 
+	# 3a. the opening must deliver all four framing roles. "Nobody knew what
+	#     they were supposed to be doing or why they were there" was the
+	#     loudest finding of the last playtest, and it is checkable.
+	for beat in Beats.LADDER:
+		if String(beat.get("kind", "scene")) != "scene" or not beat.get("built", false):
+			continue
+		var lines: Array = beat.get("lines", [])
+		if lines.is_empty():
+			fail("SCENE WITH NO LINES: %s is built but says nothing" % beat.id)
+			continue
+		if beat.id == "opening":
+			var roles: Array = []
+			for l in lines:
+				roles.append(String(l.role))
+			for need in Beats.REQUIRED_OPENING_ROLES:
+				if not (need in roles):
+					fail("OPENING MISSING '%s': a player cannot say what they are doing without it" % need)
+
 	# 3. every mechanic reaches the ladder somewhere
 	for m in Beats.MECHANICS:
 		if not (m in taught):

@@ -19,10 +19,26 @@ static var LADDER := [
 	{
 		"id": "opening",
 		"kind": "scene",
-		"title": "the boat",
+		"title": "the rig",
 		"teaches": "goal",
 		"uses": ["goal"],
-		"built": false,
+		"built": true,
+		# The opening is a MECHANIC, not polish (SPEC 3.3). It must deliver
+		# four things in under a minute and nothing else. Each line carries
+		# the role it serves so verify/ can assert all four are present:
+		# a scene that forgets to say what you want is the exact failure
+		# the last prototype shipped.
+		# ALL TEXT PLACEHOLDER, for Marc.
+		"lines": [
+			{"role": "who", "text": "(placeholder) Three of you. Two suits and a set of scuba gear, all of it borrowed."},
+			{"role": "obstacle", "text": "(placeholder) The water never went down. Everything worth having is under it, and the things down there got there first."},
+			{"role": "want", "text": "(placeholder) The pump is dying. What fixes it is down in the city. We go down."},
+			# controls for THIS beat only. Combat keys are taught in `descent`,
+			# which is the beat that teaches the combat frame: telling a player
+			# how to end a turn before turns exist is the teach ladder broken
+			# in the UI instead of the data.
+			{"role": "controls", "text": "ENTER to descend"},
+		],
 	},
 	{
 		"id": "descent",
@@ -98,6 +114,10 @@ static var LADDER := [
 # Mechanics that exist in the sim but are not yet placed on the ladder.
 # Anything here is a finding: an untaught mechanic is one the player meets
 # without ever having been shown it alone.
+# Every opening must answer these four, in this order, or a player cannot
+# say what they are doing. Checked by verify/teach.gd.
+static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
+
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
 	"telegraph", "cost_tiers", "water_level", "conditions", "backline",
 	"overdraft", "umbilical"]

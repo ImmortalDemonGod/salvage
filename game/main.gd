@@ -34,6 +34,7 @@ var ui_divers: Array = []
 var ui_air: Label
 var ui_intent: Label
 var ui_help: Label
+var ui_scene: Label
 
 func _ready() -> void:
 	run = Run.new()
@@ -47,7 +48,6 @@ func _build_ui() -> void:
 	# never overlap and their labels stay inside them
 	for i in range(5):
 		var m := Panel.new()
-		m.visible = combat.station_open(i)
 		m.name = "station_" + Combat.STATION_NAMES[i]
 		m.size = Vector2(150, 46)
 		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 54)
@@ -103,6 +103,20 @@ func _build_ui() -> void:
 	ui_intent.offset_top = 6; ui_intent.offset_bottom = -6
 	tel.add_child(ui_intent)
 
+	# built BEFORE the first _refresh, which runs on the opening scene beat
+	var scene_panel := Panel.new()
+	scene_panel.name = "scene_panel"
+	scene_panel.size = Vector2(900, 210)
+	scene_panel.position = Vector2(190, 190)
+	add_child(scene_panel)
+	ui_scene = Label.new()
+	ui_scene.name = "label"
+	ui_scene.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_scene.offset_left = 28; ui_scene.offset_right = -28
+	ui_scene.offset_top = 24; ui_scene.offset_bottom = -24
+	ui_scene.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	scene_panel.add_child(ui_scene)
+
 	var help_panel := Panel.new()
 	help_panel.name = "help_panel"
 	help_panel.size = Vector2(1220, 40)
@@ -117,16 +131,31 @@ func _build_ui() -> void:
 
 func _refresh() -> void:
 	if combat == null:
-		# a scene beat, or the run is complete
-		ui_air.text = ""
+		# A scene beat. The opening is a mechanic and gets rendered as one:
+		# who you are, what stands in the way, what you want, and what the
+		# buttons do (SPEC 3.3).
+		ui_air.get_parent().visible = false
 		ui_intent.text = run.state_line()
-		ui_help.text = "ENTER to continue"
 		for card in ui_divers:
 			card.visible = false
 		for i in range(ui_stations.size()):
 			ui_stations[i].visible = false
+		var b: Dictionary = run.current()
+		var lines: Array = b.get("lines", [])
+		var body: Array = []
+		var controls := "ENTER to continue"
+		for l in lines:
+			if String(l.role) == "controls":
+				controls = String(l.text)
+			else:
+				body.append(String(l.text))
+		ui_scene.text = "\n\n".join(body)
+		ui_scene.get_parent().visible = body.size() > 0
+		ui_help.text = controls
 		queue_redraw()
 		return
+	ui_scene.get_parent().visible = false
+	ui_air.get_parent().visible = true
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the

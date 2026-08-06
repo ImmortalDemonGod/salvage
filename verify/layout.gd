@@ -21,22 +21,31 @@ func _initialize() -> void:
 	root.add_child(load("res://game/main.tscn").instantiate())
 
 func collect(n: Node, out: Array) -> void:
-	if n is Control and (n as Control).visible:
+	# is_visible_in_tree(), not visible: a child Label of a hidden Panel
+	# still reports visible == true, so the naive check reported station
+	# labels colliding with a scene card while none of them were on screen.
+	if n is Control and (n as Control).is_visible_in_tree():
 		out.append(n)
 	for c in n.get_children():
 		collect(c, out)
 
 # does the label's text actually fit the box it was given?
 func text_overflows(l: Label) -> Vector2:
-	var font: Font = ThemeDB.fallback_font
 	var fs: int = ThemeDB.fallback_font_size
+	var have: Vector2 = l.get_global_rect().size
+	# An autowrapping label is not overflowing just because one source line
+	# is wider than the box; that is what wrapping is for. Ask the label how
+	# many lines it ACTUALLY laid out and check the height only. MEASURE,
+	# never assert (standing rule 3).
+	if l.autowrap_mode != TextServer.AUTOWRAP_OFF:
+		var laid: int = l.get_line_count()
+		return Vector2(0.0, float(laid) * float(fs) * 1.35 - have.y)
+	var font: Font = ThemeDB.fallback_font
 	var widest := 0.0
 	var lines: PackedStringArray = l.text.split("\n")
 	for line in lines:
 		widest = max(widest, font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
-	var needed := Vector2(widest, float(lines.size()) * float(fs) * 1.35)
-	var have: Vector2 = l.get_global_rect().size
-	return needed - have
+	return Vector2(widest, float(lines.size()) * float(fs) * 1.35) - have
 
 func _process(_d: float) -> bool:
 	frames += 1

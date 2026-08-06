@@ -56,10 +56,22 @@ func _process(_d: float) -> bool:
 	if frames < 3:
 		return false
 
+	# Advance the run to the first COMBAT beat. Without this the check
+	# passed vacuously the moment an opening scene was added: it found no
+	# combat, reported nothing to compare, and exited green. An instrument
+	# that cannot fire is not a guard (standing rule 11).
+	var hops := 0
+	while scene.combat == null and hops < 20:
+		hops += 1
+		scene.run.advance()
+		scene.combat = scene.run.combat
 	var b: Combat = scene.combat   # path B: what the keyboard drives
 	if b == null:
-		print("differential  scene has no combat on this beat; nothing to compare")
-		quit(0)
+		findings.append("NO COMBAT REACHABLE: walked %d beats without finding a fight to compare" % hops)
+		print("differential  no combat beat reachable")
+		for f in findings:
+			print("FINDING  " + f)
+		quit(1)
 		return true
 	var a := Combat.new(b.enc_id)  # path A: what the bots drive, SAME encounter
 	var steps := 0
