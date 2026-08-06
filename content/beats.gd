@@ -58,7 +58,7 @@ static var LADDER := [
 		"encounter": "crab",
 		"title": "the hunter crab",
 		"teaches": "stations",
-		"parts": ["limbs"],
+		"parts": ["limbs", "analyze"],
 		"uses": ["goal", "combat_frame", "stations", "air", "limbs", "telegraph", "cost_tiers"],
 		"built": true,
 		"expect": {"encounter": "crab", "divers": 2, "open_stations": 4, "limbs": 3},
@@ -145,4 +145,4 @@ static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
 
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
 	"telegraph", "cost_tiers", "heavy_tier", "water_level", "conditions", "backline",
-	"overdraft", "umbilical"]
+	"overdraft", "umbilical", "analyze"]

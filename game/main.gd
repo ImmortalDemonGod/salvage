@@ -621,6 +621,8 @@ func _next_step() -> String:
 	var lb2: int = combat.target_limb(d)
 	if empty_swing:
 		return "An attack will hit empty water and tear an air line: you lose 1 air next turn. Stand in it, or accept it."
+	if lb2 >= 0 and not combat.known(lb2) and combat.air >= Combat.ANALYZE_COST and int(combat.limb_hp[lb2]) > 4:
+		return "Press A to read the %s first (1 air). What it turns out to be decides whether it is worth breaking." % String(combat.LIMB_NAMES[lb2]).to_upper()
 	if lb2 >= 0:
 		var e0: Dictionary = combat.effect_at(d, 0, combat.tier_for(d))
 		var line := "Press SPACE for %s: hit the %s for %d." % [

@@ -55,6 +55,9 @@ func _init() -> void:
 	quit(1 if findings > 0 else 0)
 	return
 
+func k_name(c, lb: int) -> String:
+	return String(c.LIMB_NAMES[lb]).to_upper()
+
 func _audit(scene, c, enc_id: String) -> void:
 	var text: String = scene._next_step()
 	checked += 1
@@ -67,7 +70,7 @@ func _audit(scene, c, enc_id: String) -> void:
 	# this check can verify. Vague direction is not allowed to hide.
 	var directive := text.find("Move to") >= 0 or text.find("press ") >= 0 or text.find("Press ") >= 0
 	var checkable := RegEx.create_from_string("Move to [A-Z]+ \\(press [A-Z]\\)").search(text) != null \
-		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER|[0-9]) ").search(text) != null \
+		or RegEx.create_from_string("[Pp]ress (SPACE|F|A|ENTER|[0-9]) ").search(text) != null \
 		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER|[0-9])\\.").search(text) != null \
 		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER)$").search(text) != null
 	if directive and not checkable:
@@ -96,6 +99,21 @@ func _audit(scene, c, enc_id: String) -> void:
 		if c.air < Combat.MOVE_COST:
 			fail("%s: prompt says move with %d air in the tank and a move costing %d" % [
 				enc_id, c.air, Combat.MOVE_COST])
+
+	# "Press A to read the JAW" -- only when it is genuinely unread, this
+	# diver can reach it, and the tank can pay for it
+	var r := RegEx.create_from_string("Press A to read the ([A-Z]+)").search(text)
+	if r != null:
+		var rl: int = c.target_limb(d)
+		if rl < 0:
+			fail("%s: prompt says read a limb while %s can reach none" % [enc_id, d.dname])
+		elif c.known(rl):
+			fail("%s: prompt says read the %s, which has already been read" % [enc_id, k_name(c, rl)])
+		elif c.air < Combat.ANALYZE_COST:
+			fail("%s: prompt says read a limb with %d air" % [enc_id, c.air])
+		elif k_name(c, rl) != r.get_string(1):
+			fail("%s: prompt says read the %s and this diver would read the %s" % [
+				enc_id, r.get_string(1), k_name(c, rl)])
 
 	# "press SPACE to break the JAW" -- must be an ability this diver has,
 	# and it must actually do what the sentence claims

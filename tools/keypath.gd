@@ -65,6 +65,8 @@ func _init() -> void:
 			match String(a.kind):
 				"attack":
 					keys.append("Space" if int(a.get("slot", 0)) == 0 else "KeyF")
+				"analyze":
+					keys.append("KeyA")
 				"move":
 					keys.append(MOVE_KEY[int(a.s)])
 				_:
