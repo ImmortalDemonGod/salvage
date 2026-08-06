@@ -259,7 +259,7 @@ func _build_ui() -> void:
 
 	var tel := Panel.new()
 	tel.name = "telegraph_panel"
-	tel.size = Vector2(856, 76)
+	tel.size = Vector2(856, 52)
 	tel.position = Vector2(392, 24)
 	tel.add_theme_stylebox_override("panel", skin_primary())
 	_rivet(tel)
@@ -851,8 +851,6 @@ func _refresh() -> void:
 			t.color = Color(0.42, 0.16, 0.13)
 	ui_legend.get_parent().visible = false
 	ui_goal.get_parent().visible = true
-	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
-	ui_legend.get_parent().visible = true
 	var keys2 := ["Q", "W", "E", "R", "T"]
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
@@ -1028,6 +1026,7 @@ func _refresh() -> void:
 	for i in range(5):
 		if combat.station_open(i):
 			mkeys.append(String(keys[i]))
+	ui_help.get_parent().visible = run.beat <= 2
 	ui_help.text += "click to move, click again to attack  ·  %s  ·  station key moves there  ·  A reads a limb (1 air)  ·  %s  ·  ENTER end turn" % [pick, use]
 	queue_redraw()
 
