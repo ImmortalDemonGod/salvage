@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Underwater Jam: One Game From Two Docs</title>
+<style>
+  :root {
+    --ground: #F6F9F8;
+    --panel: #FFFFFF;
+    --ink: #182B31;
+    --muted: #5A6F76;
+    --accent: #0E7C86;
+    --accent-soft: #E1F0F1;
+    --coral: #B4552D;
+    --coral-soft: #F6E8E0;
+    --line: #D8E2E2;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0E181C;
+      --panel: #142328;
+      --ink: #D9E6E6;
+      --muted: #8BA3A9;
+      --accent: #53C2CC;
+      --accent-soft: #123338;
+      --coral: #E0906A;
+      --coral-soft: #33211A;
+      --line: #23383E;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0E181C;
+    --panel: #142328;
+    --ink: #D9E6E6;
+    --muted: #8BA3A9;
+    --accent: #53C2CC;
+    --accent-soft: #123338;
+    --coral: #E0906A;
+    --coral-soft: #33211A;
+    --line: #23383E;
+  }
+  :root[data-theme="light"] {
+    --ground: #F6F9F8;
+    --panel: #FFFFFF;
+    --ink: #182B31;
+    --muted: #5A6F76;
+    --accent: #0E7C86;
+    --accent-soft: #E1F0F1;
+    --coral: #B4552D;
+    --coral-soft: #F6E8E0;
+    --line: #D8E2E2;
+  }
+
+  html { background: var(--ground); }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    line-height: 1.58;
+    margin: 0;
+    padding: 2.5rem 1.25rem 5rem;
+  }
+  .wrap { max-width: 46rem; margin: 0 auto; }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin: 0 0 0.6rem;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-size: clamp(1.7rem, 4.5vw, 2.35rem);
+    line-height: 1.15;
+    margin: 0 0 0.5rem;
+    text-wrap: balance;
+    font-weight: 600;
+  }
+  .meta {
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    margin: 0 0 1.6rem;
+  }
+  .lede {
+    font-size: 1.05rem;
+    margin: 0 0 2rem;
+  }
+
+  h2 {
+    font-family: var(--serif);
+    font-size: 1.32rem;
+    font-weight: 600;
+    margin: 0;
+    text-wrap: balance;
+  }
+  h3 {
+    font-size: 0.95rem;
+    font-weight: 650;
+    margin: 1.3rem 0 0.4rem;
+  }
+  p { margin: 0.55rem 0; }
+  ul { margin: 0.4rem 0 0.8rem; padding-left: 1.2rem; }
+  li { margin: 0.3rem 0; }
+  .quiet { color: var(--muted); }
+
+  section.block {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.5rem 1.6rem 1.4rem;
+    margin: 0 0 1.4rem;
+  }
+  .block-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 0.8rem;
+    margin-bottom: 0.9rem;
+  }
+  .agenda-num {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .chip {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.14rem 0.5rem;
+    border-radius: 999px;
+    vertical-align: 0.12em;
+    margin-right: 0.35rem;
+    white-space: nowrap;
+  }
+  .chip.keep { background: var(--accent-soft); color: var(--accent); }
+  .chip.later { background: var(--coral-soft); color: var(--coral); }
+
+  .rec {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 0.7rem 1rem;
+    margin: 0.9rem 0;
+  }
+  .rec .label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .table-scroll { overflow-x: auto; margin: 0.8rem 0; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.92rem;
+  }
+  th {
+    text-align: left;
+    font-size: 0.72rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 650;
+    padding: 0.45rem 0.9rem 0.45rem 0;
+    border-bottom: 1.5px solid var(--line);
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.5rem 0.9rem 0.5rem 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  td.num, .mono {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+
+  .footer-note {
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 2.2rem;
+    border-top: 1px solid var(--line);
+    padding-top: 1rem;
+  }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <p class="eyebrow">Team Ratateam · Underwater Jam</p>
+  <h1>One Game From Two Docs: a merge proposal</h1>
+  <p class="meta">Jam runs <strong>Jul&nbsp;30 → Oct&nbsp;5</strong> (9.5 weeks) · Builds on Marc's <strong>Project Proposal</strong> and Glass_Goat's <strong>Presentation_Simplified</strong></p>
+
+  <p class="lede">Both design docs already agree on the game we want to make: tactical turn-based combat where <strong>disabling the enemy matters more than damaging them</strong>, no mana bar, every action has a real cost, set in a fallen underwater civilization. This doc proposes one way to merge the two combat designs and size the whole game so we finish with time to polish. Everything here is a starting point for tonight's discussion, not a verdict.</p>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="agenda-num">01</span>
+      <h2>What each doc contributes</h2>
+    </div>
+    <p><strong>Marc's proposal</strong> gives us the identity: the disable-first pillar, the relic-gated Zelda-style exploration, the story of the fallen civilization, and a clear "features we won't build" list. The scope instinct is already in the doc.</p>
+    <p><strong>Glass_Goat's doc</strong> gives us the buildable implementation: instead of giving every enemy five breakable parts with their own durability, a skill can simply inflict the condition directly: hit the eye, enemy is Blinded; hit the fin, enemy is Slowed. Same tactical choice, a fraction of the code and art.</p>
+    <div class="rec">
+      <span class="label">Proposed merge</span>
+      <strong>Glass_Goat's conditions carry Marc's pillar.</strong> Regular enemies use condition-inflicting skills. Bosses get the full body-part targeting treatment (multiple targetable parts, breaks that end phases) as showcase set-pieces. Every fight is still "choose what to disable"; we pay for the expensive version only where judges will actually see it.
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="agenda-num">02</span>
+      <h2>Sizing the game to the jam</h2>
+    </div>
+    <p>Two things worth designing around:</p>
+    <ul>
+      <li><strong>Jam judges typically play 15–20 minutes per entry.</strong> A 2–4 hour game spends most of its content on players who will never reach it. A 30–45 minute game puts everything we build in front of every player.</li>
+      <li><strong>Last jam taught us where the time goes.</strong> We shipped one boss fight and were still tuning mechanics on deadline night. The lesson isn't "aim lower." It's that <em>testing and tuning</em>, not writing features, is where jam time disappears. So this plan budgets for tuning from day one.</li>
+    </ul>
+    <p>That second point is also the main question to weigh on the combat system. The two docs trade different costs:</p>
+    <div class="table-scroll">
+      <table>
+        <tr><th></th><th>Full limb system (all enemies)</th><th>Full exhaustion system</th></tr>
+        <tr><td><strong>Build cost</strong></td><td>High: part rigs, break effects, art per part, per enemy</td><td>Low: mostly standard turn-based code</td></tr>
+        <tr><td><strong>Tuning cost</strong></td><td>Low: each fight resets, so each fight can be tuned alone</td><td>High: resources carry across fights, so tuning changes need full-run replays</td></tr>
+      </table>
+    </div>
+    <p>The exhaustion system's tuning cost comes from specific pieces: two death conditions that interact (HP and stamina both lethal, failed dodges drain both), three threshold versions of every skill, and HP that barely heals, which makes a mistake in fight 2 change the difficulty of fight 8. Each of these multiplies the full-run playtesting we'd need inside the jam window. So this plan keeps the simplest core (<strong>actions cost stamina, stamina regenerates, HP is the sacred resource</strong>) and moves the rest to the post-jam list rather than cutting it forever.</p>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="agenda-num">03</span>
+      <h2>Proposed content budget</h2>
+    </div>
+    <p>Numbers to agree on tonight and write down. The point is having <em>a</em> fixed budget, not these exact values:</p>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Item</th><th>In Marc's doc</th><th>Jam budget</th></tr>
+        <tr><td>Playtime</td><td class="num">2–4 h</td><td class="num"><strong>30–45 min</strong></td></tr>
+        <tr><td>World</td><td>region count open</td><td class="num"><strong>1 hub + 2 dungeons</strong></td></tr>
+        <tr><td>Bosses (full limb targeting)</td><td>1 per region</td><td class="num"><strong>2</strong></td></tr>
+        <tr><td>Enemy types (condition-based)</td><td class="num">5 archetypes</td><td class="num"><strong>3</strong></td></tr>
+        <tr><td>Relics</td><td class="num">7+ functions listed</td><td class="num"><strong>1–2</strong></td></tr>
+        <tr><td>Puzzle types</td><td class="num">9 listed</td><td class="num"><strong>2–3</strong></td></tr>
+        <tr><td>Player abilities</td><td>~6 categories</td><td class="num"><strong>~6 (unchanged)</strong></td></tr>
+        <tr><td>Collectibles</td><td class="num">6 categories</td><td class="num"><strong>1 (memory fragments)</strong></td></tr>
+      </table>
+    </div>
+    <p class="quiet">Memory fragments survive the cut because they do double duty: collectible <em>and</em> the story-delivery mechanism.</p>
+
+    <h3>Post-jam parking lot</h3>
+    <p>Not deleted, just parked. If the game is worth continuing after Oct 5, this is the roadmap:</p>
+    <ul>
+      <li><span class="chip later">Post-jam</span><strong>Inventory + equipment</strong>: needs a longer game to pay off.</li>
+      <li><span class="chip later">Post-jam</span><strong>Party members</strong>: a full system of its own; the jam game is a solo character.</li>
+      <li><span class="chip later">Post-jam</span><strong>Resonance</strong> (the spendable resource from Marc's doc, earned by breaking parts): for the jam, successful disables refund stamina instead, which keeps the same "tactical play is rewarded" incentive with zero new systems.</li>
+      <li><span class="chip later">Post-jam</span><strong>Stamina-death, threshold skill tiers, desperation moves, hard-to-heal HP</strong>: the full exhaustion vision, once there's time to tune it properly.</li>
+      <li><span class="chip later">Post-jam</span><strong>Save/load</strong>: jam build autosaves at dungeon entrances.</li>
+    </ul>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="agenda-num">04</span>
+      <h2>How we avoid last jam's deadline crunch</h2>
+    </div>
+    <ul>
+      <li><strong>Vertical slice by end of week 2</strong> (~Aug 13): one fight, one puzzle, one relic gate, playable start to finish. If the slice slips, the content budget shrinks to match, agreed in advance, so it's automatic instead of a hard conversation later.</li>
+      <li><strong>Automated balance testing from day 1.</strong> If we keep combat deterministic (or seed its randomness), we can simulate thousands of bot fights per balance change, catching unwinnable fights, degenerate strategies, and fight-length problems before any human sits down. Simulation answers "is it winnable"; our weekly playtest answers "is it fun." ImmortalDemon builds this in week 1.</li>
+      <li><strong>One scheduled playtest evening per week</strong>, so feel-testing happens all jam long instead of the final weekend.</li>
+      <li><strong>Content freeze Sep 26</strong>: the last 9 days are polish and playtesting only. Polish is where jam ratings are won, and it only exists if we protect it on the calendar.</li>
+    </ul>
+    <h3>Rough milestones</h3>
+    <div class="table-scroll">
+      <table>
+        <tr><th>Weeks</th><th>Target</th></tr>
+        <tr><td class="num">1–2</td><td>Combat prototype + balance sim + vertical slice</td></tr>
+        <tr><td class="num">3–5</td><td>Dungeon 1 complete: enemies, puzzles, boss 1, relic</td></tr>
+        <tr><td class="num">6–7</td><td>Dungeon 2 + boss 2, reusing every dungeon-1 system</td></tr>
+        <tr><td class="num">8</td><td>Story pass, memory fragments, audio, hub</td></tr>
+        <tr><td class="num">Sep 26 → Oct 5</td><td>Polish + playtests only (content frozen)</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="block">
+    <div class="block-head">
+      <span class="agenda-num">05</span>
+      <h2>Open questions for tonight</h2>
+    </div>
+    <ul>
+      <li>Does the merged combat core work for everyone: conditions on regular enemies, full limb targeting on bosses, stamina-as-action-cost?</li>
+      <li>Are the budget numbers right? (Argue any of them, but let's leave with a written budget.)</li>
+      <li><strong>Engine:</strong> Marc's doc says Unity, which we know well. Worth 60 seconds: this is a fresh, physics-light project, and in my experience that's the case where Godot makes headless automated playtesting much easier. Familiarity may still win; it just deserves a quick conscious call.</li>
+      <li>Art priorities for Glass_Goat: with the merge, the art budget concentrates on 2 bosses (multi-part), 3 enemies, the mermaid NPCs already in progress, and 2 dungeon tilesets. Does that ordering match your priorities?</li>
+      <li>Which weekday is the standing playtest evening?</li>
+    </ul>
+  </section>
+
+  <p class="footer-note">Merge proposal drafted from Project&nbsp;Proposal.pdf (Marc) and Presentation_Simplified.pdf (Glass_Goat) · itch.io Underwater Jam, Jul&nbsp;30&nbsp;–&nbsp;Oct&nbsp;5 · For discussion at the Jul&nbsp;23 team meeting</p>
+</div>
+
+</body>
+</html>
