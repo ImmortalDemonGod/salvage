@@ -9,7 +9,14 @@
 import { readdirSync, existsSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
+
+// The repo this script lives in, not $HOME/salvage: the server used to
+// serve homedir()/salvage/export/web, which is this build only when the
+// checkout sits at ~/salvage. Anywhere else it served a different tree,
+// or nothing, while the shots were filed as if they came from here.
+const REPO = fileURLToPath(new URL("..", import.meta.url));
 
 const outdir = process.argv[2] ?? "/tmp/salvage-shots";
 const keySpec = process.argv[3] ?? "";
@@ -23,14 +30,21 @@ async function loadChromium() {
 }
 function findShell() {
   if (process.env.CHROME_SHELL) return process.env.CHROME_SHELL;
-  const roots = [join(homedir(), "Library/Caches/ms-playwright"), join(homedir(), ".cache/ms-playwright")].filter(existsSync);
+  // PLAYWRIGHT_BROWSERS_PATH first: it is where playwright itself was told
+  // the browsers live, and environments that set it (CI, containers) have
+  // no ms-playwright cache at all. Its layout keeps the shell under
+  // chrome-linux/headless_shell rather than the cache's chrome-headless-*.
+  const roots = [process.env.PLAYWRIGHT_BROWSERS_PATH,
+    join(homedir(), "Library/Caches/ms-playwright"), join(homedir(), ".cache/ms-playwright")]
+    .filter(Boolean).filter(existsSync);
   for (const root of roots) {
     const dirs = readdirSync(root).filter((d) => d.startsWith("chromium_headless_shell-"))
       .sort((a, b) => Number(b.split("-")[1]) - Number(a.split("-")[1]));
     for (const d of dirs) for (const rel of [
       "chrome-headless-shell-mac-arm64/chrome-headless-shell",
       "chrome-headless-shell-mac-x64/chrome-headless-shell",
-      "chrome-headless-shell-linux/chrome-headless-shell"]) {
+      "chrome-headless-shell-linux/chrome-headless-shell",
+      "chrome-linux/headless_shell"]) {
       const p = join(root, d, rel); if (existsSync(p)) return p;
     }
   }
@@ -38,7 +52,7 @@ function findShell() {
 
 const PORT = 8731;
 const server = spawn("python3", ["-m", "http.server", String(PORT), "--bind", "127.0.0.1"],
-  { cwd: join(homedir(), "salvage/export/web"), stdio: "ignore" });
+  { cwd: join(REPO, "export/web"), stdio: "ignore" });
 const stop = () => { try { server.kill(); } catch {} };
 process.on("exit", stop);
 

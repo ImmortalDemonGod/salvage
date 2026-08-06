@@ -7,9 +7,18 @@
 # is satisfiable only by the deep set going quiet, which requires building.
 #
 # Exit 0  -> allow stop.  Exit 2 -> block, stderr goes back to the model.
-LEDGER="$HOME/salvage/verify/deep-ledger.json"
-GUARD="$HOME/salvage/verify/.stop-blocks"
-ARMED="$HOME/salvage/verify/.run-armed"
+#
+# Every path is derived from this script's own location. They were
+# hardcoded to $HOME/salvage while start-run.sh armed the repo-relative
+# file, so on any checkout that is not at ~/salvage the two disagreed:
+# arming wrote one file, the gate read another that never existed, and an
+# armed run could always stop. Measured on a container checkout at
+# /home/user/salvage: exit 0 with .run-armed present. A gate pointed at
+# the wrong file is not a gate.
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+LEDGER="$ROOT/verify/deep-ledger.json"
+GUARD="$ROOT/verify/.stop-blocks"
+ARMED="$ROOT/verify/.run-armed"
 NEED=3
 MAX_BLOCKS=400   # safety valve so a broken ledger cannot loop forever
 
@@ -30,10 +39,10 @@ fi
 
 if [ ! -f "$LEDGER" ]; then
   echo $((n+1)) > "$GUARD"
-  cat >&2 <<'MSG'
+  cat >&2 <<MSG
 STOP BLOCKED: no deep-set ledger exists, so the run has never been measured.
 Run the nightly deep set and keep building:
-  godot --headless --path ~/salvage --script verify/deep.gd -- 600
+  godot --headless --path "$ROOT" --script verify/deep.gd -- 600
 The run is DONE only after THREE CONSECUTIVE DRY PASSES. Re-running a green
 fast suite is not work.
 MSG
@@ -56,7 +65,7 @@ STOP BLOCKED: dry streak is $streak of $NEED (deep passes so far: $passes).
 The run is not finished. A pass counts as dry only when it introduces no new
 finding AND no check is UNVERIFIED, so coverage cannot be faked by a thin
 deep set. Do the next piece of work, then run:
-  godot --headless --path ~/salvage --script verify/deep.gd -- 600
+  godot --headless --path "$ROOT" --script verify/deep.gd -- 600
 
 Bootstrap order is binding: scene-tree layout invariants, then the
 differential harness check, then a clickable web export, then content
