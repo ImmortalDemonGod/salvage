@@ -429,11 +429,15 @@ func _limb_named(line: String) -> int:
 			return i
 	return -1
 
+func _body_at() -> Vector2:
+	var ap: Array = combat.enc.art.pos
+	return Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150)
+
 func _limb_at(idx: int) -> Vector2:
 	for st in range(5):
 		if int(combat.STATION_LIMB[st]) == idx:
-			return place(st)
-	return Vector2(DESIGN.x * 0.72, DESIGN.y * 0.45)
+			return place(st).lerp(_body_at(), 0.55)
+	return _body_at()
 
 func _amount(line: String) -> int:
 	var at := line.rfind(" for ")
@@ -672,6 +676,15 @@ func _auto_select() -> void:
 # suggestion it makes is legal by construction: a station must be open,
 # unthreatened, EMPTY and affordable, and an attack is only offered as an
 # alternative if it actually stops the hit.
+func _incoming(d) -> String:
+	for it in combat.intents():
+		if int(combat.limb_stun[int(it.limb)]) > 0 or combat.limb_broken[int(it.limb)]:
+			continue
+		if int(d.station) in it.stations:
+			return "The %s lands %d on %s this turn" % [
+				String(combat.LIMB_NAMES[int(it.limb)]).to_upper(), int(it.dmg), d.dname]
+	return "%s is about to be hit" % d.dname
+
 func _escape_line(d) -> String:
 	var refuge := -1
 	for st in combat.OPEN_STATIONS:
@@ -699,14 +712,14 @@ func _escape_line(d) -> String:
 					"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb]).to_upper()]
 				break
 	if refuge >= 0 and combat.air >= Combat.MOVE_COST:
-		var t := "%s is about to be hit. Move to %s (press %s)" % [
-			d.dname, Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
+		var t := "%s -- about to be hit. Move to %s (press %s)" % [
+			_incoming(d), Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
 		return t + ("   " + kill + "." if kill != "" else ".")
 	if kill != "":
 		var only: String = kill.trim_prefix("or ")
-		return "%s is about to be hit and there is nowhere clear to stand. %s%s." % [
-			d.dname, only.substr(0, 1).to_upper(), only.substr(1)]
-	return "%s is about to be hit and there is nowhere clear to stand. Take it, and break what you can." % d.dname
+		return "%s -- about to be hit, nowhere clear to stand. %s%s." % [
+			_incoming(d), only.substr(0, 1).to_upper(), only.substr(1)]
+	return "%s -- about to be hit, nowhere clear to stand. Take it, and break what you can." % _incoming(d)
 
 func _lock_step(p) -> String:
 	if p.solved():
@@ -1585,19 +1598,20 @@ func _draw_affordances() -> void:
 					busy = true
 			if busy:
 				continue
-			var c0: Vector2 = place(int(st))
-			for k in range(10):
-				if k % 2 == 1:
-					continue
-				var a0: float = TAU * float(k) / 10.0 + _clock * 0.8
-				draw_arc(c0, 52.0 + 2.0 * t, a0, a0 + TAU / 10.0, 6, Color(0.55, 0.85, 0.75, 0.5), 2.5)
+			var c0: Vector2 = place(int(st)) + Vector2(0, 22)
+			draw_circle(c0, 34.0 + 3.0 * t, Color(0.45, 0.85, 0.72, 0.13 + 0.06 * t))
+			draw_circle(c0, 5.0, Color(0.55, 0.90, 0.78, 0.8))
 	# 3. what SPACE would do: a reticle on the target and a preview chunk
 	var lb: int = combat.target_limb(d)
 	if lb >= 0 and not combat.limb_broken[lb]:
 		var at: Vector2 = _limb_at(lb)
-		draw_arc(at, 30.0, -0.4 + t * 0.1, 0.4 + t * 0.1, 8, Color(0.95, 0.85, 0.45, 0.9), 2.5)
-		draw_arc(at, 30.0, PI - 0.4 - t * 0.1, PI + 0.4 - t * 0.1, 8, Color(0.95, 0.85, 0.45, 0.9), 2.5)
-		draw_line(at + Vector2(-6, 0), at + Vector2(6, 0), Color(0.95, 0.85, 0.45, 0.9), 2.0)
+		draw_line(foot + Vector2(0, -10), at, Color(0.95, 0.85, 0.45, 0.55), 2.5)
+		var rr: float = 22.0 + 2.0 * t
+		draw_arc(at, rr, 0, TAU, 28, Color(0.95, 0.85, 0.45, 0.95), 3.5)
+		for k in range(4):
+			var ang: float = TAU * float(k) / 4.0
+			var dv := Vector2(cos(ang), sin(ang))
+			draw_line(at + dv * (rr - 5.0), at + dv * (rr + 7.0), Color(0.95, 0.85, 0.45, 0.95), 3.0)
 
 func _draw_traits() -> void:
 	for st in range(5):
@@ -1606,7 +1620,7 @@ func _draw_traits() -> void:
 		var lb: int = combat.STATION_LIMB[st]
 		if lb < 0 or combat.limb_broken[lb] or not combat.known(lb):
 			continue
-		var at: Vector2 = place(st) + Vector2(0, -26)
+		var at: Vector2 = _limb_at(lb)
 		match combat.trait_of(lb):
 			"brittle":
 				# cracks: three jagged lines across the limb
