@@ -1645,9 +1645,14 @@ func _draw_bars() -> void:
 		# clamped under the prompt band, which is new and lower than the old
 		# control strip: Proto5's bar was being cut in half by it
 		var by: float = max(f.y - DIVER_SCALE - 8.0, PANEL_FLOOR)
-		_bar(Vector2(f.x - 52.0, by), 104, 13, frac, BAR_OK if frac > 0.34 else BAR_LOW)
 		var df: Font = ThemeDB.fallback_font
-		draw_string(df, Vector2(f.x - 48.0, by + 11.0), "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)],
+		var plate := "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)]
+		var pw: float = df.get_string_size(plate, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 10.0
+		var bw: float = max(104.0, pw)
+		# keep the whole plate on screen while it is at it
+		var bx: float = clampf(f.x - bw * 0.5, 4.0, 1280.0 - bw - 4.0)
+		_bar(Vector2(bx, by), bw, 13, frac, BAR_OK if frac > 0.34 else BAR_LOW)
+		draw_string(df, Vector2(bx + 5.0, by + 11.0), plate,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.96, 0.98, 1.0))
 
 func _draw() -> void:
