@@ -91,7 +91,7 @@ func expect_attack(c: Combat, i: int) -> bool:
 		return false
 	if c.air < int(d.cost):
 		return false
-	var limb: int = Combat.STATION_LIMB[int(d.station)]
+	var limb: int = c.STATION_LIMB[int(d.station)]
 	if limb < 0:
 		return false
 	return not bool(c.limb_broken[limb])
@@ -105,7 +105,7 @@ func expect_move(c: Combat, i: int, s: int) -> bool:
 	# a station that is not open in this encounter is not a legal
 	# destination. Fight one runs on four; BACKLINE arrives with the
 	# scanner in fight two.
-	if not (s in Combat.OPEN_STATIONS):
+	if not (s in c.OPEN_STATIONS):
 		return false
 	return int(d.station) != s
 
@@ -149,13 +149,13 @@ func check(c: Combat, pre: Dictionary, kind: String) -> void:
 	for i in range(3):
 		if int(c.limb_hp[i]) < 0:
 			fail("limb-negative", "LIMB HP NEGATIVE: %s at %d after %s"
-				% [Combat.LIMB_NAMES[i], c.limb_hp[i], kind])
+				% [c.LIMB_NAMES[i], c.limb_hp[i], kind])
 		if int(c.limb_hp[i]) > int(pre_limb[i]):
 			fail("limb-healed", "LIMB HEALED: %s went %d -> %d after %s"
-				% [Combat.LIMB_NAMES[i], pre_limb[i], c.limb_hp[i], kind])
+				% [c.LIMB_NAMES[i], pre_limb[i], c.limb_hp[i], kind])
 		if bool(pre_broken[i]) and not bool(c.limb_broken[i]):
 			fail("limb-unbroken", "A BROKEN LIMB CAME BACK: %s was broken and is not, after %s"
-				% [Combat.LIMB_NAMES[i], kind])
+				% [c.LIMB_NAMES[i], kind])
 
 	if not (c.outcome in ["ongoing", "victory", "defeat"]):
 		fail("outcome-value", "OUTCOME IS NOT A LEGAL VALUE: '%s' after %s" % [c.outcome, kind])
@@ -224,7 +224,7 @@ func fuzz() -> void:
 			bump("try_attack")
 			if c.air < int(d.cost):
 				bump("ill_air")
-			var lim: int = Combat.STATION_LIMB[int(d.station)] if (int(d.station) >= 0 and int(d.station) <= 4) else -1
+			var lim: int = c.STATION_LIMB[int(d.station)] if (int(d.station) >= 0 and int(d.station) <= 4) else -1
 			if lim < 0 or bool(c.limb_broken[lim]):
 				bump("ill_nolimb")
 			expected = expect_attack(c, i)
@@ -235,7 +235,7 @@ func fuzz() -> void:
 			bump("try_move")
 			if int(d.station) == s:
 				bump("ill_same")
-			if not (s in Combat.OPEN_STATIONS):
+			if not (s in c.OPEN_STATIONS):
 				bump("ill_closed")
 			if c.air < Combat.MOVE_COST:
 				bump("ill_air")
@@ -334,13 +334,18 @@ func probe_station_bounds() -> void:
 	for bad in [5, -1]:
 		var c := Combat.new()
 		var air_before: int = c.air
+		# MEASURE the start, never assume it. This line used to compare
+		# against a hardcoded 0 and fired falsely the moment encounters
+		# became data and Scuba started somewhere else. Standing rule 3
+		# applies to a detector's expectations, not just its labels.
+		var station_before: int = int(c.divers[0].station)
 		var accepted: bool = c.act_move(0, bad)
 		var d = c.divers[0]
 		bump("probes")
 		if int(d.station) < 0 or int(d.station) > 4:
 			fail("move-unvalidated", "act_move DOES NOT VALIDATE ITS STATION: act_move(0, %d) left %s at station %d, which is off the board (0..4)"
 				% [bad, d.dname, d.station])
-		if not accepted and (int(c.air) != air_before or int(d.station) != 0):
+		if not accepted and (int(c.air) != air_before or int(d.station) != station_before):
 			fail("move-unvalidated-silent", "act_move(0, %d) returned false yet spent %d Air and moved %s to %d: a caller cannot tell refusal from corruption"
 				% [bad, air_before - int(c.air), d.dname, d.station])
 

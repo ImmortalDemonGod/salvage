@@ -11,24 +11,19 @@ const REAR := 3
 const BACKLINE := 4
 const STATION_NAMES := ["FRONT", "FLANK", "UNDER", "REAR", "BACKLINE"]
 
-const JAW := 0
-const CLAW := 1
-const TAIL := 2
-const LIMB_NAMES := ["jaw", "claw", "tail"]
+const Encounters := preload("res://content/encounters.gd")
 
-# The limb IS the position. One table, read by sim and presentation both,
-# so the contract can never be two lists that agree (SPEC 4.2.3).
-const STATION_LIMB := [JAW, CLAW, -1, TAIL, -1]
-
-# Which stations exist in this encounter. Fight one runs on FOUR: the
-# station histogram showed UNDER at 0.0 percent occupancy, and the cause
-# was not that safety is worthless, it was that BACKLINE is ALSO safe and
-# has no downside, so a safe-seeking bot always picks it and UNDER is
-# dominated by a duplicate. BACKLINE exists so the scanner can work from
-# range; the scanner arrives with the drum in fight two, so BACKLINE
-# arrives then too. That is the teach ladder doing its job: a station
-# shows up with the thing that makes it worth standing in.
-static var OPEN_STATIONS := [FRONT, FLANK, UNDER, REAR]
+# Per-encounter, derived from the encounter's limb list so the two can
+# never disagree. Fight one runs on FOUR stations: the histogram showed
+# UNDER at 0.0 percent, and the cause was not that safety is worthless, it
+# was that BACKLINE is ALSO safe with no downside, so UNDER was dominated
+# by a duplicate. BACKLINE arrives in fight two with the scanner that makes
+# standing there worth it.
+var STATION_LIMB: Array = []
+var OPEN_STATIONS: Array = []
+var LIMB_NAMES: Array = []
+var enc_id := "crab"
+var enc: Dictionary = {}
 
 const AIR_PER_TURN := 4   # see TUNE.air; this is the ceiling for clamping
 const MOVE_COST := 1
@@ -58,18 +53,14 @@ static var TUNE := {
 	# two-diver fight is a narrow design space and the next content change
 	# will likely knock it out. Measured here: casual 66.3%, greedy 6.0
 	# turns (floor 6.0), 10.0 squad HP lost (floor 8.0).
-	"limb_hp": [14, 10, 10],
 	"diver_hp": [8, 14, 16],
 	"diver_dmg": [2, 2, 5],
-	"jaw_dmg": 2,
-	"tail_dmg": 2,
 	"air": 4,
-	"party": 2,   # fight one is two divers; Proto5 joins at the boat
 }
 
 var divers: Array = []
 var limb_hp: Array = []
-var limb_broken := [false, false, false]
+var limb_broken: Array = []
 var air := AIR_PER_TURN
 var air_penalty := 0          # umbilicals cut last turn
 var turn := 1
@@ -78,19 +69,27 @@ var log_lines: Array = []
 var _rotation := 0            # deterministic enemy cycle
 var overdrafted := false      # the valve opens once per turn, not endlessly
 
-func _init() -> void:
+func _init(encounter := "crab") -> void:
+	enc_id = encounter
+	enc = (Encounters.ALL[encounter] as Dictionary)
+	STATION_LIMB = Encounters.station_limb(enc)
+	OPEN_STATIONS = (enc.open_stations as Array).duplicate()
+	LIMB_NAMES = []
+	limb_hp = []
+	limb_broken = []
+	for l in enc.limbs:
+		LIMB_NAMES.append(String(l.name))
+		limb_hp.append(int(l.hp))
+		limb_broken.append(false)
 	var hp: Array = TUNE.diver_hp
 	var dm: Array = TUNE.diver_dmg
-	# SPEC 2.8's ladder: fight one is TWO divers. Proto5 joins at the boat,
-	# because "a diver who costs 3 is a commitment" is its own idea and has
-	# to be taught alone. G-TEACH caught the sim building three.
-	divers = [
-		Diver.new(0, "Scuba", 1, int(hp[0]), int(dm[0]), FRONT),
-		Diver.new(1, "Prototype1", 2, int(hp[1]), int(dm[1]), UNDER),
-	]
-	if int(TUNE.party) >= 3:
-		divers.append(Diver.new(2, "Proto5", 3, int(hp[2]), int(dm[2]), FLANK))
-	limb_hp = (TUNE.limb_hp as Array).duplicate()
+	var roster := [["Scuba", 1], ["Prototype1", 2], ["Proto5", 3]]
+	var starts: Array = enc.get("starts", [])
+	divers = []
+	var n: int = min(int(enc.party), roster.size())
+	for i in range(n):
+		var start: int = int(starts[i]) if i < starts.size() else int(OPEN_STATIONS[i % OPEN_STATIONS.size()])
+		divers.append(Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start))
 	air = int(TUNE.air)
 
 # ---- enemy anatomy: fight one, the hunter crab -------------------------
@@ -98,10 +97,7 @@ func _init() -> void:
 # geometry is real: it is a place you can stand that does nothing
 # offensively, and the jaw cannot reach it. Safety is a reason to move.
 func attacks() -> Array:
-	return [
-		{"limb": JAW, "stations": [FRONT], "dmg": int(TUNE.jaw_dmg), "name": "snaps"},
-		{"limb": TAIL, "stations": [REAR, FLANK], "dmg": int(TUNE.tail_dmg), "name": "sweeps"},
-	]
+	return enc.attacks
 
 func live_attacks() -> Array:
 	var out: Array = []
@@ -230,7 +226,7 @@ func end_turn() -> void:
 # Deep-set rollouts need to try an action and unwind. Cloning keeps the sim
 # pure: no undo stack, no hidden state to get out of sync.
 func clone() -> Combat:
-	var c := Combat.new()
+	var c := Combat.new(enc_id)
 	for i in range(divers.size()):
 		var a = divers[i]
 		var b = c.divers[i]

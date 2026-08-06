@@ -12,7 +12,7 @@ static func legal(c: Combat) -> Array:
 		if c.afford(d.cost) and c.can_attack(d):
 			out.append({"kind": "attack", "i": d.id})
 		if c.afford(Combat.MOVE_COST):
-			for s in Combat.OPEN_STATIONS:
+			for s in c.OPEN_STATIONS:
 				if s != d.station:
 					out.append({"kind": "move", "i": d.id, "s": int(s)})
 	return out
@@ -66,12 +66,12 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 		var d = c.divers[a.i]
 		var score := 0.0
 		if a.kind == "attack":
-			var limb: int = Combat.STATION_LIMB[d.station]
+			var limb: int = c.STATION_LIMB[d.station]
 			score = float(min(d.dmg, c.limb_hp[limb])) / float(d.cost)
 			if d.dmg >= c.limb_hp[limb]:
 				score += 3.0   # finishing a limb changes the map
 		else:
-			var limb2: int = Combat.STATION_LIMB[a.s]
+			var limb2: int = c.STATION_LIMB[a.s]
 			if limb2 >= 0 and not c.limb_broken[limb2]:
 				score = 0.9
 			if d.station in threatened and not (a.s in threatened):

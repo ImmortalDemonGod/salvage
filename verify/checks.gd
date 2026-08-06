@@ -37,6 +37,7 @@ func check_bands(n: int) -> void:
 
 # ---- dead / dominant station (SPEC 4.2) --------------------------------
 func check_stations(n: int) -> void:
+	var OPEN: Array = Combat.new().OPEN_STATIONS
 	var occ := [0, 0, 0, 0, 0]
 	var total := 0
 	for s in range(n):
@@ -59,7 +60,7 @@ func check_stations(n: int) -> void:
 	var parts: Array = []
 	for i in range(5):
 		var pct: float = 100.0 * float(occ[i]) / float(max(1, total))
-		var open_here: bool = i in Combat.OPEN_STATIONS
+		var open_here: bool = i in OPEN
 		parts.append("%s %.1f%%%s" % [Combat.STATION_NAMES[i], pct, "" if open_here else " (closed)"])
 		if not open_here:
 			continue

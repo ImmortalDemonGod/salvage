@@ -65,11 +65,11 @@ func _init() -> void:
 		if not beat.has("expect") or not beat.built:
 			continue
 		var e: Dictionary = beat.expect
-		var c := Combat.new()
+		var c := Combat.new(String(e.get("encounter", "crab")))
 		if int(e.divers) != c.divers.size():
 			fail("LADDER DISAGREES WITH THE SIM: %s declares %d divers, the sim builds %d" % [beat.id, int(e.divers), c.divers.size()])
-		if int(e.open_stations) != Combat.OPEN_STATIONS.size():
-			fail("LADDER DISAGREES WITH THE SIM: %s declares %d open stations, the sim opens %d" % [beat.id, int(e.open_stations), Combat.OPEN_STATIONS.size()])
+		if int(e.open_stations) != c.OPEN_STATIONS.size():
+			fail("LADDER DISAGREES WITH THE SIM: %s declares %d open stations, the sim opens %d" % [beat.id, int(e.open_stations), c.OPEN_STATIONS.size()])
 		if int(e.limbs) != c.limb_hp.size():
 			fail("LADDER DISAGREES WITH THE SIM: %s declares %d limbs, the sim builds %d" % [beat.id, int(e.limbs), c.limb_hp.size()])
 

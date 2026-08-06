@@ -121,7 +121,7 @@ func _refresh() -> void:
 		var where: Array = []
 		for s in it.stations:
 			where.append(Combat.STATION_NAMES[s])
-		ui_intent.text = "NEXT: the %s %s %s for %d" % [Combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
+		ui_intent.text = "NEXT: the %s %s %s for %d" % [combat.LIMB_NAMES[it.limb], it.name, "/".join(where), it.dmg]
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third
 	# card, which the as-played capture caught on its first frame.
@@ -176,7 +176,7 @@ func _draw() -> void:
 	for i in range(5):
 		if not combat.station_open(i):
 			continue
-		var limb: int = Combat.STATION_LIMB[i]
+		var limb: int = combat.STATION_LIMB[i]
 		var safe: bool = limb < 0 or combat.limb_broken[limb]
 		var col := Color(0.25, 0.55, 0.6) if safe else Color(0.85, 0.35, 0.25)
 		draw_arc(STATION_POS[i], 46, 0, TAU, 40, col, 2.0)
