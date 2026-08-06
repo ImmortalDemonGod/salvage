@@ -5,6 +5,10 @@
 set -e
 cd "$(dirname "$0")/.."
 godot --headless --path "$PWD" --export-release "Web" export/web/index.html >/dev/null 2>&1
+if [ "$1" = "--export-only" ]; then
+  echo "exported: export/web (not published)"
+  exit 0
+fi
 tmp=$(mktemp -d)
 cp -r export/web/* "$tmp"/
 touch "$tmp/.nojekyll"

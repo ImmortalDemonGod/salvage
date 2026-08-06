@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 OUT=${1:-/tmp/salvage-gallery}
 rc=0
 rm -rf "$OUT"; mkdir -p "$OUT"
-./tools/deploy.sh >/dev/null 2>&1
+./tools/deploy.sh --export-only >/dev/null 2>&1
 shoot() {  # name, keys, expected beat id
   local d="$OUT/$1"
   local log="$OUT/$1.log"
