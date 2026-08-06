@@ -516,6 +516,7 @@ func _refresh() -> void:
 	ui_legend.get_parent().visible = true
 	ui_goal.get_parent().visible = true
 	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
+	ui_legend.get_parent().visible = run.beat <= 2
 	var keys2 := ["Q", "W", "E", "R", "T"]
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
@@ -586,7 +587,7 @@ func _refresh() -> void:
 		card.visible = true
 		var d = combat.divers[i]
 		var mark := ">" if i == selected else " "
-		var state := "DOWN" if d.down else "at %s   %d/%d HP" % [Combat.STATION_NAMES[d.station], d.hp, d.max_hp]
+		var state := "DOWN, out for this fight, back at the boat" if d.down else "at %s   %d/%d HP" % [Combat.STATION_NAMES[d.station], d.hp, d.max_hp]
 		var afford := "" if combat.air >= d.cost else "   cannot afford"
 		var lines: Array = []
 		for slot in range(d.kit.size()):
