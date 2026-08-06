@@ -589,15 +589,43 @@ func _next_step() -> String:
 				Combat.STATION_NAMES[int(d.station)], Combat.STATION_NAMES[safe_far],
 				["Q", "W", "E", "R", "T"][safe_far]]
 		return "Press ENTER to end the turn."
-	# standing somewhere an attack is about to land, with the air to leave
-	if int(d.station) in combat.threatened_stations() and combat.air >= Combat.MOVE_COST + d.cost:
+	# standing somewhere an attack is about to land
+	if int(d.station) in combat.threatened_stations():
+		# a station is only a suggestion if it is open, unthreatened, EMPTY,
+		# and affordable. "Taken" is not somewhere you can go.
+		var refuge := -1
 		for st in combat.OPEN_STATIONS:
-			if int(st) == int(d.station):
+			if int(st) == int(d.station) or int(st) in combat.threatened_stations():
 				continue
-			if not (int(st) in combat.threatened_stations()):
-				return "%s is about to be hit. Move to %s (press %s), or hit the %s with SPACE." % [
-					d.dname, Combat.STATION_NAMES[int(st)], ["Q", "W", "E", "R", "T"][int(st)],
-					String(combat.LIMB_NAMES[combat.target_limb(d)]).to_upper()]
+			var occupied := false
+			for o in combat.divers:
+				if not o.down and int(o.station) == int(st):
+					occupied = true
+			if not occupied:
+				refuge = int(st)
+				break
+		# and killing the limb is only an ALTERNATIVE if this diver can
+		# actually kill it this turn with the air in the tank
+		var lb3: int = combat.target_limb(d)
+		var kill := ""
+		if lb3 >= 0:
+			for slot in range(d.kit.size()):
+				var ab3: Dictionary = d.kit[slot]
+				if String(ab3.kind) == "shut" and int(combat.limb_stun[lb3]) <= 0 and combat.air >= d.cost:
+					kill = "or press %s to shut the %s so it cannot swing" % [
+						"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb3]).to_upper()]
+					break
+				if int(ab3.dmg) >= int(combat.limb_hp[lb3]) and combat.air >= d.cost:
+					kill = "or press %s to break the %s before it swings" % [
+						"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb3]).to_upper()]
+					break
+		if refuge >= 0 and combat.air >= Combat.MOVE_COST:
+			var move_txt := "%s is about to be hit. Move to %s (press %s)" % [
+				d.dname, Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
+			return move_txt + ("   " + kill + "." if kill != "" else ".")
+		if kill != "":
+			return "%s is about to be hit and there is nowhere clear to stand. %s." % [d.dname, kill.capitalize()]
+		return "%s is about to be hit and there is nowhere clear to stand. Take the hit and break what you can." % d.dname
 	# an attack that will land on an empty station costs the squad an air
 	# line, and he watched that happen repeatedly without ever being told
 	# why. Warn while it can still be avoided.
@@ -646,12 +674,12 @@ func _lock_step(p) -> String:
 	if p.stage == 2:
 		if not p.valve[p.CROSS]:
 			if p.reachable(p.CROSS):
-				return "Open the crossover (4) first, while chamber B is still dry. Once B fills it goes under and you cannot turn it."
+				return "Open the crossover (4) FIRST, before any water goes into B. Its handle is at B floor level, so once B has water you can no longer reach it."
 			return "The crossover is under water. Shut valve 3 to drain chamber B, then open the crossover."
 		return "Crossover open. Fill chamber A to the line with 1 and 2, and 3 to push B's water across. A needs three; B must end dry."
 	if not p.valve[p.SEIZED]:
 		if p.reachable(p.SEIZED):
-			return "Turn valve 3 first. It sits at the floor, and once the water rises it goes under and cannot be turned."
+			return "Turn valve 3 first. It is the one on the tank wall, low down, and once the water rises it goes under and cannot be turned."
 		return "Valve 3 is under water now. Shut one of the others to drop the level, then turn 3."
 	return "Valve 3 is open. Turn the rest to fill the chamber to the line."
 
@@ -780,7 +808,7 @@ func _refresh() -> void:
 	ui_legend.get_parent().visible = true
 	ui_goal.get_parent().visible = true
 	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
-	ui_legend.get_parent().visible = run.beat <= 2
+	ui_legend.get_parent().visible = true
 	var keys2 := ["Q", "W", "E", "R", "T"]
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
