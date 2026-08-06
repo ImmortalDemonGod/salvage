@@ -18,6 +18,14 @@ var finished := false
 func _init() -> void:
 	_enter()
 
+# has the run already completed the beat with this id?
+func _passed(id: String) -> bool:
+	var bs := built_beats()
+	for i in range(min(beat, bs.size())):
+		if String(bs[i].id) == id:
+			return true
+	return false
+
 func built_beats() -> Array:
 	var out: Array = []
 	for b in Beats.LADDER:

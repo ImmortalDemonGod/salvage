@@ -91,14 +91,14 @@ func _init(encounter := "crab") -> void:
 		limb_stun.append(0)
 	var hp: Array = TUNE.diver_hp
 	var dm: Array = TUNE.diver_dmg
-	var roster := [["Scuba", 1, false], ["Prototype1", 2, true], ["Proto5", 3, false]]
+	var roster := [["Scuba", 1, false], ["Prototype1", 2, false], ["Proto5", 3, false]]
 	var starts: Array = enc.get("starts", [])
 	divers = []
 	var n: int = min(int(enc.party), roster.size())
 	for i in range(n):
 		var start: int = int(starts[i]) if i < starts.size() else int(OPEN_STATIONS[i % OPEN_STATIONS.size()])
 		var dv := Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start)
-		dv.disables = bool(roster[i][2])
+		dv.disables = String(roster[i][0]) == "Prototype1" and bool(enc.get("drum", false))
 		divers.append(dv)
 	air = int(TUNE.air)
 
@@ -136,7 +136,20 @@ func alive() -> Array:
 	return out
 
 func can_attack(d) -> bool:
+	# From BACKLINE the disabler reaches with the drum: it shuts down
+	# whatever is winding up, wherever it is. That is what makes standing
+	# at range a decision rather than a retreat, and it is why BACKLINE and
+	# conditions are one idea rather than two (SPEC 2.7 parts).
+	if d.disables and d.station == BACKLINE:
+		return not intent().is_empty()
 	return STATION_LIMB[d.station] >= 0 and not limb_broken[STATION_LIMB[d.station]]
+
+# which limb this diver would hit from where it stands
+func target_limb(d) -> int:
+	if d.disables and d.station == BACKLINE:
+		var it: Dictionary = intent()
+		return int(it.limb) if not it.is_empty() else -1
+	return int(STATION_LIMB[d.station])
 
 func afford(cost: int) -> bool:
 	return air >= cost
@@ -148,13 +161,13 @@ func act_attack(i: int) -> bool:
 	if outcome != "ongoing" or d.down or not afford(d.cost) or not can_attack(d):
 		return false
 	air -= d.cost
-	var limb: int = STATION_LIMB[d.station]
+	var limb: int = target_limb(d)
 	limb_hp[limb] -= d.dmg
 	log_lines.append("%s hits the %s for %d" % [d.dname, LIMB_NAMES[limb], d.dmg])
 	# SPEC 2.9 gives Prototype1 the verb *disable*. Until it had one it was
 	# strictly worse than Scuba at attacking and G4 reported it dominated.
 	if d.disables and not limb_broken[limb]:
-		limb_stun[limb] = 2
+		limb_stun[limb] = 1
 		log_lines.append("the %s is shut down" % LIMB_NAMES[limb])
 	if limb_hp[limb] <= 0:
 		limb_hp[limb] = 0

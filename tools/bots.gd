@@ -66,7 +66,9 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 		var d = c.divers[a.i]
 		var score := 0.0
 		if a.kind == "attack":
-			var limb: int = c.STATION_LIMB[d.station]
+			var limb: int = c.target_limb(d)
+			if limb < 0:
+				continue
 			score = float(min(d.dmg, c.limb_hp[limb])) / float(d.cost)
 			if d.dmg >= c.limb_hp[limb]:
 				score += 3.0   # finishing a limb changes the map
@@ -74,7 +76,7 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			# damage it would have dealt. Without this the judge cannot see
 			# prevention at all and would report the disabler dominated
 			# purely because it cannot value what the disabler does.
-			if d.disables and int(intent.get("limb", -1)) == limb and int(c.limb_stun[limb]) <= 0:
+			if d.disables and limb >= 0 and int(intent.get("limb", -1)) == limb and int(c.limb_stun[limb]) <= 0:
 				score += float(intent.get("dmg", 0)) * float(intent.get("stations", []).size()) / float(d.cost)
 		else:
 			var limb2: int = c.STATION_LIMB[a.s]
