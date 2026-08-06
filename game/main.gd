@@ -209,7 +209,16 @@ func _refresh() -> void:
 		for i in range(ui_stations.size()):
 			ui_stations[i].visible = false
 		ui_scene.get_parent().visible = true
-		ui_scene.text = run.puzzle.state_text() + "\n\n" + ("the way out is open" if run.puzzle.solved() else "(placeholder) The way out is above the waterline. Fill the chamber.")
+		# the goal has to be the goal of THIS lock. Lock 2 has two chambers
+		# and stage 1's line ("fill the chamber") describes neither of them.
+		var want := ""
+		if run.puzzle.solved():
+			want = "the way out is open"
+		elif run.puzzle.stage == 2:
+			want = "(placeholder) The way out sits above chamber A. Fill A to the top, and chamber B has to stay dry to hold it there."
+		else:
+			want = "(placeholder) The way out is above the waterline. Fill the chamber to the top."
+		ui_scene.text = run.puzzle.state_text() + "\n\n" + want
 		var vk := ["1", "2", "3", "4"]
 		var labels: Array = []
 		for i in range(run.puzzle.valves()):
@@ -438,12 +447,93 @@ func _unhandled_input(e: InputEvent) -> void:
 			else:
 				player_end_turn()
 
+# The lock, DRAWN. It was a line of text -- "chamber A 0/3 chamber B 0/3
+# valve 1 SHUT ..." -- on an otherwise empty screen, which is precisely the
+# failure the last project's puzzle died of and precisely what this one was
+# justified as fixing: the whole state readable from a still frame. A still
+# frame of a sentence is still a sentence.
+#
+# Everything here is read from the sim: the water heights are level_a() and
+# level_b(), the valve colours are valve[], and the door lights on solved().
+# Nothing is remembered by the player and nothing is remembered by the draw.
+const WATER := Color(0.20, 0.52, 0.62)
+const STEEL := Color(0.16, 0.24, 0.30)
+const OPEN_C := Color(0.45, 0.78, 0.55)
+const SHUT_C := Color(0.72, 0.34, 0.28)
+
+func _valve_dot(at: Vector2, key: String, is_open: bool, reachable: bool) -> void:
+	var col: Color = OPEN_C if is_open else SHUT_C
+	if not is_open and not reachable:
+		col = Color(0.38, 0.36, 0.42)      # under water: cannot be turned
+	draw_circle(at, 16, col)
+	draw_arc(at, 16, 0, TAU, 24, Color(0.85, 0.90, 0.95), 2.0)
+	var f: Font = ThemeDB.fallback_font
+	draw_string(f, at + Vector2(-5, 6), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.05, 0.09, 0.12))
+	if not is_open and not reachable:
+		draw_string(f, at + Vector2(-34, 38), "under water", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.75, 0.72, 0.80))
+
+func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name: String) -> void:
+	draw_rect(Rect2(at, Vector2(wide, tall)), STEEL)
+	var h: float = tall * (float(filled) / float(max(1, cap)))
+	if h > 0.0:
+		draw_rect(Rect2(at + Vector2(0, tall - h), Vector2(wide, h)), WATER)
+	draw_rect(Rect2(at, Vector2(wide, tall)), Color(0.55, 0.66, 0.74), false, 2.0)
+	# the graduations, so "2 of 3" is countable and not just a bar
+	for m in range(1, cap):
+		var y: float = at.y + tall - tall * (float(m) / float(cap))
+		draw_line(Vector2(at.x, y), Vector2(at.x + 14, y), Color(0.55, 0.66, 0.74), 1.0)
+	var f: Font = ThemeDB.fallback_font
+	draw_string(f, at + Vector2(0, tall + 26), "%s  %d of %d" % [name, filled, cap],
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
+
+func _door(at: Vector2, wide: float, is_open: bool) -> void:
+	var f: Font = ThemeDB.fallback_font
+	draw_rect(Rect2(at, Vector2(wide, 22)), OPEN_C if is_open else Color(0.30, 0.28, 0.24))
+	draw_string(f, at + Vector2(0, -12), "the way out" + ("  OPEN" if is_open else ""),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.72, 0.74, 0.78))
+
+func _draw_lock(p) -> void:
+	var tall := 260.0
+	if p.stage == 2:
+		var ax := 300.0
+		var bx := 700.0
+		var wide := 240.0
+		var top := 250.0
+		_chamber(Vector2(ax, top), wide, tall, p.level_a(), 3, "chamber A")
+		_chamber(Vector2(bx, top), wide, tall, p.level_b(), 3, "chamber B")
+		_door(Vector2(ax, top - 30), wide, p.solved())
+		# the crossover pipe, at the BOTTOM of B because that is the whole
+		# interlock: it can only be turned while B is dry
+		var pipe_y := top + tall - 26.0
+		draw_line(Vector2(ax + wide, pipe_y), Vector2(bx, pipe_y),
+			OPEN_C if p.valve[p.CROSS] else STEEL, 8.0)
+		_valve_dot(Vector2((ax + wide + bx) * 0.5, pipe_y), "4", p.valve[p.CROSS], p.reachable(p.CROSS))
+		_valve_dot(Vector2(ax + 60, top + tall + 60), "1", p.valve[0], true)
+		_valve_dot(Vector2(ax + 170, top + tall + 60), "2", p.valve[1], true)
+		_valve_dot(Vector2(bx + 110, top + tall + 60), "3", p.valve[2], true)
+		var f2: Font = ThemeDB.fallback_font
+		draw_string(f2, Vector2(ax + 30, top + tall + 110), "1 and 2 feed A", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
+		draw_string(f2, Vector2(bx + 60, top + tall + 110), "3 feeds B", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
+		return
+	var x := 480.0
+	var wide := 300.0
+	var top := 250.0
+	_chamber(Vector2(x, top), wide, tall, p.level(), p.VALVES, "the chamber")
+	_door(Vector2(x, top - 30), wide, p.solved())
+	# two inlets you can always reach, and the seized one down at the floor
+	_valve_dot(Vector2(x + 70, top + tall + 60), "1", p.valve[0], p.reachable(0))
+	_valve_dot(Vector2(x + 150, top + tall + 60), "2", p.valve[1], p.reachable(1))
+	_valve_dot(Vector2(x + wide - 40, top + tall - 30), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
+
 func _draw() -> void:
 	# Paint the ACTUAL rect, not the design size. With stretch/expand the
 	# viewport grows past 720 and anything beyond it was left unpainted,
 	# which is the flat grey band a visual reviewer flagged as the game
 	# failing to fill its window.
 	draw_rect(Rect2(Vector2.ZERO, size.max(DESIGN)), Color(0.04, 0.11, 0.16))
+	if run != null and run.puzzle != null:
+		_draw_lock(run.puzzle)
+		return
 	# station rings: red while the limb they expose is live, teal once it is
 	# broken or absent. This is the map changing, drawn.
 	if combat == null:

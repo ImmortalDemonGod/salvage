@@ -329,13 +329,13 @@ Every claim carries its instrument. Reproduce the fast set with
 
 | Gate | Verdict | Evidence |
 |---|---|---|
-| **G1 BUG-FREE** | GREEN | 16/16 scripts parse; fuzz 15,000 hostile actions with per-action invariants, air observed 0..5 against a 0..5 bound, 0 findings; web export loads with 0 page errors across every capture |
-| **G2 WINNABLE** | GREEN | 40/40 runs clear all eight beats, worst 95 actions. No softlock: positioning never stranded a diver |
-| **G3 BANDS** | GREEN | crab 66.5% / 6.0 turns / 10.0 HP; spitter 71.0% / 7.0 / 9.0; dredge 88.7% / 11.0 / 17.0. `descent` SKIPPED by declaration as a teaching beat |
+| **G1 BUG-FREE** | GREEN | 21/21 scripts parse; fuzz 15,000 hostile actions with per-action invariants over **138 fights rotating through all four encounters**, air observed 0..4 against a 0..5 bound, 0 findings; web export loads with 0 page errors across every capture. The rotation is load-bearing: while the fuzz ran one encounter it never opened BACKLINE, and three real defects were sitting there |
+| **G2 WINNABLE** | GREEN | 40/40 runs clear all nine beats, worst 140 actions. No softlock: positioning never stranded a diver |
+| **G3 BANDS** | GREEN | crab 79.8% / 9.0 turns / 14.0 HP; spitter 67.6% / 8.0 / 20.0; dredge 66.9% / 17.0 / 39.0, all inside the pinned 55-90 band. `descent` SKIPPED by declaration as a teaching beat |
 | **G4 PER-OPTION DOMINANCE** | GREEN | deep set: 0 dominance signatures across all fighting encounters. Was RED for five passes on `attack:Prototype1`; resolved by giving the disabler its verb |
 | **G5-MACHINE** | EVIDENCED | bands, station occupancy (no dead, none above 60%), 4 distinct anatomies, telegraph honest over 5,600 slots |
 | **G5-HUMAN** | **UNVERIFIED by definition** | No human has played it. This can only be closed by a person who did not build it |
-| **G6 VISUAL** | GREEN after fixes | Fresh-eyes reviewer, 6-image gallery, severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
+| **G6 VISUAL** | GREEN after fixes | Fresh-eyes reviewer, gallery now **10 shots covering 9 of 9 beats**, derived by `tools/keypath.gd` rather than hand-authored key strings (the hand-authored set reached the crab and stopped, so four of nine beats were all G6 and G10 ever saw), severity assigned by the reviewer. 3 HIGH found and all fixed: text bleeding between HUD panels, an unpainted band from drawing a hardcoded rect instead of the real viewport, and station cards slicing the diver sprites. MED and LOW findings logged below |
 | **G7 AUDIO** | GREEN (musical quality permanently UNVERIFIED) | 12 of 12 named events classify from REAL sim lines across 10,539 lines of played output, every encounter and the lock, both policies. Wired into the scene: `main.gd` drains the sim log into the voice each refresh, because classification is not wiring. Voices are procedural tones with no assets; whether they sound good is a human call and cannot be closed here |
 | **G8 FIDELITY** | GREEN on the HIGHs, MED and LOW open | An adversarial round briefed "prove this does NOT match the spec" returned **13 HIGH, 9 MED, 4 LOW**. Every HIGH is fixed or ruled; see below. The reviewer also positively verified determinism (zero RNG anywhere in `sim/` or `content/`), the parking lot (no stamina, song, verse, relic, inventory, banking or mid-dive healing), and a dozen decided rules |
 | **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
@@ -346,6 +346,28 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G14 HARNESS FIDELITY** | GREEN | sim is `RefCounted` with no Node; differential drives one script down the bot path and the keyboard path with identical state, every commit |
 | **G14-DOOR** | GREEN | `verify/door.gd` reads the key map as text and holds it against the content: every ability slot any diver owns must be bound to a key, every bound key must call a function that exists, no key may point at a mechanic whose enable const is false, and any verifier claiming to drive the player must drive a bound door. Mutation-tested three ways, control clean. `tools/keypath.gd` extends this to the screen: it derives a key sequence per beat by playing the run with the judge bots, and fails if any beat is unreachable from the keyboard. **9 of 9 reachable** |
 | **G-TEACH** | GREEN | 8 beats, 12 mechanics, each taught exactly once, cross-checked against what the sim actually builds |
+
+### The ring said the opposite of the truth
+
+Worth its own entry, because every gate was green while it was wrong and
+because of how it was found. The station rings drew red where a limb
+stood and blue everywhere else, and the legend read "blue ring = safe to
+stand". Those are two different questions: a limb's arc reaches stations
+it does not occupy. On the vent worm, BACKLINE was drawn blue and
+labelled safe on the same frame that announced "gut vents over BACKLINE
+for 3".
+
+No detector could have caught it, because no detector knew what the ring
+was claiming. It was found by looking at a screenshot. The fix is a
+single source (`Combat.threatened_stations()`) feeding the ring, the
+legend and a new fuzz invariant: anyone standing where no announced
+attack named must come through the enemy turn without losing a point.
+Deliberately sabotaged, that invariant fires 263 times; control clean.
+
+And it could not fire at all until the fuzz stopped calling
+`Combat.new()` with no argument. That is the crab, and only the crab:
+71 fights, one anatomy, BACKLINE never open. Rotating through all four
+encounters found three more defects in the first run.
 
 ### Logged, not fixed
 
