@@ -56,7 +56,36 @@ func _ready() -> void:
 	_refresh()
 
 # where this encounter puts a station, falling back to the default ring
-const BOARD_LIFT := Vector2(0, -46)
+# The board sits under the HUD, and a sprite is not a Control, so nothing
+# was stopping one being drawn through the help line. A reviewer looking at
+# the last beat put it exactly: the words "ENTER end t" were painted on top
+# of Proto5's chest, and it read as HUD chrome rather than a unit on the
+# board. Declared here so verify/layout.gd can check it.
+const HUD_BOTTOM := 196.0
+const DIVER_SCALE := 66.0
+const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
+const CARD_TOP := 522.0
+const BOARD_LIFT := Vector2(0, 0)
+
+# Where this diver's feet go. Divers used to be offset by their index in the
+# whole party -- `-22 + i * 36` -- so the third diver was pushed 50px right
+# of its ring even when standing there alone, which is how Proto5 ended up
+# balanced on the rim of the FLANK circle with the circle itself empty.
+# Spread by position AMONG THE DIVERS SHARING THAT STATION instead.
+func diver_foot(d) -> Vector2:
+	var here: Array = []
+	for o in combat.divers:
+		if not o.down and int(o.station) == int(d.station):
+			here.append(int(o.id))
+	var at: int = here.find(int(d.id))
+	var spread: float = 34.0
+	var off: float = (float(at) - (float(here.size()) - 1.0) * 0.5) * spread
+	return place(int(d.station)) + Vector2(off, DIVER_SEAT)
+
+# the box a diver sprite occupies, so the drawing and the check agree
+func diver_rect(d) -> Rect2:
+	var f: Vector2 = diver_foot(d)
+	return Rect2(f + Vector2(-DIVER_SCALE * 0.5, -DIVER_SCALE), Vector2(DIVER_SCALE, DIVER_SCALE))
 # the area _draw_lock() paints, declared so verify/layout.gd can hold the
 # Controls off it. A drawing is not a Control, so nothing was stopping a
 # panel from being laid straight over the puzzle.
@@ -98,7 +127,7 @@ func _build_ui() -> void:
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
 		p.size = Vector2(392, 190)
-		p.position = Vector2(24 + i * 406, 522)
+		p.position = Vector2(24 + i * 406, CARD_TOP)
 		add_child(p)
 		var l := Label.new()
 		l.name = "label"
@@ -290,6 +319,10 @@ func _refresh() -> void:
 		if not combat.station_open(i):
 			continue
 		var mk: Panel = ui_stations[i]
+		# UNDER used to sit at y=470, which left no room for its own label
+		# above the card row. Lifting the whole board to dodge that pushed
+		# the FLANK sprite up into the HUD instead, so the station moved
+		# rather than everything else.
 		mk.position = place(i) - mk.size * 0.5 + Vector2(0, 56)
 		# The limb IS the position, so the marker has to SAY the limb and
 		# how much of it is left. A blind reviewer found no enemy health
@@ -592,10 +625,7 @@ func _draw() -> void:
 	Art.draw_crab(self, Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150), asc, combat.limb_broken)
 	Art.tint = Color(1, 1, 1)
 	Art.stretch = 1.0
-	for i in range(combat.divers.size()):
-		var d = combat.divers[i]
+	for d in combat.divers:
 		if d.down:
 			continue
-		# above the ring, so the station card below never slices a sprite
-		var p: Vector2 = place(d.station) + Vector2(-22 + i * 36, -8)
-		Art.draw_diver(self, d.cost, p, 74.0, 1)
+		Art.draw_diver(self, d.cost, diver_foot(d), DIVER_SCALE, 1)

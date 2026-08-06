@@ -165,6 +165,18 @@ func check_current() -> void:
 				if ov.size.x > 2.0 and ov.size.y > 2.0:
 					fail("PANELS OVERLAP: %s and %s by %dx%d" % [pa.name, pb.name, int(ov.size.x), int(ov.size.y)])
 
+	# no diver may be drawn up into the HUD. A sprite is not a Control, so
+	# the panel checks above cannot see this: the help line was painted
+	# straight through the third diver on the last beat.
+	if scene.combat != null:
+		for d in scene.combat.divers:
+			if d.down:
+				continue
+			var dr: Rect2 = scene.diver_rect(d)
+			if dr.position.y < scene.HUD_BOTTOM:
+				fail("DIVER DRAWN INTO THE HUD: %s at %s reaches y=%d, above the HUD floor at %d" % [
+					d.dname, Combat.STATION_NAMES[int(d.station)], int(dr.position.y), int(scene.HUD_BOTTOM)])
+
 	# nothing may be laid over the lock drawing
 	if scene.run != null and scene.run.puzzle != null:
 		for p2 in panels:

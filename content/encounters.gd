@@ -39,7 +39,7 @@ static var ALL := {
 	"crab": {
 		"title": "the hunter crab",
 		"art": {"kind": "crab", "scale": 124.0, "pos": [878, 316], "tint": [1.0, 1.0, 1.0]},
-		"places": {"0": [700, 386], "1": [752, 300], "2": [880, 470], "3": [1046, 328]},
+		"places": {"0": [648, 386], "1": [752, 292], "2": [906, 424], "3": [1058, 322]},
 		# TWO divers. One was tried and REFUTED by measurement: the crab
 		# became unwinnable (G2 0/40), casual fell to 5.2 percent, and
 		# UNDER went dead because a lone diver never has a reason to stand
@@ -89,7 +89,7 @@ static var ALL := {
 		# a LONGER, thinner body: the stations sit further apart along it,
 		# so the board itself reads differently from the crab's
 		"art": {"kind": "worm", "scale": 150.0, "pos": [900, 300], "tint": [0.55, 0.85, 0.70]},
-		"places": {"0": [660, 360], "1": [850, 262], "2": [900, 470], "4": [300, 386]},
+		"places": {"0": [640, 366], "1": [858, 268], "2": [926, 424], "4": [300, 386]},
 		"party": 2,
 		# The drum is fitted before this fight, so it is declared HERE.
 		# While gear was a global set by the run, the bands measured the
