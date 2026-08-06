@@ -42,7 +42,6 @@ var ui_air: Label
 var ui_tanks: Array = []
 var ui_log: Label
 var ui_step: Label
-var ui_won: Label
 var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
@@ -323,21 +322,6 @@ func _build_ui() -> void:
 	help_panel.add_theme_stylebox_override("panel", skin_quiet())
 	_rivet(help_panel)
 	add_child(help_panel)
-	var won_panel := Panel.new()
-	won_panel.name = "won_panel"
-	won_panel.size = Vector2(620, 66)
-	won_panel.position = Vector2(330, 300)
-	won_panel.add_theme_stylebox_override("panel", skin_primary())
-	_rivet(won_panel)
-	add_child(won_panel)
-	ui_won = Label.new()
-	ui_won.name = "label"
-	ui_won.set_anchors_preset(Control.PRESET_FULL_RECT)
-	ui_won.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ui_won.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	ui_won.add_theme_font_size_override("font_size", 26)
-	ui_won.add_theme_color_override("font_color", BRASS_LIT)
-	won_panel.add_child(ui_won)
 	var step_panel := Panel.new()
 	step_panel.name = "step_panel"
 	step_panel.size = Vector2(1220, 40)
@@ -647,9 +631,6 @@ func _auto_select() -> void:
 
 func _refresh() -> void:
 	_auto_select()
-	if ui_won != null:
-		ui_won.text = _won
-		ui_won.get_parent().visible = _won != ""
 	_stamp_title()
 	_voice()
 	_recent()
@@ -970,7 +951,7 @@ func _after() -> void:
 		_dive = 1.7
 		_hud(false)
 		_won = ("%s IS DISABLED" % String(combat.enc.get("title", "the enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
-		_hold = 2.6
+		_hold = 1.7
 		run.advance()
 		combat = run.combat
 		selected = 0
@@ -1224,6 +1205,9 @@ func _draw_dive(k: float) -> void:
 		var len: float = 30.0 + float(i % 5) * 26.0
 		draw_line(Vector2(x, y), Vector2(x, y + len), Color(0.62, 0.82, 0.92, 0.30 * fade), 2.0)
 	var b: Dictionary = run.current()
+	if _won != "":
+		draw_string(f, Vector2(w.x * 0.5 - 340.0, w.y * 0.46 - 68.0), _won,
+			HORIZONTAL_ALIGNMENT_CENTER, 680.0, 30, Color(0.90, 0.72, 0.38, fade))
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.46), "DESCENDING",
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 26, Color(0.72, 0.86, 0.92, fade))
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.46 + 42.0), String(b.get("title", "")).to_upper(),
