@@ -64,7 +64,7 @@ func _ready() -> void:
 # the last beat put it exactly: the words "ENTER end t" were painted on top
 # of Proto5's chest, and it read as HUD chrome rather than a unit on the
 # board. Declared here so verify/layout.gd can check it.
-const HUD_BOTTOM := 196.0
+const HUD_BOTTOM := 212.0   # the help bar ends at 206; bars clamp below it
 const DIVER_SCALE := 66.0
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
 const CARD_TOP := 522.0
