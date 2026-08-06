@@ -5,6 +5,7 @@
 extends Control
 
 const Art := preload("res://game/art.gd")
+const Fx := preload("res://game/fx.gd")
 const Run := preload("res://sim/run.gd")
 const Sfx := preload("res://game/sfx.gd")
 
@@ -224,6 +225,10 @@ func _select(i: int) -> void:
 # The last project's audio was fully dead in the played game while its
 # tests were green, because the test asserted the disconnected side.
 func _voice() -> void:
+	# motion first, off the SAME lines and the SAME classifier the audio
+	# uses, so a thing you hear is a thing you see
+	if combat != null:
+		_motion(combat.log_lines, _log_at)
 	if sfx == null:
 		return
 	if combat != null:
@@ -231,15 +236,92 @@ func _voice() -> void:
 	elif run.puzzle != null:
 		_log_at = sfx.drain(run.puzzle.log_lines, _log_at)
 
+# --- turning the sim's own sentences into motion ------------------------
+func _diver_named(line: String) -> int:
+	for d in combat.divers:
+		if line.find(String(d.dname)) >= 0:
+			return int(d.id)
+	return -1
+
+func _limb_named(line: String) -> int:
+	for i in range(combat.LIMB_NAMES.size()):
+		if line.find(String(combat.LIMB_NAMES[i])) >= 0:
+			return i
+	return -1
+
+func _limb_at(idx: int) -> Vector2:
+	for st in range(5):
+		if int(combat.STATION_LIMB[st]) == idx:
+			return place(st)
+	return Vector2(DESIGN.x * 0.72, DESIGN.y * 0.45)
+
+func _amount(line: String) -> int:
+	var at := line.rfind(" for ")
+	if at < 0:
+		return 0
+	return int(line.substr(at + 5).strip_edges())
+
+const HURT := Color(0.95, 0.42, 0.32)
+const DEALT := Color(0.96, 0.93, 0.80)
+
+func _motion(lines: Array, from: int) -> void:
+	for i in range(from, lines.size()):
+		var line := String(lines[i])
+		var ev: int = SfxEvents.classify(line)
+		var who := _diver_named(line)
+		var lb := _limb_named(line)
+		var n := _amount(line)
+		match ev:
+			SfxEvents.Kind.HIT:
+				# a diver struck a limb: lunge at it, flash it, count it
+				if who >= 0 and lb >= 0:
+					var a: Vector2 = diver_foot(combat.divers[who])
+					fx.add("lunge", 0.34, a, _limb_at(lb), "", DEALT, who)
+					fx.add("flash", 0.36, _limb_at(lb), Vector2.ZERO, "", DEALT, -1, lb)
+					fx.add("float", 0.95, _limb_at(lb) + Vector2(0, -30), Vector2.ZERO, "-%d" % n, DEALT)
+					fx.kick(0.10 + 0.02 * n)
+			SfxEvents.Kind.TAKE:
+				# the enemy reached a station. THIS is the one that read as
+				# nothing last time, so it gets the bolt, the recoil and the
+				# shake rather than a number appearing somewhere.
+				if who >= 0:
+					var d = combat.divers[who]
+					var src: Vector2 = _limb_at(lb) if lb >= 0 else Vector2(DESIGN.x * 0.8, DESIGN.y * 0.4)
+					var dst: Vector2 = diver_foot(d)
+					fx.add("bolt", 0.28, src, dst, "", HURT)
+					fx.add("recoil", 0.42, src, dst, "", HURT, who)
+					fx.add("float", 1.05, dst + Vector2(0, -70), Vector2.ZERO, "-%d" % n, HURT)
+					fx.kick(0.22 + 0.03 * n)
+			SfxEvents.Kind.BREAK:
+				if lb >= 0:
+					fx.add("burst", 0.55, _limb_at(lb), Vector2.ZERO, "BROKEN", DEALT, -1, lb)
+					fx.kick(0.5)
+			SfxEvents.Kind.SHUTDOWN:
+				if lb >= 0:
+					fx.add("ring", 0.5, _limb_at(lb), Vector2.ZERO, "SHUT DOWN", Color(0.55, 0.78, 0.95), -1, lb)
+			SfxEvents.Kind.CUT:
+				fx.add("float", 1.2, Vector2(210, 150), Vector2.ZERO, "AIR LINE CUT", HURT)
+				fx.kick(0.35)
+			SfxEvents.Kind.DOWN:
+				if who >= 0:
+					fx.add("float", 1.3, diver_foot(combat.divers[who]) + Vector2(0, -70), Vector2.ZERO, "DOWN", HURT)
+					fx.kick(0.45)
+
 # Report the current beat in the window title. On the web export this is
 # document.title, so the capture driver can read where the replay actually
 # ended up instead of trusting the key sequence to have landed.
 var _title_ticks := 0
+var fx := Fx.new()
 
-func _process(_dt: float) -> void:
+func _process(dt: float) -> void:
 	if _title_ticks < 120:
 		_title_ticks += 1
 		_stamp_title()
+	fx.tick(dt)
+	# the board breathes even when nothing is happening, so a turn spent
+	# thinking is not a still image
+	if combat != null:
+		queue_redraw()
 
 func _stamp_title() -> void:
 	var b: Dictionary = run.current()
@@ -607,6 +689,10 @@ func _draw() -> void:
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
 		return
+	var jolt := Vector2.ZERO
+	if fx.shake > 0.01:
+		jolt = Vector2(sin(fx.shake * 41.0), cos(fx.shake * 37.0)) * fx.shake * 9.0
+	draw_set_transform(jolt, 0.0, Vector2.ONE)
 	# station rings: red while the limb they expose is live, teal once it is
 	# broken or absent. This is the map changing, drawn.
 	if combat == null:
@@ -640,4 +726,42 @@ func _draw() -> void:
 	for d in combat.divers:
 		if d.down:
 			continue
-		Art.draw_diver(self, d.cost, diver_foot(d), DIVER_SCALE, 1)
+		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
+	_draw_fx()
+
+# --- the effects themselves, painted over the board ---------------------
+func _draw_fx() -> void:
+	var f: Font = ThemeDB.fallback_font
+	for e in fx.live:
+		var k: float = e.k()
+		match e.kind:
+			"bolt":
+				# the enemy reaching you, drawn as a strike travelling from
+				# the limb to the station it named. The telegraph promised
+				# this exact line one turn earlier; now you watch it land.
+				var head: Vector2 = e.at.lerp(e.to, min(1.0, k * 1.6))
+				var tail: Vector2 = e.at.lerp(e.to, max(0.0, k * 1.6 - 0.45))
+				var fade := Color(e.col.r, e.col.g, e.col.b, 1.0 - k * 0.7)
+				draw_line(tail, head, fade, 7.0 - 3.0 * k)
+				draw_circle(head, 13.0 * (1.0 - k * 0.5), fade)
+			"flash":
+				draw_arc(e.at, 46.0 + 16.0 * k, 0, TAU, 36,
+					Color(e.col.r, e.col.g, e.col.b, 1.0 - k), 4.0 - 2.0 * k)
+			"burst":
+				var r: float = 40.0 + 90.0 * k
+				draw_arc(e.at, r, 0, TAU, 40, Color(e.col.r, e.col.g, e.col.b, 1.0 - k), 5.0 * (1.0 - k))
+				if e.text != "":
+					draw_string(f, e.at + Vector2(-46, -60 - 26 * k), e.text,
+						HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(e.col.r, e.col.g, e.col.b, 1.0 - k))
+			"ring":
+				draw_arc(e.at, 52.0, 0, TAU, 40, Color(e.col.r, e.col.g, e.col.b, 1.0 - k), 3.0)
+				if e.text != "":
+					draw_string(f, e.at + Vector2(-52, -62), e.text,
+						HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(e.col.r, e.col.g, e.col.b, 1.0 - k))
+			"float":
+				# a number that leaves the thing it happened to, so damage
+				# has a place as well as a value
+				var rise: Vector2 = e.at + Vector2(0, -46.0 * k)
+				var a: float = 1.0 if k < 0.6 else (1.0 - (k - 0.6) / 0.4)
+				draw_string(f, rise, e.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 30,
+					Color(e.col.r, e.col.g, e.col.b, a))

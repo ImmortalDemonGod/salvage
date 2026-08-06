@@ -55,7 +55,13 @@ func _init() -> void:
 	# --- the key map, as the engine will actually dispatch it ---
 	var map: Dictionary = {}          # KEY_NAME -> the call it makes
 	var in_match := false
-	for raw in main.split("\n"):
+	var handler := main.split("func _unhandled_input")
+	if handler.size() < 2:
+		fail("NO INPUT HANDLER FOUND in game/main.gd -- this check is asleep")
+		_done()
+		return
+	var body: String = String(handler[1])
+	for raw in body.split("\n"):
 		var line := raw.strip_edges()
 		if line.begins_with("match k:"):
 			in_match = true
@@ -75,7 +81,7 @@ func _init() -> void:
 	# Blocks (KEY_1: then an indented body) carry their calls on later lines.
 	# Fold every player_* call in the file into a reachable set, but only if
 	# it sits under the match. Simpler and stricter: scan the match region.
-	var region := main.split("match k:")[-1].split("\nfunc ")[0]
+	var region := body.split("\nfunc ")[0]
 	var bound: Dictionary = {}
 	for m in RegEx.create_from_string("(player_[a-z_]+)\\s*\\(([^)]*)\\)").search_all(region):
 		var fn := m.get_string(1)
