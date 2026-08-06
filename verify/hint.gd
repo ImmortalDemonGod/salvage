@@ -63,6 +63,16 @@ func _audit(scene, c, enc_id: String) -> void:
 		return
 	var d = c.divers[scene.selected]
 
+	# any hint that tells the player to move or to hit must do so in a form
+	# this check can verify. Vague direction is not allowed to hide.
+	var directive := text.find("Move to") >= 0 or text.find("press ") >= 0 or text.find("Press ") >= 0
+	var checkable := RegEx.create_from_string("Move to [A-Z]+ \\(press [A-Z]\\)").search(text) != null \
+		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER|[0-9]) ").search(text) != null \
+		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER|[0-9])\\.").search(text) != null \
+		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER)$").search(text) != null
+	if directive and not checkable:
+		fail("%s: hint gives direction this check cannot verify, so nothing defends it: \"%s\"" % [enc_id, text])
+
 	# "Move to FLANK (press W)" -- must be somewhere this diver can go
 	var m := RegEx.create_from_string("Move to ([A-Z]+) \\(press ([A-Z])\\)").search(text)
 	if m != null:
@@ -76,8 +86,9 @@ func _audit(scene, c, enc_id: String) -> void:
 				enc_id, m.get_string(2), name, KEYS[st]])
 		if not c.station_open(st):
 			fail("%s: prompt sends %s to %s, which is not open here" % [enc_id, d.dname, name])
-		if st in c.threatened_stations():
-			fail("%s: prompt sends %s to %s, where an attack lands this turn" % [enc_id, d.dname, name])
+		var escaping := text.find("about to be hit") >= 0
+		if escaping and st in c.threatened_stations():
+			fail("%s: prompt tells %s to ESCAPE to %s, where an attack lands this turn" % [enc_id, d.dname, name])
 		for o in c.divers:
 			if not o.down and int(o.station) == st and int(o.id) != int(d.id):
 				fail("%s: prompt sends %s to %s, which the screen labels taken (%s is there)" % [

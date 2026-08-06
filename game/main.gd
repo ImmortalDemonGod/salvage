@@ -579,56 +579,31 @@ func _next_step() -> String:
 	if combat.air <= 0:
 		return "The tank is empty. Press ENTER to end the turn and refill it."
 	if float(d.hp) / max(1.0, float(d.max_hp)) <= 0.34:
-		return "%s is at %d of %d and will go down soon. Move somewhere nothing is announced, or finish the limb that is hitting them." % [
-			d.dname, int(d.hp), int(d.max_hp)]
+		var hurt := "%s is at %d of %d and will go down soon." % [d.dname, int(d.hp), int(d.max_hp)]
+		if int(d.station) in combat.threatened_stations():
+			return hurt + "   " + _escape_line(d)
+		return hurt + "   Nothing is announced where they stand: keep them there and hit with SPACE."
 	if not combat.can_attack(d):
 		var safe_far := -1
 		for st in combat.OPEN_STATIONS:
-			if combat.STATION_LIMB[int(st)] >= 0 and not combat.limb_broken[int(combat.STATION_LIMB[int(st)])]:
+			var lbx: int = combat.STATION_LIMB[int(st)]
+			if lbx < 0 or combat.limb_broken[lbx]:
+				continue
+			var busy := false
+			for o in combat.divers:
+				if not o.down and int(o.station) == int(st):
+					busy = true
+			if not busy:
 				safe_far = int(st)
 				break
 		if safe_far >= 0 and combat.air >= Combat.MOVE_COST:
-			return "Nothing to hit from %s. Click %s, or press %s, to move there (1 air)." % [
+			return "Nothing to hit from %s. Move to %s (press %s), or click it. Costs 1 air." % [
 				Combat.STATION_NAMES[int(d.station)], Combat.STATION_NAMES[safe_far],
 				["Q", "W", "E", "R", "T"][safe_far]]
 		return "Press ENTER to end the turn."
 	# standing somewhere an attack is about to land
 	if int(d.station) in combat.threatened_stations():
-		# a station is only a suggestion if it is open, unthreatened, EMPTY,
-		# and affordable. "Taken" is not somewhere you can go.
-		var refuge := -1
-		for st in combat.OPEN_STATIONS:
-			if int(st) == int(d.station) or int(st) in combat.threatened_stations():
-				continue
-			var occupied := false
-			for o in combat.divers:
-				if not o.down and int(o.station) == int(st):
-					occupied = true
-			if not occupied:
-				refuge = int(st)
-				break
-		# and killing the limb is only an ALTERNATIVE if this diver can
-		# actually kill it this turn with the air in the tank
-		var lb3: int = combat.target_limb(d)
-		var kill := ""
-		if lb3 >= 0:
-			for slot in range(d.kit.size()):
-				var ab3: Dictionary = d.kit[slot]
-				if String(ab3.kind) == "shut" and int(combat.limb_stun[lb3]) <= 0 and combat.air >= d.cost:
-					kill = "or press %s to shut the %s so it cannot swing" % [
-						"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb3]).to_upper()]
-					break
-				if int(ab3.dmg) >= int(combat.limb_hp[lb3]) and combat.air >= d.cost:
-					kill = "or press %s to break the %s before it swings" % [
-						"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb3]).to_upper()]
-					break
-		if refuge >= 0 and combat.air >= Combat.MOVE_COST:
-			var move_txt := "%s is about to be hit. Move to %s (press %s)" % [
-				d.dname, Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
-			return move_txt + ("   " + kill + "." if kill != "" else ".")
-		if kill != "":
-			return "%s is about to be hit and there is nowhere clear to stand. %s." % [d.dname, kill.capitalize()]
-		return "%s is about to be hit and there is nowhere clear to stand. Take the hit and break what you can." % d.dname
+		return _escape_line(d)
 	# an attack that will land on an empty station costs the squad an air
 	# line, and he watched that happen repeatedly without ever being told
 	# why. Warn while it can still be avoided.
@@ -673,6 +648,46 @@ func _auto_select() -> void:
 		if not o.down:
 			selected = int(o.id)
 			return
+
+# The one place that tells a diver how to get out of the way. Every
+# suggestion it makes is legal by construction: a station must be open,
+# unthreatened, EMPTY and affordable, and an attack is only offered as an
+# alternative if it actually stops the hit.
+func _escape_line(d) -> String:
+	var refuge := -1
+	for st in combat.OPEN_STATIONS:
+		if int(st) == int(d.station) or int(st) in combat.threatened_stations():
+			continue
+		var occupied := false
+		for o in combat.divers:
+			if not o.down and int(o.station) == int(st):
+				occupied = true
+		if not occupied:
+			refuge = int(st)
+			break
+	var lb: int = combat.target_limb(d)
+	var kill := ""
+	if lb >= 0:
+		for slot in range(d.kit.size()):
+			var ab: Dictionary = d.kit[slot]
+			var eff: Dictionary = combat.effect_at(d, slot, combat.tier_for(d))
+			if String(ab.kind) == "shut" and int(combat.limb_stun[lb]) <= 0:
+				kill = "or press %s to shut the %s so it cannot swing" % [
+					"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb]).to_upper()]
+				break
+			if int(eff.dmg) >= int(combat.limb_hp[lb]):
+				kill = "or press %s to break the %s before it swings" % [
+					"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb]).to_upper()]
+				break
+	if refuge >= 0 and combat.air >= Combat.MOVE_COST:
+		var t := "%s is about to be hit. Move to %s (press %s)" % [
+			d.dname, Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
+		return t + ("   " + kill + "." if kill != "" else ".")
+	if kill != "":
+		var only: String = kill.trim_prefix("or ")
+		return "%s is about to be hit and there is nowhere clear to stand. %s%s." % [
+			d.dname, only.substr(0, 1).to_upper(), only.substr(1)]
+	return "%s is about to be hit and there is nowhere clear to stand. Take it, and break what you can." % d.dname
 
 func _lock_step(p) -> String:
 	if p.solved():
