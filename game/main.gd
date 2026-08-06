@@ -23,8 +23,8 @@ const STATION_POS := [
 	Vector2(1046, 328),  # REAR   - the tail
 	Vector2(300, 386),   # BACKLINE - out of reach
 ]
-const CRAB_POS := Vector2(866, 306)
-const CRAB_SCALE := 150.0
+const CRAB_POS := Vector2(878, 316)
+const CRAB_SCALE := 124.0
 
 var run: Run
 var combat: Combat
@@ -53,7 +53,7 @@ func _build_ui() -> void:
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
 		m.size = Vector2(210, 66)
-		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 48)
+		m.position = STATION_POS[i] - m.size * 0.5 + Vector2(0, 56)
 		add_child(m)
 		var l := Label.new()
 		l.name = "label"
