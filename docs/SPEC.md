@@ -742,6 +742,82 @@ deep set goes dry, not until a count is reached.
 
 ---
 
+# Part 2d: Reversals, logged
+
+Every decision below overturns something stated earlier in this document.
+Each carries the measurement that forced it. An adversarial fidelity round
+found the spec and the build disagreeing (H12, L-c) and this is that debt
+paid, not a quiet edit: **the earlier text stays where it is** so the
+reasoning that produced it is still readable.
+
+## R1. Every live limb swings, and all of them are announced
+
+2.11 described one telegraphed attack per turn. With one, shutting that
+single limb down for 2 Air prevented the ENTIRE enemy turn, and the judge
+finished the vent worm without taking a scratch. A shutdown must be a
+partial answer, so every unbroken limb now attacks and the telegraph lists
+all of them.
+
+Consequence: incoming damage roughly tripled and every number below moved.
+
+## R2. The announced attack is LOCKED at the start of the player's turn
+
+Not a reversal so much as a defect the spec always implied and the build
+did not honour. Intent was recomputed at resolution, so shutting down the
+announced limb SUBSTITUTED a different, never-announced attack. Measured:
+announced "the maw lunges at FRONT for 3", delivered "Scuba took 3 at
+FLANK". A shut-down limb is now PREVENTED, not replaced.
+
+## R3. The HP overdraft is CUT
+
+2.2 and ruling A1 gave the Air economy a desperation valve. It could not
+be made to matter. At 2 HP for 1 Air it bought exactly break-even value,
+so it could never be strictly better than not using it; at 1 HP, with a
+value function that prices HP spent on a WON fight as nearly free (the
+boat restores fully, per A3), it was still never uniquely optimal in any
+encounter. Two honest attempts, then cut. A dead option is worse than no
+option, and the last project shipped one that a human called a trap.
+
+## R4. Numbers, all re-swept
+
+| Spec said | Build has | Why |
+|---|---|---|
+| diver HP [6, 10, 16] | **[24, 34, 40]** | R1 tripled incoming damage; 2.10 licenses these moving with the bands |
+| diver damage [2, 2, 5] | **[2, 2, 8]** | Proto5 at 5-for-3 had the WORST rate in the party and was dominated everywhere. Concentration buys nothing without a per-diver action cap, so he is now the efficient heavy |
+| limb durability 6 to 8 | **7 to 23** | Ranges predate R1. Swept per encounter; the band tests are the real constraint |
+| enemy damage 3 to 4 | **2 to 5** | Same |
+
+## R5. An encounter opens the stations its anatomy justifies
+
+2.3 says five stations ring the enemy. In practice each encounter opens
+between one and four, because **a station that is threatened while
+exposing no limb is dead by construction**, and a second station that is
+merely safe duplicates the first. Both are now static checks over the
+encounter data. Five stations is the vocabulary, not a per-fight quota.
+
+## R6. BACK LINE is not universally safe
+
+2.3 calls BACK LINE safe. Two encounters attack it. A permanently safe
+station is a duplicate of any other empty one, which is the dead-station
+defect this project built three separate times. The ring colour now means
+"no limb here" and the on-screen legend says exactly that.
+
+## R7. The ladder order changed
+
+2.8 placed Proto5's arrival third and conditions at fight two. Shipped
+order: opening, descent, fight1, the drum fitted, the lock, the vent worm,
+the big suit, the dredge. Each diver now arrives at the beat that gives it
+a job, which is the rule 2.8 states even though the order it lists does
+not follow it.
+
+## Still open against the spec
+
+- **2.9's six named abilities do not exist.** Each diver has one attack
+  and a verb. The animation-derived kit is unbuilt work.
+- **2.12's second puzzle** is unbuilt; the lock appears once.
+
+---
+
 # Part 5: Still open
 
 The question tree is complete. What remains are loose ends rather than
