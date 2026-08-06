@@ -84,7 +84,7 @@ func _build_ui() -> void:
 
 	var air_panel := Panel.new()
 	air_panel.name = "air_panel"
-	air_panel.size = Vector2(230, 54)
+	air_panel.size = Vector2(340, 54)
 	air_panel.position = Vector2(30, 24)
 	add_child(air_panel)
 	ui_air = Label.new()
@@ -96,8 +96,8 @@ func _build_ui() -> void:
 
 	var tel := Panel.new()
 	tel.name = "telegraph_panel"
-	tel.size = Vector2(700, 54)
-	tel.position = Vector2(300, 24)
+	tel.size = Vector2(620, 54)
+	tel.position = Vector2(392, 24)
 	add_child(tel)
 	ui_intent = Label.new()
 	ui_intent.name = "label"
@@ -372,5 +372,6 @@ func _draw() -> void:
 		var d = combat.divers[i]
 		if d.down:
 			continue
-		var p: Vector2 = STATION_POS[d.station] + Vector2(-22 + i * 34, 40)
+		# above the ring, so the station card below never slices a sprite
+		var p: Vector2 = STATION_POS[d.station] + Vector2(-22 + i * 36, -8)
 		Art.draw_diver(self, d.cost, p, 74.0, 1)

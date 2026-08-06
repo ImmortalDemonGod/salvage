@@ -62,6 +62,8 @@ func _process(_d: float) -> bool:
 	# combat: the run starts on a scene beat, so combat layout was never
 	# looked at once.
 	check_current()
+	force_variants()
+	check_current()
 	if advance_to_next_beat():
 		frames = 0
 		return false
@@ -88,6 +90,21 @@ func advance_to_next_beat() -> bool:
 	scene.selected = 0
 	scene._refresh()
 	return true
+
+# Exercise the STATES a string only appears in, not just the beats. The
+# "(1 line cut)" suffix overflowed its panel and no check saw it, because
+# the walk never produced a turn where a line had been cut.
+func force_variants() -> void:
+	var r = scene.run
+	if r.combat == null:
+		return
+	r.combat.air_penalty = 1
+	for lb in range(r.combat.limb_stun.size()):
+		r.combat.limb_stun[lb] = 1
+	if r.combat.divers.size() > 0:
+		r.combat.divers[0].hp = 0
+		r.combat.divers[0].down = true
+	scene._refresh()
 
 func check_current() -> void:
 	var controls: Array = []

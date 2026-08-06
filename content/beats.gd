@@ -46,8 +46,8 @@ static var LADDER := [
 		"encounter": "descent",
 		"title": "the descent",
 		"teaches": "combat_frame",
-		"parts": ["air", "telegraph"],
-		"uses": ["goal", "combat_frame", "air", "telegraph"],
+		"parts": ["air", "telegraph", "cost_tiers"],
+		"uses": ["goal", "combat_frame", "air", "telegraph", "cost_tiers"],
 		"built": true,
 		"expect": {"encounter": "descent", "divers": 1, "open_stations": 1, "limbs": 1},
 		"note": "one diver, one limb, no station choice: establishes that a turn is a budget and the enemy announces itself, BEFORE geography exists",
@@ -59,7 +59,7 @@ static var LADDER := [
 		"title": "the hunter crab",
 		"teaches": "stations",
 		"parts": ["limbs"],
-		"uses": ["goal", "combat_frame", "stations", "air", "limbs", "telegraph"],
+		"uses": ["goal", "combat_frame", "stations", "air", "limbs", "telegraph", "cost_tiers"],
 		"built": true,
 		"expect": {"encounter": "crab", "divers": 2, "open_stations": 4, "limbs": 3},
 	},
@@ -98,8 +98,8 @@ static var LADDER := [
 		"id": "boat2",
 		"kind": "scene",
 		"title": "the big suit",
-		"teaches": "cost_tiers",
-		"uses": ["goal", "stations", "air", "cost_tiers"],
+		"teaches": "heavy_tier",
+		"uses": ["goal", "stations", "air", "cost_tiers", "heavy_tier"],
 		"built": true,
 		"lines": [
 			{"role": "who", "text": "(placeholder) Proto5 comes down with you. Nobody has run the big suit this deep before."},
@@ -114,7 +114,7 @@ static var LADDER := [
 		"title": "running on empty",
 		"teaches": "umbilical",
 		"parts": ["overdraft"],
-		"uses": ["goal", "stations", "air", "limbs", "telegraph", "cost_tiers", "conditions", "backline", "umbilical", "overdraft"],
+		"uses": ["goal", "stations", "air", "limbs", "telegraph", "cost_tiers", "heavy_tier", "conditions", "backline", "umbilical", "overdraft"],
 		"built": true,
 		"expect": {"encounter": "dredge", "divers": 3, "open_stations": 4, "limbs": 3},
 		"note": "a strike into empty water cuts a line, and burning HP to buy one back is the same lesson from the other side: air is what you are short of",
@@ -129,5 +129,5 @@ static var LADDER := [
 static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
 
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
-	"telegraph", "cost_tiers", "water_level", "conditions", "backline",
+	"telegraph", "cost_tiers", "heavy_tier", "water_level", "conditions", "backline",
 	"overdraft", "umbilical"]
