@@ -570,7 +570,7 @@ func _next_step() -> String:
 				return "%s is down. Press %d to take over %s." % [d.dname, int(o.id) + 1, o.dname]
 		return ""
 	if combat.air <= 0:
-		return "Out of air. Press ENTER to end the turn and refill the tank."
+		return "The tank is empty. Press ENTER to end the turn and refill it."
 	if float(d.hp) / max(1.0, float(d.max_hp)) <= 0.34:
 		return "%s is at %d of %d and will go down soon. Move somewhere nothing is announced, or finish the limb that is hitting them." % [
 			d.dname, int(d.hp), int(d.max_hp)]
