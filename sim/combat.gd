@@ -286,7 +286,7 @@ func act_ability(i: int, slot: int) -> bool:
 		"shut":
 			if not limb_broken[limb]:
 				limb_stun[limb] = int(ab.get("turns", 1))
-				log_lines.append("the %s is shut down" % LIMB_NAMES[limb])
+				log_lines.append("the %s is shut down and will not swing" % LIMB_NAMES[limb])
 		"hit_and_step":
 			var n: Array = neighbours(d.station)
 			if not n.is_empty():

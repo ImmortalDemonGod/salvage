@@ -185,7 +185,7 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(238, 68)
+		m.size = Vector2(258, 68)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
 		var bg := ColorRect.new()
@@ -470,7 +470,8 @@ func _motion(lines: Array, from: int) -> void:
 						"shut":
 							# no swing: a held press, and the limb rings shut
 							fx.add("press", 0.44, a, tgt, "", Color(0.55, 0.78, 0.95), who)
-							fx.add("ring", 0.52, tgt, Vector2.ZERO, "", Color(0.55, 0.78, 0.95), -1, lb)
+							fx.add("ring", 0.70, tgt, Vector2.ZERO, "", Color(0.55, 0.78, 0.95), -1, lb)
+							fx.add("float", 1.30, tgt + Vector2(0, -46), Vector2.ZERO, "SHUT: it cannot swing", Color(0.62, 0.84, 0.98))
 						_:
 							fx.add("lunge", 0.30, a, tgt, "", DEALT, who)
 					fx.add("flash", 0.55, tgt, Vector2.ZERO, "", DEALT, -1, lb)
@@ -823,7 +824,7 @@ func _refresh() -> void:
 		elif combat.limb_broken[lb]:
 			lbl.text = "%s  [%s]%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), String(combat.LIMB_NAMES[lb]).to_upper()]
 		else:
-			var stun := "  SHUT" if int(combat.limb_stun[lb]) > 0 else ""
+			var stun := "  ·  SHUT %d" % int(combat.limb_stun[lb]) if int(combat.limb_stun[lb]) > 0 else ""
 			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
 			lbl.text = "%s  [%s]%s%s\n%s %d/%d" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
 				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp]
@@ -849,7 +850,10 @@ func _refresh() -> void:
 			for st in it.stations:
 				where.append(Combat.STATION_NAMES[st])
 			var shut: bool = int(combat.limb_stun[int(it.limb)]) > 0
-			parts.append("%s %s %s for %d%s" % [String(combat.LIMB_NAMES[int(it.limb)]), it.name, "/".join(where), int(it.dmg), "  (SHUT)" if shut else ""])
+			if shut:
+				parts.append("%s: SHUT DOWN, it does not swing this turn" % String(combat.LIMB_NAMES[int(it.limb)]))
+			else:
+				parts.append("%s %s %s for %d" % [String(combat.LIMB_NAMES[int(it.limb)]), it.name, "/".join(where), int(it.dmg)])
 		ui_intent.text = "%s   NEXT: %s" % [run.state_line(), "   ".join(parts)]
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third

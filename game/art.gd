@@ -87,6 +87,19 @@ static func draw_diver(ci: CanvasItem, tier: int, pos: Vector2, scale: float, fa
 
 # limb_broken: [jaw, claw, tail] of bools, as Combat.limb_broken.
 # The crab always faces left; the divers ring it.
+static func _lurker_body(ci: CanvasItem, xf: Transform2D) -> void:
+	# a suggestion of bulk that fades into nothing
+	for i in range(5):
+		var t: float = 0.10 + float(i) * 0.085
+		_dot(ci, xf, Vector2(t, -0.28), 0.155 - float(i) * 0.028, SHELL_DK)
+	# eyes in the dark, which is all you actually get to see of it
+	_dot(ci, xf, Vector2(-0.055, -0.360), 0.030, GOLD)
+	_dot(ci, xf, Vector2(0.020, -0.375), 0.024, GOLD)
+	# tendrils trailing back into the black
+	for i in range(3):
+		var y: float = -0.20 - float(i) * 0.075
+		_tube(ci, xf, Vector2(0.28, y), Vector2(0.52 + float(i) * 0.05, y - 0.05), 0.022, 0.004, SHELL_DK)
+
 # A VENT WORM: no legs, a segmented tube, and the vents it is named for.
 static func _worm_body(ci: CanvasItem, xf: Transform2D) -> void:
 	for i in range(7):
@@ -132,9 +145,12 @@ static func draw_crab(ci: CanvasItem, pos: Vector2, scale: float, limb_broken: A
 		_crab_tail_broken(ci, xf)
 	else:
 		_crab_tail(ci, xf)
-	_crab_shell(ci, xf)
-	_crab_belly(ci, xf)
-	if kind == "worm":
+	if kind != "lurker":
+		_crab_shell(ci, xf)
+		_crab_belly(ci, xf)
+	if kind == "lurker":
+		_lurker_body(ci, xf)
+	elif kind == "worm":
 		_worm_body(ci, xf)
 	elif kind == "dredge":
 		_dredge_body(ci, xf)
