@@ -145,6 +145,34 @@ the reason to move at all.** Rule on it, with numbers, and log the ruling.
 17. Commit cadence: never more than 45 minutes of uncommitted work. Each
     mechanic and its check land in the SAME commit.
 
+### Added mid-run, each after a defect got through
+
+18. **Engine stderr is evidence and is gated.** Measured: "Invalid polygon
+    data, triangulation failed" printed on every frame while the ENEMY
+    SILENTLY DID NOT DRAW and every test stayed green. An `ERROR` or
+    `SCRIPT ERROR` line from any headless run is now a finding.
+19. **Every script parses before anything runs.** GDScript fails at load,
+    so a broken script is discovered one at a time by whatever happens to
+    run it. `--check-only` over every `.gd` costs a second and finds them
+    in one pass.
+20. **`quit()` must be followed by `return`.** It only REQUESTS a quit;
+    the code after it still runs. This made a fully green fast set exit 1.
+21. **A detector that has never fired is unproven.** Every new gate is
+    mutation-tested against a deliberate defect before it is trusted. All
+    three of 18, 19 and 20 were proven this way, plus a clean control.
+22. **A deep pass cannot be DRY while the fast set is red, or stale.**
+    `fast.sh` records its verdict, the commit it applied to, and the dirty
+    file count; the deep set treats anything else as UNVERIFIED. Finding
+    nothing new in a build already known to be broken is not evidence.
+23. **Agents that write files get their own worktree.** Both subagents
+    reported that a blanket `git add -A` here committed their in-progress
+    work; one commit contains a known-bad version of the art. Isolate
+    them instead of racing them.
+24. **When a capture or a human finds something the detectors missed,
+    extend the detector in the SAME commit.** Measured twice: the layout
+    check only ever compared station panels to station panels, so it
+    passed while a marker sat on the help bar.
+
 ---
 
 ## The defect-class checklist

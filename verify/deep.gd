@@ -165,6 +165,25 @@ func _init() -> void:
 	for u in unverified:
 		print("UNVERIFIED " + u)
 
+	# A pass cannot be DRY while the fast set is red, or has not run on this
+	# code at all. Finding nothing new in a build you already know is broken
+	# is not evidence of anything.
+	var fast_ok := false
+	var fast_why := "verify/.fast-status missing: the fast set has not run"
+	if FileAccess.file_exists("res://verify/.fast-status"):
+		var raw: String = FileAccess.open("res://verify/.fast-status", FileAccess.READ).get_as_text().strip_edges()
+		var bits: PackedStringArray = raw.split(" ")
+		if bits.size() >= 3 and bits[0] == "0":
+			if int(bits[2]) > 0:
+				fast_why = "the fast set passed but %s file(s) have changed since" % bits[2]
+			else:
+				fast_ok = true
+				fast_why = ""
+		else:
+			fast_why = "the fast set last reported findings"
+	if not fast_ok:
+		unverified.append("fast set: " + fast_why)
+
 	var led := load_ledger()
 	var seen: Array = led.seen
 	var fresh: Array = []
