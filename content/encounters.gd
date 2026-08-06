@@ -108,6 +108,33 @@ static var ALL := {
 			{"limb": 2, "stations": [BACKLINE], "dmg": 2, "name": "vents over"},
 		],
 	},
+	# Beat `deep1`. A MACHINE, not a creature: SPEC 2.4 says a machine reads
+	# as a puzzle box and should be earned after anatomy is taught, and by
+	# now it has been, twice. Every station is open and every one is
+	# threatened, so evading everything means moving the whole squad, which
+	# is expensive with the big suit in the party. That is the beat where
+	# the umbilical rule and the HP overdraft finally bite.
+	"dredge": {
+		"title": "the dredge",
+		"party": 3,
+		"drum": true,
+		# UNDER is closed here. Every open station must either expose a limb
+		# or be safe; UNDER would have been threatened and empty, which is
+		# dead by construction. BACKLINE is the single safe place, and it
+		# earns that because the drum reaches from it.
+		"open_stations": [FRONT, FLANK, REAR, BACKLINE],
+		"starts": [FRONT, BACKLINE, FLANK],
+		"limbs": [
+			{"name": "arm", "hp": 16, "station": FRONT},
+			{"name": "boiler", "hp": 12, "station": FLANK},
+			{"name": "winch", "hp": 12, "station": REAR},
+		],
+		"attacks": [
+			{"limb": 0, "stations": [FRONT], "dmg": 4, "name": "sweeps"},
+			{"limb": 1, "stations": [FLANK], "dmg": 3, "name": "vents over"},
+			{"limb": 2, "stations": [REAR], "dmg": 4, "name": "lashes"},
+		],
+	},
 }
 
 # The station-to-limb table, derived from the limb list so it can never

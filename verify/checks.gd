@@ -50,6 +50,43 @@ func check_bands(n: int) -> void:
 			fail("G3 %s greedy loses only %.1f HP, floor is %.1f" % [enc_id, hp, GREEDY_HP_MIN])
 
 # ---- dead / dominant station (SPEC 4.2) --------------------------------
+# A station that is THREATENED but exposes NO LIMB is dead by construction:
+# standing there costs you damage and buys you nothing. I built this same
+# defect three times (the crab's claw, the worm's gut, the dredge's flank)
+# before making it decidable from the data instead of waiting for the
+# occupancy histogram to notice.
+func check_station_design() -> void:
+	for key in Encounters.ALL.keys():
+		var enc: Dictionary = Encounters.ALL[key]
+		var open: Array = enc.open_stations
+		var limb_at: Array = Encounters.station_limb(enc)
+		var threatened: Dictionary = {}
+		for a in enc.attacks:
+			for st in a.stations:
+				threatened[int(st)] = true
+		var safe := 0
+		# BACKLINE is not empty when the drum is fitted: the disabler reaches
+		# from there, which is the whole reason the station exists. The
+		# first version of this check did not know that and fired on the
+		# worm, where the occupancy histogram measures BACKLINE at 50
+		# percent. When a static rule and a measurement disagree, the
+		# measurement wins and the rule gets fixed.
+		var drum: bool = bool(enc.get("drum", false))
+		for st in open:
+			var i := int(st)
+			if i == Combat.BACKLINE and drum:
+				continue
+			if limb_at[i] < 0 and threatened.has(i):
+				fail("STATION DEAD BY DESIGN in %s: %s is threatened but exposes no limb, so standing there costs damage and buys nothing"
+					% [String(key), Combat.STATION_NAMES[i]])
+			if limb_at[i] < 0 and not threatened.has(i):
+				safe += 1
+		if drum and (Combat.BACKLINE in open) and not threatened.has(Combat.BACKLINE):
+			safe += 1
+		if safe > 1:
+			fail("DUPLICATE SAFETY in %s: %d stations are safe and expose nothing, so one dominates the other"
+				% [String(key), safe])
+
 func check_stations(n: int, enc_id := "crab") -> void:
 	var OPEN: Array = Combat.new(enc_id).OPEN_STATIONS
 	var occ := [0, 0, 0, 0, 0]
@@ -152,6 +189,7 @@ func check_run(n: int) -> void:
 
 func _init() -> void:
 	var t := Time.get_ticks_usec()
+	check_station_design()
 	check_bands(1000)
 	check_run(40)
 	for k in Encounters.ALL.keys():
