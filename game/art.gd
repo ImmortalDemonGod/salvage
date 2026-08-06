@@ -140,6 +140,22 @@ static var bad_polys := 0
 # a placeholder, but a LONG one and a SQUAT one read as different bodies,
 # which is the thing the station design is being tested against.
 static var tint := Color(1, 1, 1)
+static var rim := Color(0.72, 0.88, 0.96, 0.30)
+
+# the upward-facing edges of a shape, lit. Cheap, and it is what turns a
+# flat fill into something with a top and a bottom.
+static func _rimlight(ci: CanvasItem, pts: PackedVector2Array) -> void:
+	if pts.size() < 3 or rim.a <= 0.0:
+		return
+	var mid := 0.0
+	for pt in pts:
+		mid += pt.y
+	mid /= float(pts.size())
+	for i in range(pts.size()):
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[(i + 1) % pts.size()]
+		if (a.y + b.y) * 0.5 < mid:
+			ci.draw_line(a, b, rim, 2.0)
 static var stretch := 1.0
 
 static func _poly(ci: CanvasItem, xf: Transform2D, local: Array, col: Color) -> void:
@@ -151,8 +167,10 @@ static func _poly(ci: CanvasItem, xf: Transform2D, local: Array, col: Color) -> 
 		var hull: PackedVector2Array = Geometry2D.convex_hull(pts)
 		if hull.size() >= 3:
 			ci.draw_colored_polygon(hull, col * tint)
+			_rimlight(ci, hull)
 		return
 	ci.draw_colored_polygon(pts, col * tint)
+	_rimlight(ci, pts)
 
 
 static func _box(ci: CanvasItem, xf: Transform2D, x0: float, y0: float, x1: float, y1: float, col: Color) -> void:
