@@ -50,6 +50,9 @@ static var ALL := {
 		# and its verb, at the boat.
 		"party": 2,
 		"drum": false,
+		# the jaw comes already read, so the first thing a player learns
+		# about reading is what it BUYS, not what it costs
+		"read_free": 0,
 		"open_stations": [FRONT, FLANK, UNDER, REAR],
 		# the opening tableau is content: Scuba in the jaw's face, Prototype1
 		# under the belly. It decides what the first turn looks like and it

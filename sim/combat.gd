@@ -109,6 +109,9 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 	analyzed = []
 	for _l in enc.limbs:
 		analyzed.append(false)
+	var freebie: int = int(enc.get("read_free", -1))
+	if freebie >= 0 and freebie < analyzed.size():
+		analyzed[freebie] = true
 	OPEN_STATIONS = (enc.open_stations as Array).duplicate()
 	LIMB_NAMES = []
 	limb_hp = []

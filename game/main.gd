@@ -185,7 +185,7 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(286, 74)
+		m.size = Vector2(300, 74)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
 		var bg := ColorRect.new()
@@ -303,8 +303,8 @@ func _build_ui() -> void:
 
 	var goal_panel := Panel.new()
 	goal_panel.name = "goal_panel"
-	goal_panel.size = Vector2(430, 42)
-	goal_panel.position = Vector2(700, 116)
+	goal_panel.size = Vector2(548, 46)
+	goal_panel.position = Vector2(700, 114)
 	goal_panel.add_theme_stylebox_override("panel", skin_quiet())
 	_rivet(goal_panel)
 	add_child(goal_panel)
@@ -892,9 +892,9 @@ func _refresh() -> void:
 			var read := ""
 			if combat.known(lb):
 				var tr := combat.trait_of(lb)
-				read = "\n" + String(Combat.TRAITS[tr]) if tr != "" else "\nread: nothing unusual"
+				read = "   %s" % tr.to_upper() if tr != "" else "   read: ordinary"
 			else:
-				read = "   unread [A]"
+				read = "   unread [A, 1 air]"
 			lbl.text = "%s  [%s]%s%s\n%s %d/%d%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
 				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, read]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
@@ -908,7 +908,18 @@ func _refresh() -> void:
 	for lb in range(combat.limb_broken.size()):
 		if not combat.limb_broken[lb]:
 			live += 1
-	ui_goal.text = "break every limb to win   ·   %d of %d still working" % [live, combat.limb_broken.size()]
+	var told := ""
+	for lb9 in range(combat.limb_hp.size()):
+		if combat.limb_broken[lb9] or not combat.known(lb9):
+			continue
+		var tr9 := combat.trait_of(lb9)
+		if tr9 != "":
+			told = "%s  ·  %s" % [String(combat.LIMB_NAMES[lb9]).to_upper(), String(Combat.TRAITS[tr9])]
+			break
+	if told != "":
+		ui_goal.text = told
+	else:
+		ui_goal.text = "%d of %d limbs working   ·   press A to read one" % [live, combat.limb_broken.size()]
 	var all_it: Array = combat.intents()
 	if all_it.is_empty():
 		ui_intent.text = "%s   spent" % run.state_line()
@@ -989,7 +1000,7 @@ func _refresh() -> void:
 	for i in range(5):
 		if combat.station_open(i):
 			mkeys.append(String(keys[i]))
-	ui_help.text += "click to move, click again to attack  ·  %s  ·  station key moves there  ·  A reads a limb  ·  %s  ·  ENTER end turn" % [pick, use]
+	ui_help.text += "click to move, click again to attack  ·  %s  ·  station key moves there  ·  A reads a limb (1 air)  ·  %s  ·  ENTER end turn" % [pick, use]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------

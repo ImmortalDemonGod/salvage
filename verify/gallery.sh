@@ -42,5 +42,9 @@ while IFS=$'\t' read -r id seq; do
 done <<< "$paths"
 # and one mid-fight shot, which is the state the cold read actually reads
 shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,Space,Enter,KeyW,Space,Space,Enter,Space,Space,Enter" "fight1"
+# and one shot AFTER reading a limb, because every gallery so far showed
+# every limb unread and a reviewer concluded, reasonably, that the whole
+# mechanic was skippable and skipped
+shoot "$(printf '%02d' $((n+2)))-fight1-read" "Enter,Space,Space,Enter,KeyW,KeyA,Space,Enter,KeyR,KeyA,Space" "fight1"
 if [ $rc -ne 0 ]; then echo "GALLERY: replay landed on the wrong beat"; exit 1; fi
 echo "GALLERY: $((n+1)) shots, every replay landed where it claimed"
