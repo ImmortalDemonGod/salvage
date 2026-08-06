@@ -96,7 +96,7 @@ func _build_ui() -> void:
 
 	var tel := Panel.new()
 	tel.name = "telegraph_panel"
-	tel.size = Vector2(620, 54)
+	tel.size = Vector2(856, 54)
 	tel.position = Vector2(392, 24)
 	add_child(tel)
 	ui_intent = Label.new()
@@ -135,7 +135,7 @@ func _build_ui() -> void:
 	var goal_panel := Panel.new()
 	goal_panel.name = "goal_panel"
 	goal_panel.size = Vector2(430, 42)
-	goal_panel.position = Vector2(690, 96)
+	goal_panel.position = Vector2(700, 96)
 	add_child(goal_panel)
 	ui_goal = Label.new()
 	ui_goal.name = "label"

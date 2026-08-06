@@ -8,6 +8,10 @@
 extends SceneTree
 
 const LEDGER := "res://verify/deep-ledger.json"
+
+# Signatures the human has ruled on. Adding a line here is a DECISION on the
+# record, not a way to silence a detector; it needs a reason beside it.
+const RULED: Array = []
 const Encounters := preload("res://content/encounters.gd")
 const Run := preload("res://sim/run.gd")
 
@@ -223,7 +227,17 @@ func _init() -> void:
 	# and declares the run finished at SCAFFOLD. "Found nothing" only means
 	# something when everything was actually looked at, which is the same
 	# distinction (coverage, not volume) that this project keeps relearning.
-	var complete: bool = unverified.is_empty()
+	# Rule 7 says a finding may be fixed, escalated, or ruled on, but never
+	# just explained. Applied here: a signature that is still live and has
+	# not been written into RULED blocks dryness, so a known defect cannot
+	# quietly ride three passes to a stop.
+	var unruled: Array = []
+	for s2 in sigs:
+		if not (s2 in RULED):
+			unruled.append(s2)
+	for u in unruled:
+		print("UNRULED  " + u)
+	var complete: bool = unverified.is_empty() and unruled.is_empty()
 	led.dry_streak = 0 if (fresh.size() > 0 or not complete) else int(led.dry_streak) + 1
 	led.seen = seen
 	var f := FileAccess.open(LEDGER, FileAccess.WRITE)
@@ -236,5 +250,5 @@ func _init() -> void:
 	print("DEEP pass %d: %d signature(s), %d NEW, %d UNVERIFIED  ->  dry streak %d of 3"
 		% [led.passes, sigs.size(), fresh.size(), unverified.size(), led.dry_streak])
 	if not complete:
-		print("       not dry: a pass with UNVERIFIED checks can never count toward the streak")
+		print("       not dry: %d UNVERIFIED, %d UNRULED. A pass carrying either can never count toward the streak." % [unverified.size(), unruled.size()])
 	quit(0 if int(led.dry_streak) >= 3 else 1)

@@ -125,13 +125,15 @@ static var ALL := {
 		"open_stations": [FRONT, FLANK, REAR, BACKLINE],
 		"starts": [FRONT, BACKLINE, FLANK],
 		"limbs": [
-			{"name": "arm", "hp": 16, "station": FRONT},
-			{"name": "boiler", "hp": 12, "station": FLANK},
-			{"name": "winch", "hp": 12, "station": REAR},
+			# swept after the boiler widened to three stations. Measured:
+			# casual 63.3%, greedy 7.0 turns, 8.0 squad HP lost.
+			{"name": "arm", "hp": 10, "station": FRONT},
+			{"name": "boiler", "hp": 8, "station": FLANK},
+			{"name": "winch", "hp": 8, "station": REAR},
 		],
 		"attacks": [
-			{"limb": 0, "stations": [FRONT], "dmg": 4, "name": "sweeps"},
-			{"limb": 1, "stations": [FLANK], "dmg": 3, "name": "vents over"},
+			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},
+			{"limb": 1, "stations": [FLANK, REAR, BACKLINE], "dmg": 3, "name": "vents over"},
 			{"limb": 2, "stations": [REAR], "dmg": 4, "name": "lashes"},
 		],
 	},
