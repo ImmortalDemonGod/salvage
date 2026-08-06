@@ -868,17 +868,29 @@ const OPEN_C := Color(0.45, 0.78, 0.55)
 const SHUT_C := Color(0.72, 0.34, 0.28)
 
 func _valve_dot(at: Vector2, key: String, is_open: bool, reachable: bool) -> void:
-	var col: Color = OPEN_C if is_open else SHUT_C
+	var col: Color = BRASS_LIT if is_open else BRASS
 	if not is_open and not reachable:
-		col = Color(0.38, 0.36, 0.42)      # under water: cannot be turned
-	draw_circle(at, 16, col)
-	draw_arc(at, 16, 0, TAU, 24, Color(0.85, 0.90, 0.95), 2.0)
+		col = Color(0.32, 0.30, 0.28)      # under water: cannot be turned
+	draw_circle(at, 19, Color(0.10, 0.11, 0.12))
+	draw_arc(at, 17, 0, TAU, 28, col, 4.0)
+	# spokes, so it reads as a wheel you turn
+	for k in range(4):
+		var ang: float = float(k) * PI * 0.5 + (0.6 if is_open else 0.0)
+		var dirv := Vector2(cos(ang), sin(ang))
+		draw_line(at + dirv * 4.0, at + dirv * 15.0, col, 3.0)
+	draw_circle(at, 5.0, col)
 	var f: Font = ThemeDB.fallback_font
-	draw_string(f, at + Vector2(-5, 6), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.05, 0.09, 0.12))
+	draw_string(f, at + Vector2(-5, 34), key, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.82, 0.86, 0.90))
 	if not is_open and not reachable:
 		draw_string(f, at + Vector2(-34, 38), "under water", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.75, 0.72, 0.80))
 
 func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name: String) -> void:
+	# steel walls with rivets down them, not a wireframe
+	draw_rect(Rect2(at - Vector2(9, 0), Vector2(wide + 18, tall + 9)), Color(0.115, 0.130, 0.145))
+	for ry in range(int(tall / 34.0)):
+		var yy: float = at.y + 18.0 + float(ry) * 34.0
+		draw_rect(Rect2(Vector2(at.x - 6, yy), Vector2(4, 4)), RIVET)
+		draw_rect(Rect2(Vector2(at.x + wide + 2, yy), Vector2(4, 4)), RIVET)
 	draw_rect(Rect2(at, Vector2(wide, tall)), STEEL)
 	var h: float = tall * (float(filled) / float(max(1, cap)))
 	if h > 0.0:
@@ -890,7 +902,7 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 			var bob: float = sin(_clock * 2.2 + float(i) * 0.8) * 2.4
 			draw_line(Vector2(x0, sy + bob), Vector2(x0 + wide / 14.0, sy - bob),
 				Color(0.72, 0.94, 1.0, 0.85), 2.0)
-	draw_rect(Rect2(at, Vector2(wide, tall)), Color(0.55, 0.66, 0.74), false, 2.0)
+	draw_rect(Rect2(at, Vector2(wide, tall)), Color(0.40, 0.46, 0.52), false, 2.0)
 	# the graduations, so "2 of 3" is countable and not just a bar
 	for m in range(1, cap):
 		var y: float = at.y + tall - tall * (float(m) / float(cap))
@@ -898,12 +910,16 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 	var f: Font = ThemeDB.fallback_font
 	# above the tank, clear of the pipes that run below it
 	# under the tank, where nothing else is written
-	draw_string(f, at + Vector2(0, tall + 26), "%s  %d of %d" % [name, filled, cap],
+	# clear of the pipes, which run from the tank floor down to the valves
+	draw_string(f, at + Vector2(0, tall + 122), "%s  %d of %d" % [name, filled, cap],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.86, 0.90, 0.94))
 
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
 	var f: Font = ThemeDB.fallback_font
-	draw_rect(Rect2(at, Vector2(wide, 22)), OPEN_C if is_open else Color(0.30, 0.28, 0.24))
+	draw_rect(Rect2(at, Vector2(wide, 22)), Color(0.155, 0.165, 0.175))
+	draw_rect(Rect2(at, Vector2(wide, 22)), OPEN_C if is_open else BRASS, false, 2.0)
+	for k in range(int(wide / 46.0)):
+		draw_rect(Rect2(at + Vector2(14.0 + float(k) * 46.0, 8), Vector2(5, 5)), RIVET)
 	# a dashed line across the chamber marking the height the water has to
 	# reach, so "fill it to the top" is a picture
 	for i in range(16):
