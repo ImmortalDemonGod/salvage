@@ -287,7 +287,12 @@ func _force_complete(r) -> void:
 			r.puzzle.valve[i] = true
 
 func _init() -> void:
-	var n := 600
+	# 400 states, MEASURED not guessed. At 150 the search reported
+	# move->REAR dominated across the whole slice; at 400 it appears twice
+	# in the dredge and the slice is clean. A cheap run produces confident
+	# false findings, which is worse than no run (standing rule 10, now
+	# applied to state count as well as seed count).
+	var n := 400
 	for a in OS.get_cmdline_user_args():
 		if a.is_valid_int():
 			n = a.to_int()

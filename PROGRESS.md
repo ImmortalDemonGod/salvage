@@ -129,9 +129,11 @@ the reason to move at all.** Rule on it, with numbers, and log the ruling.
    commit.
 9. Every "deferred with reason" gets a BACKLOG line at the moment it is
    deferred.
-10. **A detector's seed count is load bearing and is measured, not
-    guessed.** Measured precedent: a hint detector reported the opposite
-    winner at 60 seeds and the correct one from 150 up.
+10. **A detector's seed AND state count is load bearing, and is measured,
+    not guessed.** Two precedents: a hint detector reported the opposite
+    winner at 60 seeds and the correct one from 150 up; and the dominance
+    search called `move->REAR` dead across the whole slice at 150 sampled
+    states while finding it uniquely optimal at 400.
 11. **Every detector is invoked by the fast set or the nightly job.** An
     instrument nothing runs cannot block and will rot.
 12. No em dashes in user-shareable text.
