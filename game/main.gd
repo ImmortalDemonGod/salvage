@@ -7,6 +7,7 @@ extends Control
 const Art := preload("res://game/art.gd")
 const Fx := preload("res://game/fx.gd")
 const Run := preload("res://sim/run.gd")
+const Beats := preload("res://content/beats.gd")
 const Sfx := preload("res://game/sfx.gd")
 
 const DESIGN := Vector2(1280, 720)
@@ -315,6 +316,7 @@ func _motion(lines: Array, from: int) -> void:
 					var d = combat.divers[who]
 					var src: Vector2 = _limb_at(lb) if lb >= 0 else Vector2(DESIGN.x * 0.8, DESIGN.y * 0.4)
 					var dst: Vector2 = diver_foot(d)
+					fx.add("body", 0.36, src, dst, "", HURT)
 					fx.add("bolt", 0.28, src, dst, "", HURT)
 					fx.add("recoil", 0.42, src, dst, "", HURT, who)
 					fx.add("float", 1.05, dst + Vector2(0, -70), Vector2.ZERO, "-%d" % n, HURT)
@@ -347,6 +349,10 @@ func _process(dt: float) -> void:
 		_stamp_title()
 	_clock += dt
 	fx.tick(dt)
+	if _hold > 0.0:
+		_hold -= dt
+		if _hold <= 0.0:
+			_won = ""
 	# the board breathes even when nothing is happening, so a turn spent
 	# thinking is not a still image
 	queue_redraw()
@@ -354,6 +360,30 @@ func _process(dt: float) -> void:
 func _stamp_title() -> void:
 	var b: Dictionary = run.current()
 	DisplayServer.window_set_title("SALVAGE beat=%s" % String(b.get("id", "?")))
+
+func _draw_ending() -> void:
+	var f: Font = ThemeDB.fallback_font
+	var w: Vector2 = size.max(DESIGN)
+	draw_rect(Rect2(Vector2.ZERO, w), Color(0.02, 0.05, 0.09, 0.86))
+	var cx: float = w.x * 0.5 - 250.0
+	var y: float = w.y * 0.30
+	var lost := int(run.salvage_lost)
+	var head := "THE PUMP TURNS OVER" if lost == 0 else "THE PUMP TURNS OVER, BARELY"
+	draw_string(f, Vector2(cx, y), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.86, 0.93, 0.96))
+	draw_string(f, Vector2(cx, y + 46), "placeholder copy, for Marc",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
+	var rows: Array = [
+		"beats cleared        %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
+		"salvage lost         %d" % lost,
+		"the squad came back  %s" % ("whole" if lost == 0 else "lighter than it went down"),
+	]
+	for i in range(rows.size()):
+		draw_string(f, Vector2(cx, y + 108 + 34 * float(i)), String(rows[i]),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Color(0.78, 0.86, 0.90))
+	draw_string(f, Vector2(cx, y + 232), "SALVAGE   a Team Ratateam prototype",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(0.66, 0.78, 0.84))
+	draw_string(f, Vector2(cx, y + 262), "art Glass_Goat   ·   words Marc   ·   placeholder art and copy throughout",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
 
 func _refresh() -> void:
 	_stamp_title()
@@ -367,7 +397,7 @@ func _refresh() -> void:
 	var scene_p: Control = ui_scene.get_parent()
 	if run.puzzle != null:
 		scene_p.position = Vector2(190, 620)
-		scene_p.size = Vector2(900, 96)
+		scene_p.size = Vector2(900, 118)
 	else:
 		scene_p.position = SCENE_PANEL_AT
 		scene_p.size = SCENE_PANEL_SIZE
@@ -388,10 +418,10 @@ func _refresh() -> void:
 		if run.puzzle.solved():
 			want = "the way out is open"
 		elif run.puzzle.stage == 2:
-			want = "(placeholder) The way out sits above chamber A. Fill A, keep B dry."
+			want = "The way out sits above chamber A. Fill A, keep B dry."
 		else:
-			want = "(placeholder) The way out is above the waterline. Fill the chamber to the top."
-		ui_scene.text = want
+			want = "The way out is above the waterline. Fill the chamber to the top."
+		ui_scene.text = want + "\n\nplaceholder copy, for Marc"
 		var vk := ["1", "2", "3", "4"]
 		var labels: Array = []
 		for i in range(run.puzzle.valves()):
@@ -601,8 +631,15 @@ func player_end_turn() -> void:
 
 # A finished fight advances the ladder. The run owns progression; the
 # scene only asks it to move.
+# Winning cut straight to the next screen, so the moment you won was the
+# moment the thing you won against vanished. Hold it.
+var _hold := 0.0
+var _won := ""
+
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
+		_won = ("THE %s IS DISABLED" % String(combat.enc.get("title", "enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
+		_hold = 1.4
 		run.advance()
 		combat = run.combat
 		selected = 0
@@ -627,7 +664,7 @@ func _unhandled_input(e: InputEvent) -> void:
 			else: _select(2)
 			_refresh()
 		KEY_4:
-			if run.puzzle != null: run.puzzle.toggle(3)
+			if run.puzzle != null and run.puzzle.valves() > 3: run.puzzle.toggle(3)
 			_refresh()
 		KEY_Q: player_move(Combat.FRONT)
 		KEY_W: player_move(Combat.FLANK)
@@ -742,10 +779,10 @@ func _draw_water() -> void:
 	# a vertical gradient: brighter at the surface, black at the floor
 	var top: Color = Color(0.075, 0.185, 0.245).lerp(Color(0.020, 0.055, 0.095), d)
 	var bot: Color = Color(0.030, 0.075, 0.115).lerp(Color(0.005, 0.014, 0.030), d)
-	var bands := 24
+	var bands := 180
 	for i in range(bands):
 		var f: float = float(i) / float(bands - 1)
-		draw_rect(Rect2(Vector2(0, w.y * f), Vector2(w.x, w.y / float(bands) + 1.0)), top.lerp(bot, f))
+		draw_rect(Rect2(Vector2(0, floor(w.y * f)), Vector2(w.x, ceil(w.y / float(bands)) + 1.0)), top.lerp(bot, f))
 	# light coming down from the surface, weaker the deeper you are
 	var lit: float = (1.0 - d) * 0.5
 	if lit > 0.02:
@@ -774,6 +811,45 @@ const BAR_OK := Color(0.42, 0.78, 0.62)
 const BAR_LOW := Color(0.88, 0.52, 0.30)
 const BAR_LIMB := Color(0.82, 0.44, 0.34)
 
+func _draw_windup() -> void:
+	var f: Font = ThemeDB.fallback_font
+	var pulse: float = 0.55 + 0.45 * sin(_clock * 4.2)
+	for it in combat.intents():
+		var lb: int = int(it.limb)
+		if int(combat.limb_stun[lb]) > 0 or combat.limb_broken[lb]:
+			continue
+		var src: Vector2 = _limb_at(lb)
+		for st in it.stations:
+			if not combat.station_open(int(st)):
+				continue
+			var dst: Vector2 = place(int(st))
+			var dir: Vector2 = (dst - src)
+			if dir.length() < 1.0:
+				continue
+			var n: Vector2 = dir.normalized()
+			var a: Vector2 = src + n * 30.0
+			var b: Vector2 = dst - n * 48.0
+			# a dashed reach, so it reads as "about to" rather than "is"
+			var segs := 9
+			for i in range(segs):
+				if i % 2 == 1:
+					continue
+				var t0: float = float(i) / float(segs)
+				var t1: float = float(i + 1) / float(segs)
+				draw_line(a.lerp(b, t0), a.lerp(b, t1),
+					Color(0.92, 0.42, 0.32, 0.20 + 0.40 * pulse), 3.0)
+			var mid: Vector2 = a.lerp(b, 0.52)
+			draw_string(f, mid + Vector2(-7, -8), str(int(it.dmg)),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(0.98, 0.62, 0.50, 0.55 + 0.45 * pulse))
+
+func _draw_banner() -> void:
+	var f: Font = ThemeDB.fallback_font
+	var w: Vector2 = size.max(DESIGN)
+	var y: float = w.y * 0.36
+	draw_rect(Rect2(Vector2(0, y - 12), Vector2(w.x, 66)), Color(0.03, 0.08, 0.12, 0.80))
+	draw_string(f, Vector2(w.x * 0.5 - 240.0, y + 32), _won,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color(0.92, 0.95, 0.97))
+
 func _draw_bars() -> void:
 	# one per live limb, sitting on its own ring rather than in a corner
 	for st in range(5):
@@ -800,6 +876,11 @@ func _draw() -> void:
 	# failing to fill its window.
 	_draw_water()
 	# the lock is inside the wreck, so it is lit by what you brought
+	if run != null and run.finished:
+		_draw_ending()
+		return
+	if _won != "" and combat == null:
+		_draw_banner()
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
 		return
@@ -834,13 +915,16 @@ func _draw() -> void:
 		Art.stretch = 1.55        # long and thin
 	elif String(art.get("kind", "crab")) == "dredge":
 		Art.stretch = 0.78        # squat and blocky
-	Art.draw_crab(self, Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150), asc, combat.limb_broken)
+	Art.draw_crab(self, Vector2(float(ap[0]), float(ap[1])) + Vector2(0, 150) + fx.body_offset() + fx.idle(7) * 1.6, asc, combat.limb_broken)
 	Art.tint = Color(1, 1, 1)
 	Art.stretch = 1.0
 	for d in combat.divers:
 		if d.down:
 			continue
 		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
+	if _won != "":
+		_draw_banner()
+	_draw_windup()
 	_draw_bars()
 	_draw_fx()
 

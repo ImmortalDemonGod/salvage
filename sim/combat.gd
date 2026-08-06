@@ -383,7 +383,7 @@ func _check_victory() -> void:
 		if not b:
 			return
 	outcome = "victory"
-	log_lines.append("the crab is disabled")
+	log_lines.append("%s is disabled" % String(enc.get("title", "the crab")))
 
 # ---- enemy turn --------------------------------------------------------
 func end_turn() -> void:

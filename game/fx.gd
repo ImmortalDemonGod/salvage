@@ -76,6 +76,18 @@ func diver_offset(id: int) -> Vector2:
 			off += (e.to - e.at).normalized() * 18.0 * (1.0 - k2) * sin(k2 * PI * 3.0)
 	return off
 
+# the whole creature throwing itself at the station it is striking
+func body_offset() -> Vector2:
+	var off := Vector2.ZERO
+	for e in live:
+		if e.kind != "body":
+			continue
+		var k: float = e.k()
+		# a short pull BACK, then the commit forward, then settle
+		var f: float = -0.35 * sin(k * PI * 0.9) if k < 0.28 else sin((k - 0.28) / 0.72 * PI)
+		off += (e.to - e.at).normalized() * 34.0 * f
+	return off
+
 # 0 when calm, up to 1 at the instant a limb is struck
 func limb_flash(idx: int) -> float:
 	var v := 0.0
