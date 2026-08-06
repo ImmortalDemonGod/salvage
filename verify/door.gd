@@ -130,6 +130,37 @@ func _init() -> void:
 			if not bound.has(fn):
 				fail("VERIFIER DRIVES AN UNBOUND DOOR: %s calls scene.%s() and no key reaches it, so it is not testing what a player does" % [path.get_file(), fn])
 
+	# --- 5. every ability KIND has motion of its own ---------------------
+	# The last project's defect ledger, entry 2: "all six abilities played
+	# one shared nudge", and its prescribed fix was an invariant, not a
+	# note. This build added motion and re-shipped the same defect, so the
+	# invariant gets built this time: a kind with no branch of its own falls
+	# through to the default and moves like everything else.
+	var kinds: Array = []
+	for enc_id2 in Content.ALL.keys():
+		var probe2 := Combat.new(String(enc_id2))
+		for d2 in probe2.divers:
+			for ab in d2.kit:
+				var kd := String(ab.kind)
+				if not (kd in kinds):
+					kinds.append(kd)
+	# bound the region to the HIT arm itself. Taking everything AFTER it
+	# swept in the card-text builder, which names the same kinds for a
+	# different purpose, and the check passed a deliberate sabotage.
+	var motion := main.split("SfxEvents.Kind.HIT:")
+	var arm := ""
+	if motion.size() > 1:
+		arm = String(motion[1]).split("SfxEvents.Kind.TAKE:")[0]
+	if arm.strip_edges() == "":
+		fail("NO MOTION ARM FOUND in game/main.gd -- this check is asleep")
+	var covered: Array = []
+	for kd2 in kinds:
+		if arm.find("\"%s\"" % kd2) >= 0:
+			covered.append(kd2)
+		elif kd2 != "hit":
+			fail("ABILITY MOVES LIKE EVERY OTHER: kind '%s' has no motion of its own, so it falls through to the default nudge" % kd2)
+	print("motion     %d ability kind(s), %d with motion of their own" % [kinds.size(), covered.size()])
+
 	print("door       %d key(s) mapped, %d ability slot(s) bound, widest kit %d" % [map.size(), slots.size(), widest])
 	_done()
 

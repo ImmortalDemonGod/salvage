@@ -313,12 +313,34 @@ func _motion(lines: Array, from: int) -> void:
 		var n := _amount(line)
 		match ev:
 			SfxEvents.Kind.HIT:
-				# a diver struck a limb: lunge at it, flash it, count it
+				# a diver struck a limb: move like the ability it was
 				if who >= 0 and lb >= 0:
 					var a: Vector2 = diver_foot(combat.divers[who])
-					fx.add("lunge", 0.34, a, _limb_at(lb), "", DEALT, who)
-					fx.add("flash", 0.36, _limb_at(lb), Vector2.ZERO, "", DEALT, -1, lb)
-					fx.add("float", 0.95, _limb_at(lb) + Vector2(0, -30), Vector2.ZERO, "-%d" % n, DEALT)
+					var tgt: Vector2 = _limb_at(lb)
+					var kind := ""
+					for ab in combat.divers[who].kit:
+						if line.find(String(ab.name)) >= 0:
+							kind = String(ab.kind)
+					match kind:
+						"hit_and_step":
+							# it hits and then moves: a long committed lunge
+							fx.add("lunge", 0.52, a, tgt, "", DEALT, who)
+						"hit_wide":
+							# it spills onto the neighbours, so ring them too
+							fx.add("lunge", 0.30, a, tgt, "", DEALT, who)
+							for st2 in combat.neighbours(int(combat.divers[who].station)):
+								var lb2: int = combat.STATION_LIMB[int(st2)]
+								if lb2 >= 0:
+									fx.add("flash", 0.40, place(int(st2)), Vector2.ZERO, "", DEALT, -1, lb2)
+						"shut":
+							# no swing: a held press, and the limb rings shut
+							fx.add("press", 0.44, a, tgt, "", Color(0.55, 0.78, 0.95), who)
+							fx.add("ring", 0.52, tgt, Vector2.ZERO, "", Color(0.55, 0.78, 0.95), -1, lb)
+						_:
+							fx.add("lunge", 0.30, a, tgt, "", DEALT, who)
+					fx.add("flash", 0.36, tgt, Vector2.ZERO, "", DEALT, -1, lb)
+					if n > 0:
+						fx.add("float", 0.95, tgt + Vector2(0, -30), Vector2.ZERO, "-%d" % n, DEALT)
 					fx.kick(0.10 + 0.02 * n)
 			SfxEvents.Kind.TAKE:
 				# the enemy reached a station. THIS is the one that read as
@@ -984,9 +1006,20 @@ func _draw() -> void:
 	# broken or absent. This is the map changing, drawn.
 	if combat == null:
 		return
+	var ap0: Array = combat.enc.art.pos
+	var body: Vector2 = Vector2(float(ap0[0]), float(ap0[1])) + Vector2(0, 150) + fx.body_offset()
 	for i in range(5):
 		if not combat.station_open(i):
 			continue
+		# a tether from the station to the creature, so the ring reads as a
+		# part of the thing rather than a circle drawn near it
+		if combat.STATION_LIMB[i] >= 0:
+			var pc: Vector2 = place(i)
+			var dirb: Vector2 = (body - pc)
+			if dirb.length() > 60.0:
+				var nb: Vector2 = dirb.normalized()
+				draw_line(pc + nb * 48.0, pc + nb * (dirb.length() * 0.72),
+					Color(0.62, 0.72, 0.78, 0.34), 2.0)
 		var col := Color(0.25, 0.55, 0.6)
 		if i in combat.threatened_stations():
 			col = Color(0.85, 0.35, 0.25)

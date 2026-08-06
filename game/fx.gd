@@ -71,6 +71,10 @@ func diver_offset(id: int) -> Vector2:
 			var k: float = e.k()
 			var f: float = sin(k * PI)
 			off += (e.to - e.at).normalized() * 26.0 * f
+		elif e.kind == "press":
+			# a disabler does not swing: it reaches out and holds
+			var kp: float = e.k()
+			off += (e.to - e.at).normalized() * 14.0 * min(1.0, kp * 4.0) * (1.0 - kp * kp)
 		elif e.kind == "recoil":
 			var k2: float = e.k()
 			off += (e.to - e.at).normalized() * 18.0 * (1.0 - k2) * sin(k2 * PI * 3.0)
