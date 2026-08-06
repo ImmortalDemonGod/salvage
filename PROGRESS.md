@@ -360,6 +360,40 @@ station-occupancy check before the next one starts.
 respect a shipping budget has spent the run without buying information,
 which is the exact failure prototype 1 was retired for.
 
+## The fun pass, from the documents the team already wrote
+
+After the playtest fixes, the ruling was: stop asking, make it fun. The
+material was already in `docs/` in two files I had never read.
+
+**From Glass_Goat's combat doc:** abilities tier by what is left in the
+tank. FULL is the ability as written; STRAINED (the last of the air) lands
+lighter; DESPERATE (the tank is empty) may always act, paying 4 HP per
+missing point of air, and may never kill the diver outright. Desperation
+is the overdraft I cut in the small hours; the reasoning was measured on a
+crab that hit for 2, and stopped holding the moment fight one hit for 5.
+
+**From Marc's proposal:** the Analyze step. Every limb carries a hidden
+trait: brittle (double damage), plated (one less per hit), pressurised
+(breaking it shuts every other limb a turn), leaking (breaking it returns
+2 air). Press A, 1 air, to read one; a trait only bites once KNOWN. The
+crab's jaw comes pre-read so the first lesson is what reading BUYS. The
+pressurised payoff is the biggest thing a player can cause, and lands as
+one: every ring bursts, the screen kicks, THE WHOLE THING SEIZES.
+
+**Then the ruling that reshaped the screen:** use the genre's own
+teaching tools, not sentences. The selected diver stands in a pulsing
+ring; legal moves breathe dashed halos; the target carries a reticle; and
+the target's bar shows, as a bright chunk, exactly what SPACE would
+remove, through the trait math. Traits are DRAWN on the limb: cracks,
+bolted plate, bubble stream, hot glow. The legend, the control strip, the
+telegraph sentence and the goal checklist are gone or retired; the board
+teaches, the prompt speaks only when something needs deciding.
+
+Bands after all of it, paid in content: crab 74.9, spitter 59.2, dredge
+60.2, inside 55-90. `verify/hint.gd` audits 74 prompt suggestions against
+the sim; the gallery carries a shot with limbs read so the mechanic is
+never invisible to review again.
+
 ## The first human playtest, and what it cost
 
 Someone who did not build this played it and recorded himself doing it. He
