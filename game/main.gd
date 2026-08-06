@@ -648,7 +648,9 @@ func _refresh() -> void:
 			lbl.text = "%s  [%s]%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), String(combat.LIMB_NAMES[lb]).to_upper()]
 		else:
 			var stun := "  SHUT" if int(combat.limb_stun[lb]) > 0 else ""
-			lbl.text = "%s  [%s]%s%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i)]
+			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
+			lbl.text = "%s  [%s]%s%s\n%s %d/%d" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
+				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -1207,25 +1209,11 @@ func here_free(st: int) -> String:
 	return ""
 
 func _draw_bars() -> void:
-	# one per live limb, sitting on its own ring rather than in a corner
-	for st in range(5):
-		if not combat.station_open(st):
-			continue
-		var lb: int = combat.STATION_LIMB[st]
-		if lb < 0 or combat.limb_broken[lb]:
-			continue
-		var maxhp: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
-		var frac2: float = float(combat.limb_hp[lb]) / max(1.0, maxhp)
-		# clamped out of the HUD: a station high on the board pushed its bar
-		# up behind the control bar
-		var at: Vector2 = Vector2(place(st).x - 88.0, max(place(st).y - 96.0, HUD_BOTTOM + 4.0))
-		_bar(at, 176, 16, frac2, BAR_LIMB)
-		# and the name of what you are breaking, on the bar itself
-		var f2: Font = ThemeDB.fallback_font
-		draw_string(f2, at + Vector2(6, 13), "%s %d/%d" % [String(combat.LIMB_NAMES[lb]).to_upper(),
-			int(combat.limb_hp[lb]), int(maxhp)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
-			Color(0.98, 0.96, 0.94))
-	# and one per diver, ON the diver, not in a card at the bottom of the screen
+	# The limb bars used to be painted on the board, and the station tags
+	# are UI nodes, so a tag drew straight over a neighbouring station's bar
+	# and the GUT readout vanished behind the FLANK tag. Everything about a
+	# station now lives IN that station's tag. Here, only the divers.
+	# one per diver, ON the diver, not in a card at the bottom of the screen
 	for d in combat.divers:
 		if d.down:
 			continue
