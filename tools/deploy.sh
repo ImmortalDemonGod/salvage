@@ -23,3 +23,10 @@ cd - >/dev/null
 git worktree remove --force /tmp/ghp
 rm -rf "$tmp"
 echo "deployed: https://immortaldemongod.github.io/salvage/"
+# and then ASK it, rather than announcing it. This script used to print the
+# URL and stop; the first person to open that URL got a 404.
+if command -v node >/dev/null 2>&1; then
+  sleep 8
+  PLAYWRIGHT_CORE=${PLAYWRIGHT_CORE:-$HOME/node_modules/playwright-core/index.mjs} \
+    node "$(dirname "$0")/../verify/live.mjs" 2>&1 | tail -2
+fi
