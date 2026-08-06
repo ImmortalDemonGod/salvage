@@ -478,6 +478,7 @@ func _refresh() -> void:
 	ui_legend.get_parent().visible = true
 	ui_goal.get_parent().visible = true
 	ui_legend.text = "red ring = an attack lands here this turn   ·   blue = nothing does"
+	var keys2 := ["Q", "W", "E", "R", "T"]
 	for i in range(ui_stations.size()):
 		ui_stations[i].visible = combat.station_open(i)
 		if not combat.station_open(i):
@@ -495,9 +496,9 @@ func _refresh() -> void:
 		var lb: int = combat.STATION_LIMB[i]
 		var lbl: Label = ui_stations[i].get_node("label")
 		if lb < 0:
-			lbl.text = "%s\nno limb here" % Combat.STATION_NAMES[i]
+			lbl.text = "%s  [%s]\nno limb here" % [Combat.STATION_NAMES[i], String(keys2[i])]
 		elif combat.limb_broken[lb]:
-			lbl.text = "%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper()]
+			lbl.text = "%s  [%s]\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), String(combat.LIMB_NAMES[lb]).to_upper()]
 		else:
 			var stun := "  SHUT" if int(combat.limb_stun[lb]) > 0 else ""
 			var here := ""
@@ -505,7 +506,7 @@ func _refresh() -> void:
 				if not d2.down and int(d2.station) == i and d2.id == selected:
 					here = "  <- you"
 			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
-			lbl.text = "%s\n%s %d/%d hp%s%s" % [Combat.STATION_NAMES[i], String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, stun, here]
+			lbl.text = "%s  [%s]\n%s %d/%d hp%s%s" % [Combat.STATION_NAMES[i], String(keys2[i]), String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, stun, here]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -576,12 +577,18 @@ func _refresh() -> void:
 	for i in range(5):
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
-	var pick := "1 diver only" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
+	var pick := "1 diver" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
 	var widest := 0
 	for d0 in combat.divers:
 		widest = max(widest, int(d0.kit.size()))
 	var use := "SPACE use an ability" if widest < 2 else "SPACE / F use an ability"
-	ui_help.text += "%s  ·  move (1 air): %s  ·  %s  ·  ENTER end turn" % [pick, "  ".join(moves), use]
+	# It has to fit on one line, so it says the short true thing. The cards
+	# already name each ability and its key; this line is the map of verbs.
+	var mkeys: Array = []
+	for i in range(5):
+		if combat.station_open(i):
+			mkeys.append(String(keys[i]))
+	ui_help.text += "click to move, click again to attack  ·  %s  ·  the key on a station moves there (1 air)  ·  %s  ·  ENTER end turn" % [pick, use]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
@@ -666,6 +673,9 @@ func _after() -> void:
 	_refresh()
 
 func _unhandled_input(e: InputEvent) -> void:
+	if e is InputEventMouseButton and e.pressed and int(e.button_index) == MOUSE_BUTTON_LEFT:
+		_click((e as InputEventMouseButton).position)
+		return
 	if not (e is InputEventKey and e.pressed and not e.echo):
 		return
 	var k: int = (e as InputEventKey).keycode
@@ -743,6 +753,29 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 	draw_string(f, at + Vector2(0, -12), "the way out" + ("  OPEN" if is_open else ""),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.72, 0.74, 0.78))
 
+func _valve_pos(i: int) -> Vector2:
+	var p = run.puzzle
+	var tall := 180.0
+	var top := 250.0
+	if p.stage == 2:
+		var ax := 300.0
+		var bx := 700.0
+		var wide := 240.0
+		if i == p.CROSS:
+			return Vector2((ax + wide + bx) * 0.5, top + tall - 26.0)
+		if i == 0:
+			return Vector2(ax + 60.0, top + tall + 60.0)
+		if i == 1:
+			return Vector2(ax + 170.0, top + tall + 60.0)
+		return Vector2(bx + 110.0, top + tall + 60.0)
+	var x := 480.0
+	var wide1 := 300.0
+	if i == 0:
+		return Vector2(x + 70.0, top + tall + 60.0)
+	if i == 1:
+		return Vector2(x + 150.0, top + tall + 60.0)
+	return Vector2(x + wide1 - 40.0, top + tall - 30.0)
+
 func _draw_lock(p) -> void:
 	var tall := 180.0
 	if p.stage == 2:
@@ -758,10 +791,10 @@ func _draw_lock(p) -> void:
 		var pipe_y := top + tall - 26.0
 		draw_line(Vector2(ax + wide, pipe_y), Vector2(bx, pipe_y),
 			OPEN_C if p.valve[p.CROSS] else STEEL, 8.0)
-		_valve_dot(Vector2((ax + wide + bx) * 0.5, pipe_y), "4", p.valve[p.CROSS], p.reachable(p.CROSS))
-		_valve_dot(Vector2(ax + 60, top + tall + 60), "1", p.valve[0], true)
-		_valve_dot(Vector2(ax + 170, top + tall + 60), "2", p.valve[1], true)
-		_valve_dot(Vector2(bx + 110, top + tall + 60), "3", p.valve[2], true)
+		_valve_dot(_valve_pos(p.CROSS), "4", p.valve[p.CROSS], p.reachable(p.CROSS))
+		_valve_dot(_valve_pos(0), "1", p.valve[0], true)
+		_valve_dot(_valve_pos(1), "2", p.valve[1], true)
+		_valve_dot(_valve_pos(2), "3", p.valve[2], true)
 		var f2: Font = ThemeDB.fallback_font
 		draw_string(f2, Vector2(ax + 30, top + tall + 110), "1 and 2 feed A", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
 		draw_string(f2, Vector2(bx + 60, top + tall + 110), "3 feeds B", HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.72, 0.78, 0.84))
@@ -772,9 +805,9 @@ func _draw_lock(p) -> void:
 	_chamber(Vector2(x, top), wide, tall, p.level(), p.VALVES, "the chamber")
 	_door(Vector2(x, top - 30), wide, p.solved())
 	# two inlets you can always reach, and the seized one down at the floor
-	_valve_dot(Vector2(x + 70, top + tall + 60), "1", p.valve[0], p.reachable(0))
-	_valve_dot(Vector2(x + 150, top + tall + 60), "2", p.valve[1], p.reachable(1))
-	_valve_dot(Vector2(x + wide - 40, top + tall - 30), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
+	_valve_dot(_valve_pos(0), "1", p.valve[0], p.reachable(0))
+	_valve_dot(_valve_pos(1), "2", p.valve[1], p.reachable(1))
+	_valve_dot(_valve_pos(p.SEIZED), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
 
 # how deep we are, 0 at the rig and 1 at the bottom
 func _depth() -> float:
@@ -869,6 +902,39 @@ func _draw_windup() -> void:
 			draw_arc(mid, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
 			draw_string(f, mid + Vector2(-6, 7), str(int(it.dmg)),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
+
+# A click means the obvious thing for whatever is under it: a station moves
+# the selected diver there, a diver card selects that diver, and the enemy
+# means attack. Nothing here is a new rule; it is the same three verbs.
+func _click(at: Vector2) -> void:
+	if run.puzzle != null:
+		for i in range(run.puzzle.valves()):
+			if at.distance_to(_valve_pos(i)) < 30.0:
+				run.puzzle.toggle(i)
+				_refresh()
+				return
+		return
+	if combat == null:
+		run.advance(); combat = run.combat; selected = 0; _refresh()
+		return
+	for i in range(combat.divers.size()):
+		var card: Control = ui_divers[i]
+		if card.visible and card.get_global_rect().has_point(at):
+			_select(i)
+			_refresh()
+			return
+	for st in range(5):
+		if not combat.station_open(st):
+			continue
+		if at.distance_to(place(st)) < 54.0:
+			var d = combat.divers[selected]
+			if int(d.station) == st:
+				player_ability(0)
+			else:
+				player_move(st)
+			return
+	# anywhere on the creature means hit what you are standing next to
+	player_ability(0)
 
 func _draw_banner() -> void:
 	var f: Font = ThemeDB.fallback_font
