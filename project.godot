@@ -1,0 +1,9 @@
+config_version=5
+
+[application]
+config/name="SALVAGE"
+config/features=PackedStringArray("4.7")
+run/main_scene="res://game/main.tscn"
+
+[rendering]
+renderer/rendering_method="gl_compatibility"
