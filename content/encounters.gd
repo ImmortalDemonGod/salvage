@@ -152,9 +152,9 @@ static var ALL := {
 			# player safe ground and handed back too much: casual 92.5%,
 			# outside the pinned band. Paid for in limb HP and damage, not
 			# by moving the band.
-			{"name": "arm", "hp": 14, "station": FRONT},
-			{"name": "boiler", "hp": 12, "station": FLANK},
-			{"name": "winch", "hp": 12, "station": REAR},
+			{"name": "arm", "hp": 11, "station": FRONT},
+			{"name": "boiler", "hp": 10, "station": FLANK},
+			{"name": "winch", "hp": 10, "station": REAR},
 		],
 		"attacks": [
 			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},

@@ -90,7 +90,11 @@ func expect_attack(c: Combat, i: int) -> bool:
 	if int(d.station) < 0 or int(d.station) > 4:
 		return false
 	if c.air < int(d.cost):
-		return false
+		# you may push past an empty tank, paying the shortfall in HP, so
+		# long as it does not kill you outright
+		var short: int = int(d.cost) - c.air
+		if short * Combat.STRAIN_HP >= int(d.hp):
+			return false
 	# A disabler standing at BACKLINE reaches whatever is winding up, with
 	# no limb at its own station. Modelled independently of can_attack on
 	# purpose: this function's job is to disagree with the sim when the sim

@@ -262,6 +262,47 @@ func neighbours(station: int) -> Array:
 		out.append(int(order[at + 1]))
 	return out
 
+# GLASS_GOAT'S CORE, from docs/glassgoat-combat-system.pdf, which I had
+# never read until today: "At 100% Stamina you can use certain abilities...
+# at 60% stamina you can use an inferior version of the attack, but at 20%
+# you will use your health to perform the action risking your life."
+#
+# The same button, three different decisions depending on what is left in
+# the tank. This is what turns "press SPACE four times" into a turn with a
+# shape: spend big early and finish weak, or hold back and stay strong.
+#
+#   FULL       room to spare        the ability as written
+#   STRAINED   the last of the air  one less damage, one less turn of shut
+#   DESPERATE  the air is gone      pay the shortfall out of the diver
+const STRAIN_HP := 4     # health per missing point of air
+
+enum Tier { FULL, STRAINED, DESPERATE }
+
+func tier_for(d) -> int:
+	if air >= int(d.cost) + 1:
+		return Tier.FULL
+	if air >= int(d.cost):
+		return Tier.STRAINED
+	return Tier.DESPERATE
+
+func tier_name(t: int) -> String:
+	return ["full", "strained", "desperate"][t]
+
+# What an ability actually does at a tier. The screen and the sim read this
+# one function, so a card can never promise a number the sim will not pay.
+func effect_at(d, slot: int, t: int) -> Dictionary:
+	var ab: Dictionary = d.kit[slot]
+	var dmg: int = int(ab.dmg)
+	var turns: int = int(ab.get("turns", 1))
+	if t == Tier.STRAINED and dmg > 0:
+		dmg = max(1, dmg - 1)
+	elif t == Tier.DESPERATE:
+		if dmg > 0:
+			dmg = max(1, dmg - 2)
+		turns = max(1, turns - 1)
+	var short: int = max(0, int(d.cost) - air)
+	return {"dmg": dmg, "turns": turns, "hp_cost": short * STRAIN_HP if t == Tier.DESPERATE else 0}
+
 func act_ability(i: int, slot: int) -> bool:
 	if i < 0 or i >= divers.size():
 		return false
@@ -269,14 +310,26 @@ func act_ability(i: int, slot: int) -> bool:
 	if slot < 0 or slot >= d.kit.size():
 		return false
 	var ab: Dictionary = d.kit[slot]
-	if outcome != "ongoing" or d.down or not afford(d.cost) or not can_attack(d):
+	if outcome != "ongoing" or d.down or not can_attack(d):
 		return false
 	var limb: int = target_limb(d)
 	if limb < 0:
 		return false
-	air -= d.cost
+	var t: int = tier_for(d)
+	var eff: Dictionary = effect_at(d, slot, t)
+	# Desperation: you may always act, and the shortfall comes out of the
+	# diver instead of the tank. It may never kill them outright -- that is
+	# a cost you choose, not a way to lose without meaning to.
+	if t == Tier.DESPERATE:
+		if int(eff.hp_cost) >= int(d.hp):
+			return false
+		d.hp -= int(eff.hp_cost)
+		air = 0
+		log_lines.append("%s pushes past the empty tank and takes %d for it" % [d.dname, int(eff.hp_cost)])
+	else:
+		air -= int(d.cost)
 	var at_range: bool = d.disables and d.station == BACKLINE
-	var dmg: int = 0 if at_range else int(ab.dmg)
+	var dmg: int = 0 if at_range else int(eff.dmg)
 	if dmg > 0:
 		limb_hp[limb] -= dmg
 		log_lines.append("%s: %s hits the %s for %d" % [d.dname, String(ab.name), LIMB_NAMES[limb], dmg])
@@ -285,7 +338,7 @@ func act_ability(i: int, slot: int) -> bool:
 	match String(ab.kind):
 		"shut":
 			if not limb_broken[limb]:
-				limb_stun[limb] = int(ab.get("turns", 1))
+				limb_stun[limb] = int(eff.turns)
 				log_lines.append("the %s is shut down and will not swing" % LIMB_NAMES[limb])
 		"hit_and_step":
 			var n: Array = neighbours(d.station)

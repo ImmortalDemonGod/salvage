@@ -571,6 +571,11 @@ func _next_step() -> String:
 			if not o.down:
 				return "%s is down. Press %d to take over %s." % [d.dname, int(o.id) + 1, o.dname]
 		return ""
+	if combat.air <= 0 and combat.can_attack(d):
+		var de: Dictionary = combat.effect_at(d, 0, Combat.Tier.DESPERATE)
+		if int(de.hp_cost) < int(d.hp):
+			return "The tank is empty. %s can still swing, but it costs %d of their own HP. Or press ENTER to surface and refill." % [
+				d.dname, int(de.hp_cost)]
 	if combat.air <= 0:
 		return "The tank is empty. Press ENTER to end the turn and refill it."
 	if float(d.hp) / max(1.0, float(d.max_hp)) <= 0.34:
@@ -642,8 +647,11 @@ func _next_step() -> String:
 	if empty_swing:
 		return "An attack will hit empty water and tear an air line: you lose 1 air next turn. Stand in it, or accept it."
 	if lb2 >= 0:
+		var e0: Dictionary = combat.effect_at(d, 0, combat.tier_for(d))
 		var line := "Press SPACE for %s: hit the %s for %d." % [
-			String(d.kit[0].name), String(combat.LIMB_NAMES[lb2]).to_upper(), int(d.kit[0].dmg)]
+			String(d.kit[0].name), String(combat.LIMB_NAMES[lb2]).to_upper(), int(e0.dmg)]
+		if combat.tier_for(d) == Combat.Tier.STRAINED:
+			line += "   Strained: the tank is nearly out, so it lands lighter."
 		if d.kit.size() > 1:
 			line += "   Or F for %s." % String(d.kit[1].name)
 		return line
@@ -905,13 +913,20 @@ func _refresh() -> void:
 		for slot in range(d.kit.size()):
 			var ab: Dictionary = d.kit[slot]
 			var key := "SPACE" if slot == 0 else "F"
+			var tier: int = combat.tier_for(d)
+			var eff: Dictionary = combat.effect_at(d, slot, tier)
 			var what := ""
 			match String(ab.kind):
-				"hit": what = "%d dmg" % int(ab.dmg)
-				"hit_and_step": what = "%d dmg, then move free" % int(ab.dmg)
-				"hit_wide": what = "%d dmg here and either side" % int(ab.dmg)
-				"shut": what = ("%d dmg, " % int(ab.dmg) if int(ab.dmg) > 0 else "no damage, ") + "the limb cannot attack for %d turn%s" % [int(ab.get("turns", 1)), "" if int(ab.get("turns", 1)) == 1 else "s"]
-			lines.append("%s %s: %s" % [key, String(ab.name), what])
+				"hit": what = "%d dmg" % int(eff.dmg)
+				"hit_and_step": what = "%d dmg, then move free" % int(eff.dmg)
+				"hit_wide": what = "%d dmg here and either side" % int(eff.dmg)
+				"shut": what = ("%d dmg, " % int(eff.dmg) if int(eff.dmg) > 0 else "no damage, ") + "the limb cannot attack for %d turn%s" % [int(eff.turns), "" if int(eff.turns) == 1 else "s"]
+			var tag := ""
+			if tier == Combat.Tier.STRAINED:
+				tag = "   (strained)"
+			elif tier == Combat.Tier.DESPERATE:
+				tag = "   (costs %d HP: the tank is empty)" % int(eff.hp_cost)
+			lines.append("%s %s: %s%s" % [key, String(ab.name), what, tag])
 		# the target once, at the top, instead of on every ability line
 		var onto := ""
 		if not combat.can_attack(d):
