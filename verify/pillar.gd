@@ -16,7 +16,12 @@ const Puzzle := preload("res://sim/puzzle.gd")
 var findings: Array = []
 
 # mechanics that are deliberately constant: the rules the others vary against
-const DECLARED_FLAT := ["goal", "combat_frame", "air", "overdraft"]
+# conditions and backline joined the flat list the night hunts and ramp
+# landed: the shut and the platform ARE the same tool in both fights now,
+# and the escalation between those beats is carried by what is aimed at
+# you (a hunting arc in fight two, a ramping boiler in the last), not by
+# the tool you answer it with.
+const DECLARED_FLAT := ["goal", "combat_frame", "air", "overdraft", "conditions", "backline"]
 
 func _init() -> void:
 	var rows: Array = []

@@ -90,8 +90,10 @@ func expect_attack(c: Combat, i: int) -> bool:
 	if int(d.station) < 0 or int(d.station) > 4:
 		return false
 	if c.air < int(d.cost):
-		# you may push past an empty tank, paying the shortfall in HP, so
-		# long as it does not kill you outright
+		# you may push past an empty tank ONCE per fight, paying the
+		# shortfall in HP, so long as it does not kill you outright
+		if c._desperate.has(i):
+			return false
 		var short: int = int(d.cost) - c.air
 		if short * Combat.STRAIN_HP >= int(d.hp):
 			return false
@@ -105,7 +107,8 @@ func expect_attack(c: Combat, i: int) -> bool:
 		# a limb already shut down or already broken is not a target. Stated
 		# here as the rule, not delegated to the sim's own answer.
 		for it in c.intents():
-			if int(c.limb_stun[int(it.limb)]) <= 0 and not bool(c.limb_broken[int(it.limb)]):
+			if int(c.limb_stun[int(it.limb)]) <= 0 and not bool(c.limb_broken[int(it.limb)]) \
+					and not c._no_reshut.has(int(it.limb)):
 				return true
 		return false
 	var limb: int = c.STATION_LIMB[int(d.station)]
@@ -117,7 +120,7 @@ func expect_move(c: Combat, i: int, s: int) -> bool:
 	var d = c.divers[i]
 	if c.outcome != "ongoing" or d.down:
 		return false
-	if c.air < Combat.MOVE_COST:
+	if not c.can_move_now(i):
 		return false
 	# a station that is not open in this encounter is not a legal
 	# destination. Fight one runs on four; BACKLINE arrives with the
@@ -272,7 +275,7 @@ func fuzz() -> void:
 				bump("ill_same")
 			if not (s in c.OPEN_STATIONS):
 				bump("ill_closed")
-			if c.air < Combat.MOVE_COST:
+			if not c.can_move_now(i):
 				bump("ill_air")
 			expected = expect_move(c, i, s)
 			accepted = c.act_move(i, s)

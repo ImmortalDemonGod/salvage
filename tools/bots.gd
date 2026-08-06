@@ -16,7 +16,7 @@ static func legal(c: Combat) -> Array:
 			out.append({"kind": "overdraft", "i": d.id})
 		if c.afford(Combat.ANALYZE_COST) and c.target_limb(d) >= 0 and not c.known(c.target_limb(d)):
 			out.append({"kind": "analyze", "i": d.id})
-		if c.afford(Combat.MOVE_COST):
+		if c.can_move_now(d.id):
 			for s in c.OPEN_STATIONS:
 				if s != d.station:
 					out.append({"kind": "move", "i": d.id, "s": int(s)})
@@ -143,10 +143,29 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 			# measure pressure, not self-harm.
 			continue
 		else:
+			# Move pricing, re-derived after the free-move ruling. The old
+			# flat 0.9 was priced when moves cost air; with moves free it
+			# made every diver shuffle to some limb station with its spare
+			# move, which parked occupancy on the offensive stations and
+			# reported the refuge and the drum platform dead. A move is
+			# worth something when it CHANGES something: reaching a target
+			# when you have none, reaching the platform when you cannot act
+			# where you stand, or stepping out of an announced arc, which
+			# costs nothing now and is therefore right at any HP.
 			var limb2: int = c.STATION_LIMB[a.s]
+			var here: int = c.target_limb(d)
 			if limb2 >= 0 and not c.limb_broken[limb2]:
-				score = 0.9
+				score = 0.9 if here < 0 else 0.05
+			elif a.s == Combat.BACKLINE and d.disables:
+				# the platform is a real destination exactly when something
+				# announced can be shut from it (same amendment class as
+				# shut-scoring: the judge must see what the station is FOR)
+				for it in all_intents:
+					if int(c.limb_stun[int(it.limb)]) <= 0 and not c.limb_broken[int(it.limb)]:
+						score = 0.9 if here < 0 else 0.05
+						break
 			if d.station in threatened and not (a.s in threatened):
+				score += 0.35
 				if float(d.hp) / float(d.max_hp) < 0.5:
 					score += 0.6
 		if score > best_score:

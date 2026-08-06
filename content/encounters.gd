@@ -64,9 +64,20 @@ static var ALL := {
 			# swept after Proto5 became the efficient heavy (8 dmg for 3 Air)
 			# and the overdraft was cut. All three encounters land at limbs
 			# x1.45: crab 66.7% / 9.0 turns / 14.0 HP
-			{"name": "jaw", "hp": 13, "station": FRONT, "trait": "brittle"},
-			{"name": "claw", "hp": 11, "station": FLANK},
-			{"name": "tail", "hp": 11, "station": REAR, "trait": "leaking"},
+			# re-paid Aug 6 night: the free-move ruling made the casual bot
+			# stronger everywhere (89.9 against a 90 ceiling here), so the
+			# crab grew. Bands never move; the creature does.
+			{"name": "jaw", "hp": 15, "station": FRONT, "trait": "brittle"},
+			{"name": "claw", "hp": 12, "station": FLANK},
+			{"name": "tail", "hp": 12, "station": REAR, "trait": "leaking"},
+		],
+		"refuge": UNDER,
+		"_refuge_note": [
+			# UNDER exists to be safe, not to act from: with the claw
+			# pinching its own station every offensive stand is threatened
+			# every turn, and ducking under the shell is the out. Declared,
+			# and the declaration is checked (never in an arc, and
+			# sometimes the only safe ground).
 		],
 		# SPEC 2.6 verbatim: "the jaw only reaches FRONT, and the tail sweeps
 		# REAR and FLANK together. No conditions, no statuses, no special
@@ -77,6 +88,10 @@ static var ALL := {
 		# is threatened by the tail so standing there still costs.
 		"attacks": [
 			{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "snaps at"},
+			# the claw had no attack at all, so FLANK was a free camp: the
+			# station checks measured 66.7% occupancy the hour free moves
+			# landed. The claw pinches its own station now.
+			{"limb": 1, "stations": [FLANK], "dmg": 3, "name": "pinches at"},
 			{"limb": 2, "stations": [REAR, FLANK], "dmg": 4, "name": "sweeps"},
 		],
 	},
@@ -125,6 +140,11 @@ static var ALL := {
 		"attacks": [
 			{"limb": 0, "stations": [FRONT], "dmg": 5, "name": "lunges at"},
 			{"limb": 1, "stations": [FLANK, UNDER], "dmg": 5, "name": "sprays"},
+			# the first hunting arc in the run: the vent tracks a diver's
+			# actual station, announced a turn ahead. Moving after the
+			# announcement is the dodge. It cannot reach the back line,
+			# which is what makes standing back a real choice here.
+			{"limb": 1, "hunts": true, "stations": [], "dmg": 5, "name": "chases"},
 			{"limb": 2, "stations": [BACKLINE], "dmg": 3, "name": "vents over"},
 			{"limb": 2, "stations": [UNDER], "dmg": 3, "name": "curls at"},
 		],
@@ -155,16 +175,36 @@ static var ALL := {
 			# player safe ground and handed back too much: casual 92.5%,
 			# outside the pinned band. Paid for in limb HP and damage, not
 			# by moving the band.
+			# re-paid Aug 6 night for the free-move ruling: greedy with free
+			# repositioning cleared 31 total HP in 4 turns against a 6-turn
+			# teaching floor, so the dredge grew to match the squad.
+			# no brittle limb here on purpose: with the heavy's 8 landing
+			# 16 on brittle, any brittle limb under 17 HP is a free
+			# one-shot that deletes a third of the fight's pressure at
+			# zero thought. The dredge is the fight about ORDER: the
+			# pressurised boiler is the read that matters.
+			# smaller limbs after the no-reshut rule and the ramp landed:
+			# the fight gained two kinds of pressure the same evening, so
+			# it gives back duration. Bands never move; the creature does.
 			{"name": "arm", "hp": 11, "station": FRONT, "trait": "plated"},
 			{"name": "boiler", "hp": 10, "station": FLANK, "trait": "pressurised"},
-			{"name": "winch", "hp": 10, "station": REAR, "trait": "brittle"},
+			{"name": "winch", "hp": 10, "station": REAR, "trait": "leaking"},
 		],
 		"attacks": [
 			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},
-			{"limb": 0, "stations": [FRONT], "dmg": 6, "name": "hammers"},
-			{"limb": 1, "stations": [FLANK, REAR], "dmg": 4, "name": "vents over"},
-			{"limb": 1, "stations": [BACKLINE], "dmg": 4, "name": "vents back over"},
-			{"limb": 2, "stations": [REAR], "dmg": 5, "name": "lashes"},
+			{"limb": 0, "hunts": true, "stations": [], "dmg": 5, "name": "swings for"},
+			# the vent-back-over arc made the drum platform untenable in the
+			# one fight that needs it most: the hunt cannot reach BACKLINE,
+			# so BACKLINE is where you answer the hunt, and the boiler was
+			# hitting it every other turn. It alternates close arcs now.
+			# the boiler RAMPS: every swing it lands un-prevented, its next
+			# announced number grows by one, printed in the telegraph. Shut
+			# it or break it and the climb stops. This is what finally
+			# makes attack-only play lose the last fight: the masher races
+			# a clock, the judge answers it.
+			{"limb": 1, "stations": [FLANK, REAR], "dmg": 3, "name": "vents over", "ramp": true},
+			{"limb": 1, "stations": [FLANK], "dmg": 3, "name": "hisses at", "ramp": true},
+			{"limb": 2, "stations": [REAR], "dmg": 4, "name": "lashes"},
 		],
 	},
 }

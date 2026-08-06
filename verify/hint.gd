@@ -96,9 +96,9 @@ func _audit(scene, c, enc_id: String) -> void:
 			if not o.down and int(o.station) == st and int(o.id) != int(d.id):
 				fail("%s: prompt sends %s to %s, which the screen labels taken (%s is there)" % [
 					enc_id, d.dname, name, o.dname])
-		if c.air < Combat.MOVE_COST:
-			fail("%s: prompt says move with %d air in the tank and a move costing %d" % [
-				enc_id, c.air, Combat.MOVE_COST])
+		if not c.can_move_now(scene.selected):
+			fail("%s: prompt says move when %s has spent the free move and the tank cannot pay for another" % [
+				enc_id, d.dname])
 
 	# "Press A to read the JAW" -- only when it is genuinely unread, this
 	# diver can reach it, and the tank can pay for it

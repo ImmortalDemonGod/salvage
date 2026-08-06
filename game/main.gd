@@ -617,10 +617,11 @@ func _next_step() -> String:
 			if not busy:
 				safe_far = int(st)
 				break
-		if safe_far >= 0 and combat.air >= Combat.MOVE_COST:
-			return "Nothing to hit from %s. Move to %s (press %s), or click it. Costs 1 air." % [
+		if safe_far >= 0 and combat.can_move_now(int(d.id)):
+			return "Nothing to hit from %s. Move to %s (press %s), or click it.%s" % [
 				Combat.STATION_NAMES[int(d.station)], Combat.STATION_NAMES[safe_far],
-				["Q", "W", "E", "R", "T"][safe_far]]
+				["Q", "W", "E", "R", "T"][safe_far],
+				" Moving is free." if combat.move_cost(int(d.id)) == 0 else " A second move costs 1 air."]
 		return "Press ENTER to end the turn."
 	# standing somewhere an attack is about to land
 	if int(d.station) in combat.threatened_stations():
@@ -703,7 +704,7 @@ func _escape_line(d) -> String:
 		for slot in range(d.kit.size()):
 			var ab: Dictionary = d.kit[slot]
 			var eff: Dictionary = combat.effect_at(d, slot, combat.tier_for(d))
-			if String(ab.kind) == "shut" and int(combat.limb_stun[lb]) <= 0:
+			if String(ab.kind) == "shut" and combat.can_shut(lb):
 				kill = "or press %s to shut the %s so it cannot swing" % [
 					"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb]).to_upper()]
 				break
@@ -711,7 +712,7 @@ func _escape_line(d) -> String:
 				kill = "or press %s to break the %s before it swings" % [
 					"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb]).to_upper()]
 				break
-	if refuge >= 0 and combat.air >= Combat.MOVE_COST:
+	if refuge >= 0 and combat.can_move_now(int(d.id)):
 		var t := "%s -- about to be hit. Move to %s (press %s)" % [
 			_incoming(d), Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
 		return t + ("   " + kill + "." if kill != "" else ".")
@@ -1107,7 +1108,7 @@ func player_move(station: int) -> bool:
 		var d = combat.divers[selected]
 		if not combat.station_open(station): refusal = "%s is not open here" % Combat.STATION_NAMES[station]
 		elif d.station == station: refusal = "%s is already at %s" % [d.dname, Combat.STATION_NAMES[station]]
-		elif combat.air < Combat.MOVE_COST: refusal = "not enough air to move"
+		elif not combat.can_move_now(selected): refusal = "the free move is spent and there is no air for another"
 		else: refusal = "that move is not available"
 	_refresh()
 	return ok
@@ -1588,7 +1589,7 @@ func _draw_affordances() -> void:
 	var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 	draw_arc(foot + Vector2(0, 4), 26.0 + 3.0 * t, 0, TAU, 30, Color(0.95, 0.85, 0.45, 0.65 + 0.3 * t), 3.0)
 	# 2. where they can go: a breathing dashed halo on every legal move
-	if combat.air >= Combat.MOVE_COST:
+	if combat.can_move_now(selected):
 		for st in combat.OPEN_STATIONS:
 			if int(st) == int(d.station):
 				continue

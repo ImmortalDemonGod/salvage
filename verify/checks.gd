@@ -131,7 +131,22 @@ func check_station_design() -> void:
 				% [String(key), safe])
 
 func check_stations(n: int, enc_id := "crab") -> void:
-	var OPEN: Array = Combat.new(enc_id).OPEN_STATIONS
+	var probe := Combat.new(enc_id)
+	var OPEN: Array = probe.OPEN_STATIONS
+	# An encounter may declare ONE station a refuge: a place that exists to
+	# be safe, not to act from. The judge is deliberately HP-averse and
+	# per-action myopic, so it cannot price pure safety and a refuge will
+	# read dead in its hands; a human under pressure is who a refuge is
+	# for. The declaration is not free: the refuge must never appear in an
+	# attack arc (hunts included, which can aim anywhere), and there must
+	# be observed turns where it is the ONLY safe ground, or it is a dead
+	# station wearing a name.
+	var refuge := int(probe.enc.get("refuge", -1))
+	var refuge_in_arc := false
+	for a0 in probe.enc.attacks:
+		if bool(a0.get("hunts", false)) or (refuge in (a0.get("stations", []) as Array)):
+			refuge_in_arc = true
+	var refuge_needed := false
 	var occ := [0, 0, 0, 0, 0]
 	var total := 0
 	for s in range(n):
@@ -139,6 +154,14 @@ func check_stations(n: int, enc_id := "crab") -> void:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = s
 		while c.outcome == "ongoing" and c.turn <= 40:
+			if refuge >= 0 and not refuge_needed:
+				var th: Array = c.threatened_stations()
+				var all_others := true
+				for st0 in OPEN:
+					if int(st0) != refuge and not (int(st0) in th):
+						all_others = false
+				if all_others:
+					refuge_needed = true
 			var guard := 0
 			while guard < 12:
 				guard += 1
@@ -159,7 +182,10 @@ func check_stations(n: int, enc_id := "crab") -> void:
 		if not open_here:
 			continue
 		if pct == 0.0:
-			fail("DEAD STATION in %s: %s is never occupied in optimal play" % [enc_id, Combat.STATION_NAMES[i]])
+			if i == refuge and refuge_needed and not refuge_in_arc:
+				pass # a valid refuge: never in an arc, and sometimes the only safe ground
+			else:
+				fail("DEAD STATION in %s: %s is never occupied in optimal play" % [enc_id, Combat.STATION_NAMES[i]])
 		if pct > 60.0 and OPEN.size() > 1:
 			fail("DOMINANT STATION in %s: %s occupied %.1f%% of the time; positioning is theatre" % [enc_id, Combat.STATION_NAMES[i], pct])
 	print("stations %-9s " % enc_id + "  ".join(parts))

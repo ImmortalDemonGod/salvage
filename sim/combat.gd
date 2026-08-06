@@ -83,6 +83,33 @@ var outcome := "ongoing"      # ongoing | victory | defeat
 var log_lines: Array = []
 var _rotation := 0            # deterministic enemy cycle
 var overdrafted := false      # the valve opens once per turn, not endlessly
+# The Aug 6 evening ruling: each diver's FIRST move of a turn is free, and
+# the shared tank pays for abilities only. Three playtests converged on the
+# same wall: move-both-then-strike-both cost 5 against a 4-air tank, so the
+# squad turn the player kept reaching for was illegal, and the cheapest
+# line left was mashing one diver. Extra moves past the first still cost.
+var _moved: Dictionary = {}   # diver index -> true once the free move is spent
+# Desperation is a valve, not an engine. Unlimited, the masher gate showed
+# a squad HP-burning through the dredge in four turns, faster than the
+# judge plays it; capped per TURN it still sustained an alpha-strike every
+# round. One push past the empty tank per diver per FIGHT keeps
+# Glass_Goat's rule (you may always act, at a cost you choose) as the
+# dramatic moment it reads as, not a renewable resource. The judges never
+# desperate at all, so this prices exactly one policy: the masher's.
+var _desperate: Dictionary = {}  # diver index -> true once the fight's one push is spent
+# The ramp: a limb flagged "ramp" grows 1 announced damage every time it
+# actually swings un-prevented. The first escalation in the game, SPEC
+# 2.4's open question answered small: a break or a shut is how you stop
+# the number climbing, so attack-only play races a clock it always loses.
+# Deterministic and printed in the telegraph like everything else.
+var _ramp: Dictionary = {}       # limb index -> accumulated bonus damage
+# A shut does not hold the same limb two turns running: the drum's charge
+# rebuilds. Without this one diver parked at range CC-locked the whole
+# final fight by re-shutting the same limb forever, and the masher gate
+# proved the dumbest policy could not lose. Immunity lasts exactly the
+# player turn after the stun expires, printed nowhere as a number: the
+# rule is one sentence and the telegraph shows the consequence.
+var _no_reshut: Dictionary = {}  # limb index -> true while a re-shut will not hold
 # STUN: a limb that is stunned does not attack on its next turn. Chosen
 # because it is deterministic (Q1 forbids hidden rolls) and because it makes
 # the telegraph ACTIONABLE: you see the jaw winding up and you shut it. That
@@ -215,7 +242,36 @@ func intent() -> Dictionary:
 	return {} if locked.is_empty() else locked[0]
 
 func _lock_intent() -> void:
-	locked = live_attacks().duplicate()
+	# A hunting arc aims where divers actually stand. Free moves (the Aug 6
+	# ruling) made repositioning cheap enough that optimal play camped one
+	# station and abandoned others, which the station-health checks caught
+	# the same hour. A hunt re-prices camping without re-pricing movement:
+	# it locks onto the occupied station nearest the limb's own, a full
+	# turn ahead, printed in the telegraph like every other arc. Moving
+	# after the announcement IS the counterplay. The back line is out of a
+	# hunt's reach; standing back is the point of the back line.
+	locked = []
+	for a in live_attacks():
+		var b: Dictionary = a.duplicate()
+		if bool(b.get("hunts", false)):
+			b.stations = [_hunt_station(int(b.limb))]
+		var bonus := int(_ramp.get(int(b.limb), 0))
+		if bonus > 0:
+			b.dmg = int(b.dmg) + bonus
+		locked.append(b)
+
+func _hunt_station(limb: int) -> int:
+	var home := int((enc.limbs[limb] as Dictionary).station)
+	var best := -1
+	var best_d := 999
+	for d in divers:
+		if d.down or int(d.station) == BACKLINE:
+			continue
+		var dist: int = abs(int(d.station) - home)
+		if dist < best_d or (dist == best_d and int(d.station) < best):
+			best_d = dist
+			best = int(d.station)
+	return best if best >= 0 else home
 
 func air_this_turn() -> int:
 	return max(0, int(TUNE.air) - air_penalty)
@@ -285,9 +341,10 @@ func can_attack(d) -> bool:
 func target_limb(d) -> int:
 	if d.disables and d.station == BACKLINE:
 		# from range the drum shuts down whichever announced limb is not
-		# already down: the first one still able to swing
+		# already down: the first one still able to swing and able to be
+		# gripped (a limb shut last turn will not hold again yet)
 		for it in locked:
-			if int(limb_stun[int(it.limb)]) <= 0 and not limb_broken[int(it.limb)]:
+			if can_shut(int(it.limb)):
 				return int(it.limb)
 		return -1
 	return int(STATION_LIMB[d.station])
@@ -367,8 +424,11 @@ func act_ability(i: int, slot: int) -> bool:
 	# diver instead of the tank. It may never kill them outright -- that is
 	# a cost you choose, not a way to lose without meaning to.
 	if t == Tier.DESPERATE:
+		if _desperate.has(i):
+			return false
 		if int(eff.hp_cost) >= int(d.hp):
 			return false
+		_desperate[i] = true
 		d.hp -= int(eff.hp_cost)
 		air = 0
 		log_lines.append("%s pushes past the empty tank and takes %d for it" % [d.dname, int(eff.hp_cost)])
@@ -384,9 +444,11 @@ func act_ability(i: int, slot: int) -> bool:
 		log_lines.append("%s: %s on the %s" % [d.dname, String(ab.name), LIMB_NAMES[limb]])
 	match String(ab.kind):
 		"shut":
-			if not limb_broken[limb]:
+			if can_shut(limb):
 				limb_stun[limb] = int(eff.turns)
 				log_lines.append("the %s is shut down and will not swing" % LIMB_NAMES[limb])
+			elif not limb_broken[limb]:
+				log_lines.append("the drum cannot grip the %s again so soon" % LIMB_NAMES[limb])
 		"hit_and_step":
 			var n: Array = neighbours(d.station)
 			if not n.is_empty():
@@ -405,7 +467,13 @@ func act_ability(i: int, slot: int) -> bool:
 # a trait only bites once it is KNOWN, so reading a limb is what turns it
 # into an opportunity rather than a hidden dice roll
 func _after_trait(limb: int, dmg: int) -> int:
-	if dmg <= 0 or not known(limb):
+	# Traits are physical, not epistemic. Gated on known() they produced an
+	# absurdity the masher gate surfaced: reading a plated limb made your
+	# own hits WEAKER, so the optimal line was ignorance, and the masher
+	# was rewarded for never reading. The plate is there whether or not
+	# anyone looked at it. Reading is pure information: it tells you which
+	# limb to choose, which is Marc's Analyze as written.
+	if dmg <= 0:
 		return dmg
 	match trait_of(limb):
 		"brittle":
@@ -420,17 +488,18 @@ func _break_if_spent(limb: int) -> void:
 	limb_hp[limb] = 0
 	limb_broken[limb] = true
 	log_lines.append("the %s BREAKS" % LIMB_NAMES[limb])
-	# what breaking it was FOR, which is the whole point of choosing one
-	if known(limb):
-		match trait_of(limb):
-			"pressurised":
-				for o in range(limb_hp.size()):
-					if o != limb and not limb_broken[o]:
-						limb_stun[o] = max(int(limb_stun[o]), 1)
-				log_lines.append("the pressure blows out: every other limb is shut down and will not swing")
-			"leaking":
-				air += 2
-				log_lines.append("the line vents back into the tank: 2 air returned")
+	# what breaking it was FOR. Physical like the damage traits: the
+	# pressure vessel blows whether or not anyone read the label. Reading
+	# tells you it WILL happen, which is what makes choosing it a plan.
+	match trait_of(limb):
+		"pressurised":
+			for o in range(limb_hp.size()):
+				if o != limb and not limb_broken[o]:
+					limb_stun[o] = max(int(limb_stun[o]), 1)
+			log_lines.append("the pressure blows out: every other limb is shut down and will not swing")
+		"leaking":
+			air += 2
+			log_lines.append("the line vents back into the tank: 2 air returned")
 	_check_victory()
 
 func act_attack(i: int) -> bool:
@@ -468,6 +537,18 @@ func _legacy_attack(i: int) -> bool:
 func station_open(station: int) -> bool:
 	return station in OPEN_STATIONS
 
+# One source of truth for what the NEXT move costs this diver, so the UI,
+# the hints, the bots and the fuzz all read the same number.
+func move_cost(i: int) -> int:
+	return MOVE_COST if _moved.has(i) else 0
+
+func can_shut(limb: int) -> bool:
+	return limb >= 0 and not limb_broken[limb] and int(limb_stun[limb]) <= 0 \
+		and not _no_reshut.has(limb)
+
+func can_move_now(i: int) -> bool:
+	return move_cost(i) == 0 or afford(MOVE_COST)
+
 func act_move(i: int, station: int) -> bool:
 	# Validate BEFORE spending anything. The fuzz bot proved act_move(0, 5)
 	# put a diver on station 5, off a five-station board, and that a caller
@@ -477,11 +558,18 @@ func act_move(i: int, station: int) -> bool:
 	if not station_open(station):
 		return false
 	var d = divers[i]
-	if outcome != "ongoing" or d.down or not afford(MOVE_COST) or d.station == station:
+	if outcome != "ongoing" or d.down or d.station == station:
 		return false
-	air -= MOVE_COST
+	var cost := move_cost(i)
+	if cost > 0 and not afford(cost):
+		return false
+	if cost == 0:
+		_moved[i] = true
+		log_lines.append("%s moves to %s" % [d.dname, STATION_NAMES[station]])
+	else:
+		air -= cost
+		log_lines.append("%s spends a line of air and moves to %s" % [d.dname, STATION_NAMES[station]])
 	d.station = station
-	log_lines.append("%s moves to %s" % [d.dname, STATION_NAMES[station]])
 	return true
 
 # Glass_Goat's desperation valve, kept as one rule rather than a system.
@@ -512,6 +600,7 @@ func _check_victory() -> void:
 func end_turn() -> void:
 	if outcome != "ongoing":
 		return
+	_no_reshut.clear()  # last turn's re-shut immunity expires as the enemy acts
 	air_penalty = 0
 	var any_hit := false
 	var any_swing := false
@@ -522,6 +611,12 @@ func end_turn() -> void:
 			log_lines.append("the %s cannot swing" % LIMB_NAMES[a.limb])
 			continue
 		any_swing = true
+		if bool(a.get("ramp", false)) and int(_ramp.get(int(a.limb), 0)) < 3:
+			# bounded: +1 per un-prevented swing up to +3. Unbounded it
+			# stopped measuring pressure and started executing anyone who
+			# plays slowly, which is the casual band, not the masher.
+			_ramp[int(a.limb)] = int(_ramp.get(int(a.limb), 0)) + 1
+			log_lines.append("the %s runs hotter" % LIMB_NAMES[a.limb])
 		var hit := false
 		for d in divers:
 			if d.down:
@@ -549,8 +644,11 @@ func end_turn() -> void:
 	for i in range(limb_stun.size()):
 		if int(limb_stun[i]) > 0:
 			limb_stun[i] = int(limb_stun[i]) - 1
+			if int(limb_stun[i]) == 0:
+				_no_reshut[i] = true
 	turn += 1
 	overdrafted = false
+	_moved.clear()
 	air = air_this_turn()
 	_lock_intent()
 
@@ -575,4 +673,11 @@ func clone() -> Combat:
 	c.air = air; c.air_penalty = air_penalty; c.turn = turn
 	c.outcome = outcome; c._rotation = _rotation
 	c.overdrafted = overdrafted; c.locked = locked.duplicate()
+	c._moved = _moved.duplicate()
+	c._desperate = _desperate.duplicate()
+	c._ramp = _ramp.duplicate()
+	c._no_reshut = _no_reshut.duplicate()
+	# found while adding _moved: clones were losing their limb reads, so
+	# every searched line played with amnesia about traits it had paid for
+	c.analyzed = analyzed.duplicate()
 	return c

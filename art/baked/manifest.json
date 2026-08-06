@@ -1,0 +1,288 @@
+{
+  "background": "transparent",
+  "camera": {
+    "keep_aspect": "height",
+    "ortho_size_vertical_world_units": 3.922,
+    "position": [
+      0.0,
+      1.364,
+      8.40500736236572
+    ],
+    "projection": "orthographic",
+    "rotation_degrees": [
+      0,
+      180,
+      0
+    ],
+    "world_units_per_pixel": 0.0077
+  },
+  "clips": {
+    "proto5_attck1": {
+      "bone_motion_m": 16.383,
+      "character": "proto5",
+      "clip_length_s": 1.983,
+      "fps_sampled": 6.05,
+      "frame_count": 12,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_002|Proto5_Attck1",
+      "visible_rect_px": [
+        21,
+        15,
+        316,
+        427
+      ]
+    },
+    "proto5_attck2": {
+      "bone_motion_m": 25.084,
+      "character": "proto5",
+      "clip_length_s": 1.983,
+      "fps_sampled": 6.05,
+      "frame_count": 12,
+      "note": "squash-and-stretch peak extends above the frame and is cropped for a frame or two (deliberate: fitting it would shrink every character to ~130px)",
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_002|Proto5_Attck2",
+      "visible_rect_px": [
+        28,
+        0,
+        297,
+        446
+      ]
+    },
+    "proto5_damaged": {
+      "bone_motion_m": 7.593,
+      "character": "proto5",
+      "clip_length_s": 0.317,
+      "fps_sampled": 18.95,
+      "frame_count": 6,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_002|Proto5_damaged",
+      "visible_rect_px": [
+        84,
+        43,
+        186,
+        392
+      ]
+    },
+    "proto5_idle": {
+      "bone_motion_m": 0.694,
+      "character": "proto5",
+      "clip_length_s": 1.65,
+      "fps_sampled": 6.06,
+      "frame_count": 10,
+      "sampling": "loop (t=i/N*len)",
+      "source_clip": "rig_002|Proto5_Idle",
+      "visible_rect_px": [
+        81,
+        77,
+        193,
+        359
+      ]
+    },
+    "proto5_still": {
+      "bone_motion_m": 0.0,
+      "character": "proto5",
+      "clip_length_s": 0.001,
+      "fps_sampled": 2000.0,
+      "frame_count": 2,
+      "sampling": "loop (t=i/N*len)",
+      "source_clip": "rig_002|Proto5_Still",
+      "visible_rect_px": [
+        89,
+        66,
+        182,
+        369
+      ]
+    },
+    "proto5_t_pose": {
+      "bone_motion_m": 0.0,
+      "character": "proto5",
+      "clip_length_s": 0.001,
+      "fps_sampled": 2000.0,
+      "frame_count": 2,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_002|T_Pose",
+      "visible_rect_px": [
+        89,
+        66,
+        182,
+        369
+      ]
+    },
+    "prototype1_damaged": {
+      "bone_motion_m": 1.988,
+      "character": "prototype1",
+      "clip_length_s": 0.65,
+      "fps_sampled": 9.23,
+      "frame_count": 6,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_001|Prototype1_Damaged",
+      "visible_rect_px": [
+        126,
+        190,
+        142,
+        246
+      ]
+    },
+    "prototype1_dualpalm": {
+      "bone_motion_m": 7.046,
+      "character": "prototype1",
+      "clip_length_s": 1.65,
+      "fps_sampled": 6.06,
+      "frame_count": 10,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_001|Prototype1_DualPalm",
+      "visible_rect_px": [
+        55,
+        146,
+        234,
+        290
+      ]
+    },
+    "prototype1_idle1": {
+      "bone_motion_m": 0.373,
+      "character": "prototype1",
+      "clip_length_s": 1.65,
+      "fps_sampled": 6.06,
+      "frame_count": 10,
+      "sampling": "loop (t=i/N*len)",
+      "source_clip": "rig_001|Prototype1_Idle1",
+      "visible_rect_px": [
+        126,
+        187,
+        131,
+        252
+      ]
+    },
+    "prototype1_palm_strike": {
+      "bone_motion_m": 6.956,
+      "character": "prototype1",
+      "clip_length_s": 1.4,
+      "fps_sampled": 5.71,
+      "frame_count": 8,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_001|Prototype1_Palm_Strike",
+      "visible_rect_px": [
+        77,
+        182,
+        180,
+        254
+      ]
+    },
+    "prototype1_t_pose": {
+      "bone_motion_m": 0.0,
+      "character": "prototype1",
+      "clip_length_s": 0.001,
+      "fps_sampled": 2000.0,
+      "frame_count": 2,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig_001|T_Pose",
+      "visible_rect_px": [
+        126,
+        190,
+        131,
+        245
+      ]
+    },
+    "scuba_axe_kick": {
+      "bone_motion_m": 10.402,
+      "character": "scuba",
+      "clip_length_s": 1.65,
+      "fps_sampled": 6.06,
+      "frame_count": 10,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig|Scuba_Axe_Kick",
+      "visible_rect_px": [
+        106,
+        168,
+        139,
+        329
+      ]
+    },
+    "scuba_damaged1": {
+      "bone_motion_m": 3.549,
+      "character": "scuba",
+      "clip_length_s": 1.317,
+      "fps_sampled": 6.08,
+      "frame_count": 8,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig|Scuba_Damaged1",
+      "visible_rect_px": [
+        110,
+        183,
+        156,
+        314
+      ]
+    },
+    "scuba_double_knee": {
+      "bone_motion_m": 4.394,
+      "character": "scuba",
+      "clip_length_s": 0.983,
+      "fps_sampled": 6.1,
+      "frame_count": 6,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig|Scuba_Double_Knee",
+      "visible_rect_px": [
+        115,
+        183,
+        144,
+        314
+      ]
+    },
+    "scuba_idle1": {
+      "bone_motion_m": 0.269,
+      "character": "scuba",
+      "clip_length_s": 0.983,
+      "fps_sampled": 6.1,
+      "frame_count": 6,
+      "sampling": "loop (t=i/N*len)",
+      "source_clip": "rig|Scuba_Idle1",
+      "visible_rect_px": [
+        124,
+        181,
+        101,
+        316
+      ]
+    },
+    "scuba_idle_pose": {
+      "bone_motion_m": 0.0,
+      "character": "scuba",
+      "clip_length_s": 0.001,
+      "fps_sampled": 2000.0,
+      "frame_count": 2,
+      "sampling": "loop (t=i/N*len)",
+      "source_clip": "rig|Scuba_Idle_Pose",
+      "visible_rect_px": [
+        120,
+        183,
+        102,
+        314
+      ]
+    },
+    "scuba_t_pose": {
+      "bone_motion_m": 0.0,
+      "character": "scuba",
+      "clip_length_s": 0.001,
+      "fps_sampled": 2000.0,
+      "frame_count": 2,
+      "sampling": "oneshot (t=i/(N-1)*len)",
+      "source_clip": "rig|T_Pose",
+      "visible_rect_px": [
+        63,
+        178,
+        226,
+        258
+      ]
+    }
+  },
+  "floor_anchor_px": {
+    "x": 176.0,
+    "y": 434.1
+  },
+  "import_fps": 30,
+  "materials_note": "FBX ships no textures and flat 0.906 grey albedo on every material; frames are grey clay renders with shading only.",
+  "pixel_size": [
+    352,
+    512
+  ],
+  "source": "art/rigs/Main_Team_Rigging.fbx"
+}

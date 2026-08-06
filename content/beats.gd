@@ -30,9 +30,9 @@ static var LADDER := [
 		# the last prototype shipped.
 		# ALL TEXT PLACEHOLDER, for Marc.
 		"lines": [
-			{"role": "obstacle", "text": "(placeholder) The pump on this rig has four days left in it. When it stops, the rig floods, and we are standing on it."},
+			{"role": "obstacle", "text": "(placeholder) Every diver wants the same thing: to come back up. In four days there will be nothing to come back up to. The pump on this rig dies then, the rig floods, and we are standing on it."},
 			{"role": "who", "text": "(placeholder) There are three of us. Two borrowed suits, one set of scuba gear, and nobody left who is qualified."},
-			{"role": "want", "text": "(placeholder) The part that fixes it is in the city under us. The city has been under water for eleven years, and whatever got there first is still down there.\n\nWe go down."},
+			{"role": "want", "text": "(placeholder) The part that fixes it is in the city underneath us. The city has been under water for eleven years, and whatever got there first is still down there.\n\nWe go down. We come back up. That is the whole plan."},
 			# controls for THIS beat only. Combat keys are taught in `descent`,
 			# which is the beat that teaches the combat frame: telling a player
 			# how to end a turn before turns exist is the teach ladder broken
@@ -75,9 +75,9 @@ static var LADDER := [
 		"grants_ability": 2,
 		"built": true,
 		"lines": [
-			{"role": "who", "text": "(placeholder) Prototype1 comes down with you now, and it brings the drum."},
+			{"role": "who", "text": "(placeholder) The crab is dealt with and everyone came back up. That bought us a night on deck, and we spent it fitting the drum to Prototype1's suit."},
 			{"role": "want", "text": "(placeholder) Point the drum at whatever is winding up and it stops. It reaches from the back line, so you do not have to be in front of the thing to shut it."},
-			{"role": "want", "text": "(placeholder) You all came back, so there is time to work. Everyone learns a second way to use what they already carry: press F for it."},
+			{"role": "want", "text": "(placeholder) There was time to drill, too. Every diver now has a second use for what they already carry. The part is deeper than we got today, and the pump is not waiting. We go back down."},
 			{"role": "controls", "text": "ENTER to descend"},
 		],
 	},
@@ -95,6 +95,7 @@ static var LADDER := [
 		"encounter": "spitter",
 		"title": "the vent worm",
 		"teaches": "backline",
+		"parts": ["hunts"],
 		"uses": ["stations", "air", "limbs", "telegraph", "conditions", "backline"],
 		"built": true,
 		"expect": {"encounter": "spitter", "divers": 2, "open_stations": 4, "limbs": 3},
@@ -117,8 +118,8 @@ static var LADDER := [
 		"uses": ["goal", "stations", "air", "cost_tiers", "heavy_tier"],
 		"built": true,
 		"lines": [
-			{"role": "who", "text": "(placeholder) Proto5 comes down with you. Nobody has run the big suit this deep before."},
-			{"role": "want", "text": "(placeholder) It eats three lines of air every time it moves or swings, out of the four the pump gives you. Bring it and you are spending most of your turn on one diver."},
+			{"role": "who", "text": "(placeholder) The way to the part is open now, and it runs deep. What waits at the bottom is too big for the light gear alone. So today, for the first time, the big suit goes in the water."},
+			{"role": "want", "text": "(placeholder) Every diver moves once a turn for free. Swinging is what costs air, and one swing of the big suit takes three of the four lines the pump sends down. Bring it and most of the turn belongs to one diver."},
 			{"role": "controls", "text": "ENTER to descend"},
 		],
 	},
@@ -128,7 +129,7 @@ static var LADDER := [
 		"encounter": "dredge",
 		"title": "running on empty",
 		"teaches": "umbilical",
-		"parts": ["overdraft"],
+		"parts": ["overdraft", "ramp"],
 		"uses": ["goal", "stations", "air", "limbs", "telegraph", "cost_tiers", "heavy_tier", "conditions", "backline", "umbilical", "overdraft"],
 		"built": true,
 		"expect": {"encounter": "dredge", "divers": 3, "open_stations": 4, "limbs": 3},
@@ -145,4 +146,4 @@ static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
 
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
 	"telegraph", "cost_tiers", "heavy_tier", "water_level", "conditions", "backline",
-	"overdraft", "umbilical", "analyze"]
+	"overdraft", "umbilical", "analyze", "hunts", "ramp"]
