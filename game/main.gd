@@ -746,8 +746,8 @@ func _unhandled_input(e: InputEvent) -> void:
 # Everything here is read from the sim: the water heights are level_a() and
 # level_b(), the valve colours are valve[], and the door lights on solved().
 # Nothing is remembered by the player and nothing is remembered by the draw.
-const WATER := Color(0.20, 0.52, 0.62)
-const STEEL := Color(0.16, 0.24, 0.30)
+const WATER := Color(0.24, 0.66, 0.80)
+const STEEL := Color(0.045, 0.075, 0.105)
 const OPEN_C := Color(0.45, 0.78, 0.55)
 const SHUT_C := Color(0.72, 0.34, 0.28)
 
@@ -767,6 +767,13 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 	var h: float = tall * (float(filled) / float(max(1, cap)))
 	if h > 0.0:
 		draw_rect(Rect2(at + Vector2(0, tall - h), Vector2(wide, h)), WATER)
+		# a moving surface, so the level is unmistakably a level
+		var sy: float = at.y + tall - h
+		for i in range(14):
+			var x0: float = at.x + wide * float(i) / 14.0
+			var bob: float = sin(_clock * 2.2 + float(i) * 0.8) * 2.4
+			draw_line(Vector2(x0, sy + bob), Vector2(x0 + wide / 14.0, sy - bob),
+				Color(0.72, 0.94, 1.0, 0.85), 2.0)
 	draw_rect(Rect2(at, Vector2(wide, tall)), Color(0.55, 0.66, 0.74), false, 2.0)
 	# the graduations, so "2 of 3" is countable and not just a bar
 	for m in range(1, cap):
@@ -779,8 +786,16 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 func _door(at: Vector2, wide: float, is_open: bool) -> void:
 	var f: Font = ThemeDB.fallback_font
 	draw_rect(Rect2(at, Vector2(wide, 22)), OPEN_C if is_open else Color(0.30, 0.28, 0.24))
-	draw_string(f, at + Vector2(0, -12), "the way out" + ("  OPEN" if is_open else ""),
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.72, 0.74, 0.78))
+	# a dashed line across the chamber marking the height the water has to
+	# reach, so "fill it to the top" is a picture
+	for i in range(16):
+		if i % 2 == 1:
+			continue
+		var x0: float = at.x + wide * float(i) / 16.0
+		draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
+			Color(0.86, 0.78, 0.42, 0.75), 2.0)
+	draw_string(f, at + Vector2(0, -10), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.86, 0.78, 0.42))
 
 func _valve_pos(i: int) -> Vector2:
 	var p = run.puzzle
@@ -853,6 +868,10 @@ func _draw_lock(p) -> void:
 		draw_line(Vector2(ax + wide, pipe_y), Vector2(bx, pipe_y),
 			OPEN_C if p.valve[p.CROSS] else STEEL, 8.0)
 		_valve_dot(_valve_pos(p.CROSS), "4", p.valve[p.CROSS], p.reachable(p.CROSS))
+		for src in [[0, ax + 60.0], [1, ax + 170.0], [2, bx + 110.0]]:
+			var vp: Vector2 = _valve_pos(int(src[0]))
+			draw_line(vp + Vector2(0, -18), Vector2(float(src[1]), top + tall),
+				OPEN_C if p.valve[int(src[0])] else Color(0.22, 0.26, 0.30), 6.0)
 		_valve_dot(_valve_pos(0), "1", p.valve[0], true)
 		_valve_dot(_valve_pos(1), "2", p.valve[1], true)
 		_valve_dot(_valve_pos(2), "3", p.valve[2], true)
@@ -866,6 +885,10 @@ func _draw_lock(p) -> void:
 	_chamber(Vector2(x, top), wide, tall, p.level(), p.VALVES, "the chamber")
 	_door(Vector2(x, top - 30), wide, p.solved())
 	# two inlets you can always reach, and the seized one down at the floor
+	for src2 in [[0, x + 70.0], [1, x + 150.0]]:
+		var vp2: Vector2 = _valve_pos(int(src2[0]))
+		draw_line(vp2 + Vector2(0, -18), Vector2(float(src2[1]), top + tall),
+			OPEN_C if p.valve[int(src2[0])] else Color(0.22, 0.26, 0.30), 6.0)
 	_valve_dot(_valve_pos(0), "1", p.valve[0], p.reachable(0))
 	_valve_dot(_valve_pos(1), "2", p.valve[1], p.reachable(1))
 	_valve_dot(_valve_pos(p.SEIZED), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
