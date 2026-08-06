@@ -213,6 +213,12 @@ func _build_ui() -> void:
 	log_panel.name = "log_panel"
 	log_panel.size = Vector2(392, 118)
 	log_panel.position = Vector2(24, 396)
+	var lst := StyleBoxFlat.new()
+	lst.bg_color = Color(0.03, 0.09, 0.14, 0.92)
+	lst.border_color = Color(0.34, 0.52, 0.62, 0.85)
+	lst.set_border_width_all(1)
+	lst.set_corner_radius_all(3)
+	log_panel.add_theme_stylebox_override("panel", lst)
 	add_child(log_panel)
 	ui_log = Label.new()
 	ui_log.name = "label"
@@ -521,7 +527,14 @@ func _refresh() -> void:
 	# the party size is content, not a constant: fight one runs two divers.
 	# This loop assumed three and printed a raw format string on the third
 	# card, which the as-played capture caught on its first frame.
+	var live_cards := 0
+	for d0 in combat.divers:
+		live_cards += 1
+	var span: float = float(live_cards) * 392.0 + float(max(0, live_cards - 1)) * 14.0
+	var left: float = (DESIGN.x - span) * 0.5
 	for i in range(ui_divers.size()):
+		if i < live_cards:
+			ui_divers[i].position = Vector2(left + float(i) * 406.0, CARD_TOP)
 		var card: Panel = ui_divers[i]
 		if i >= combat.divers.size():
 			card.visible = false
@@ -824,7 +837,14 @@ func _draw_windup() -> void:
 				continue
 			var dst: Vector2 = place(int(st))
 			var dir: Vector2 = (dst - src)
-			if dir.length() < 1.0:
+			if dir.length() < 6.0:
+				# it bites where it stands: ring the station instead
+				var rr: float = 56.0 + 5.0 * pulse
+				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
+				draw_circle(dst + Vector2(0, -rr - 4.0), 15.0, Color(0.10, 0.05, 0.06, 0.92))
+				draw_arc(dst + Vector2(0, -rr - 4.0), 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
+				draw_string(f, dst + Vector2(-6, -rr + 3.0), str(int(it.dmg)),
+					HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 				continue
 			var n: Vector2 = dir.normalized()
 			var a: Vector2 = src + n * 30.0
