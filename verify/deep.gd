@@ -203,6 +203,51 @@ func play(c: Combat, policy: String, rng: RandomNumberGenerator) -> Dictionary:
 		hp += d.max_hp - d.hp
 	return {"win": c.outcome == "victory", "hp": hp}
 
+# SPEC 4.1: "G11 becomes exact. The taught line's distance from optimal is a
+# number." It was greedy-versus-naive on one encounter, which is a
+# comparison of two heuristics, not a distance from optimal. A fidelity
+# round caught it (M8). Now that a real depth-limited search exists, the
+# distance can actually be measured.
+func check_taught_distance(states: int) -> void:
+	var worst := 0.0
+	var total := 0.0
+	var checked := 0
+	for key in Encounters.ALL.keys():
+		if bool((Encounters.ALL[key] as Dictionary).get("teaching", false)):
+			continue
+		_memo.clear()
+		var rng := RandomNumberGenerator.new()
+		for s in range(states):
+			rng.seed = s
+			var c := Combat.new(String(key))
+			for _i in range(s % 7):
+				var a: Dictionary = Bots.casual(c, rng)
+				if a.is_empty() or not Bots.apply(c, a):
+					c.end_turn()
+				if c.outcome != "ongoing":
+					break
+			if c.outcome != "ongoing":
+				continue
+			# what the best line is worth from here
+			var best: float = value(c, DEPTH, rng)
+			# what the TAUGHT line is worth: take the greedy action, then
+			# play on optimally
+			var t: Combat = c.clone()
+			var taught_a: Dictionary = Bots.greedy(t, rng)
+			if taught_a.is_empty() or not Bots.apply(t, taught_a):
+				continue
+			var got: float = value(t, DEPTH - 1, rng)
+			var gap: float = best - got
+			checked += 1
+			total += gap
+			worst = max(worst, gap)
+	var mean: float = total / float(max(1, checked))
+	print("G11 taught  %d states: mean distance from optimal %.2f, worst %.2f" % [checked, mean, worst])
+	# The taught line does not have to BE optimal, but it must not be far
+	# from it, or the game is teaching a losing habit.
+	if mean > 2.0:
+		sig("TAUGHT LINE DRIFTS: following what the game teaches costs %.2f value per decision against optimal play" % mean)
+
 func check_taught(n: int) -> void:
 	var tw := 0
 	var nw := 0
@@ -304,6 +349,7 @@ func _init() -> void:
 		check_dominance(n, String(k))
 	check_dominance_verdict()
 	check_taught(400)
+	check_taught_distance(60)
 	# bypass: honestly unverifiable with one beat, and a vacuous green is
 	# worse than an honest red (PROGRESS gate rules)
 	var unverified: Array = []

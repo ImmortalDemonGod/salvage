@@ -340,7 +340,7 @@ Every claim carries its instrument. Reproduce the fast set with
 | **G8 FIDELITY** | GREEN on the HIGHs, MED and LOW open | An adversarial round briefed "prove this does NOT match the spec" returned **13 HIGH, 9 MED, 4 LOW**. Every HIGH is fixed or ruled; see below. The reviewer also positively verified determinism (zero RNG anywhere in `sim/` or `content/`), the parking lot (no stamina, song, verse, relic, inventory, banking or mid-dive healing), and a dozen decided rules |
 | **G9 THIS REPORT** | GREEN | Every row above cites its instrument |
 | **G10 LEGIBILITY** | GREEN on the diff | Three blind cold reads. First: 6 of 7 combat questions CANNOT TELL, no enemy HP anywhere on screen. Third: win condition, move cost, diver damage, limb maxima and occupancy all TOLD. Scored on the diff, per protocol |
-| **G11 TAUGHT LINE** | GREEN | taught 100% win / 10.0 HP lost vs naive 0% win / 8.0 HP. The taught line wins |
+| **G11 TAUGHT LINE** | GREEN, and now EXACT | Two measurements. Comparative: taught 100% win / 14.0 HP lost vs naive 0% win. And the one SPEC 4.1 actually asks for, which a fidelity round found missing: the taught line's **distance from optimal**, measured against the depth-limited search over 156 reachable states, mean **1.43**, worst 9.00, against a threshold of 2.0 |
 | **G12 BYPASS** | GREEN | 8 built beats, 0 skippable without completing them. A ruling, not a deferral |
 | **G13 PILLAR** | GREEN | Generated matrix over 4 combat beats. Two mechanics introduced in the final beat are NOTED as unable to escalate in a slice this short: ruled, not deferred |
 | **G14 HARNESS FIDELITY** | GREEN | sim is `RefCounted` with no Node; differential drives one script down the bot path and the keyboard path with identical state, every commit |
