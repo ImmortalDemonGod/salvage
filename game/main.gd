@@ -273,7 +273,8 @@ func _refresh() -> void:
 	for i in range(5):
 		if combat.station_open(i):
 			moves.append("%s=%s" % [keys[i], Combat.STATION_NAMES[i]])
-	ui_help.text += "1-%d pick a diver  ·  move (1 air): %s  ·  SPACE attack from where you stand  ·  ENTER end turn" % [combat.divers.size(), "  ".join(moves)]
+	var pick := "1 diver only" if combat.divers.size() == 1 else "1-%d pick a diver" % combat.divers.size()
+	ui_help.text += "%s  ·  move (1 air): %s  ·  SPACE attack from where you stand  ·  ENTER end turn" % [pick, "  ".join(moves)]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
@@ -349,7 +350,11 @@ func _unhandled_input(e: InputEvent) -> void:
 				player_end_turn()
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, DESIGN), Color(0.04, 0.11, 0.16))
+	# Paint the ACTUAL rect, not the design size. With stretch/expand the
+	# viewport grows past 720 and anything beyond it was left unpainted,
+	# which is the flat grey band a visual reviewer flagged as the game
+	# failing to fill its window.
+	draw_rect(Rect2(Vector2.ZERO, size.max(DESIGN)), Color(0.04, 0.11, 0.16))
 	# station rings: red while the limb they expose is live, teal once it is
 	# broken or absent. This is the map changing, drawn.
 	if combat == null:
