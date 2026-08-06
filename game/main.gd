@@ -42,6 +42,7 @@ var ui_air: Label
 var ui_tanks: Array = []
 var ui_log: Label
 var ui_step: Label
+var ui_won: Label
 var ui_intent: Label
 var ui_help: Label
 var ui_scene: Label
@@ -322,6 +323,21 @@ func _build_ui() -> void:
 	help_panel.add_theme_stylebox_override("panel", skin_quiet())
 	_rivet(help_panel)
 	add_child(help_panel)
+	var won_panel := Panel.new()
+	won_panel.name = "won_panel"
+	won_panel.size = Vector2(620, 66)
+	won_panel.position = Vector2(330, 300)
+	won_panel.add_theme_stylebox_override("panel", skin_primary())
+	_rivet(won_panel)
+	add_child(won_panel)
+	ui_won = Label.new()
+	ui_won.name = "label"
+	ui_won.set_anchors_preset(Control.PRESET_FULL_RECT)
+	ui_won.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ui_won.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ui_won.add_theme_font_size_override("font_size", 26)
+	ui_won.add_theme_color_override("font_color", BRASS_LIT)
+	won_panel.add_child(ui_won)
 	var step_panel := Panel.new()
 	step_panel.name = "step_panel"
 	step_panel.size = Vector2(1220, 40)
@@ -521,6 +537,7 @@ func _process(dt: float) -> void:
 		_hold -= dt
 		if _hold <= 0.0:
 			_won = ""
+			_refresh()
 	# the board breathes even when nothing is happening, so a turn spent
 	# thinking is not a still image
 	queue_redraw()
@@ -620,6 +637,9 @@ func _auto_select() -> void:
 
 func _refresh() -> void:
 	_auto_select()
+	if ui_won != null:
+		ui_won.text = _won
+		ui_won.get_parent().visible = _won != ""
 	_stamp_title()
 	_voice()
 	_recent()
@@ -1335,21 +1355,6 @@ func _click(at: Vector2) -> void:
 	# anywhere on the creature means hit what you are standing next to
 	player_ability(0)
 
-func _draw_banner() -> void:
-	var f: Font = ThemeDB.fallback_font
-	var w: Vector2 = size.max(DESIGN)
-	var a: float = clampf(_hold / 0.9, 0.0, 1.0)
-	var wide := 560.0
-	var at := Vector2(w.x * 0.5 - wide * 0.5, 224.0)
-	draw_rect(Rect2(at, Vector2(wide, 62)), Color(PLATE.r, PLATE.g, PLATE.b, 0.95 * a))
-	draw_rect(Rect2(at, Vector2(wide, 62)), Color(BRASS.r, BRASS.g, BRASS.b, a), false, 2.0)
-	for c in [at + Vector2(8, 8), at + Vector2(wide - 13, 8),
-			at + Vector2(8, 49), at + Vector2(wide - 13, 49)]:
-		draw_rect(Rect2(c, Vector2(5, 5)), Color(RIVET.r, RIVET.g, RIVET.b, a))
-	draw_string(f, at + Vector2(0, 40), _won, HORIZONTAL_ALIGNMENT_CENTER, wide, 24,
-		Color(BRASS_LIT.r, BRASS_LIT.g, BRASS_LIT.b, a))
-
-# who is standing here, said the same way everywhere
 func here_free(st: int) -> String:
 	for d in combat.divers:
 		if not d.down and int(d.station) == st:
@@ -1379,8 +1384,7 @@ func _draw() -> void:
 	if run != null and run.finished:
 		_draw_ending()
 		return
-	if _won != "" and combat == null:
-		_draw_banner()
+
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
 		return
@@ -1475,8 +1479,6 @@ func _draw() -> void:
 		if d.down:
 			continue
 		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
-	if _won != "":
-		_draw_banner()
 	_draw_windup()
 	_draw_bars()
 	_draw_fx()
