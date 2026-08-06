@@ -32,7 +32,7 @@ const errors = [], failed = [];
 page.on("pageerror", e => errors.push(String(e).slice(0,200)));
 page.on("requestfailed", r => failed.push(r.url().split("/").pop() + " :: " + (r.failure()?.errorText ?? "?")));
 page.on("response", r => { if (r.status() >= 400) failed.push(r.url().split("/").pop() + " :: HTTP " + r.status()); });
-await page.goto("https://immortaldemongod.github.io/salvage/", { waitUntil: "load", timeout: 90000 });
+await page.goto("https://salvage-chi.vercel.app/", { waitUntil: "load", timeout: 90000 });
 await page.waitForTimeout(20000);
 const title = await page.title();
 // press ENTER twice and see whether the build advances, which only works if it is really running
@@ -44,7 +44,12 @@ const title = await page.title();
 await page.mouse.click(640, 520);
 await page.waitForTimeout(1500);
 const clicked = await page.title();
-await page.keyboard.press("Enter"); await page.waitForTimeout(1200);
+// keys, where they have an observable effect: three SPACEs kill the
+// descent's single 6hp limb and the run advances. ENTER during a fight
+// only ends a turn, which is why the first version of this check reported
+// the keyboard broken while the keyboard was fine.
+for (let i = 0; i < 4; i++) { await page.keyboard.press("Space"); await page.waitForTimeout(700); }
+await page.waitForTimeout(2200);
 const after = await page.title();
 await page.screenshot({ path: "/tmp/live-boot.png" });
 console.log("TITLE AT BOOT : " + title);

@@ -547,8 +547,6 @@ func _draw_ending() -> void:
 	var lost := int(run.salvage_lost)
 	var head := "THE PUMP TURNS OVER" if lost == 0 else "THE PUMP TURNS OVER, BARELY"
 	draw_string(f, Vector2(cx, y), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.86, 0.93, 0.96))
-	draw_string(f, Vector2(cx, y + 46), "placeholder copy, for Marc",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
 	var rows: Array = [
 		"dives cleared        %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
 		"salvage lost         %d" % lost,
@@ -559,8 +557,8 @@ func _draw_ending() -> void:
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Color(0.78, 0.86, 0.90))
 	draw_string(f, Vector2(cx, y + 232), "SALVAGE   a Team Ratateam prototype",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(0.66, 0.78, 0.84))
-	draw_string(f, Vector2(cx, y + 262), "art Glass_Goat   ·   words Marc   ·   placeholder art and copy throughout",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.55, 0.64, 0.70))
+	draw_string(f, Vector2(cx, y + 262), "art Glass_Goat   ·   words Marc",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.66, 0.74, 0.80))
 
 func _next_step() -> String:
 	if run.puzzle != null:
@@ -783,8 +781,6 @@ func _refresh() -> void:
 		ui_help.add_theme_color_override("font_color", BRASS_LIT)
 		hp3.add_theme_stylebox_override("panel", skin_primary())
 		ui_scene.text = "\n\n".join(body)
-		if marked:
-			ui_scene.text += "\n\n                                                          placeholder · Marc"
 		ui_scene.get_parent().visible = body.size() > 0
 		ui_help.text = controls
 		queue_redraw()
