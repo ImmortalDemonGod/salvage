@@ -127,6 +127,9 @@ func expect_move(c: Combat, i: int, s: int) -> bool:
 	# scanner in fight two.
 	if not (s in c.OPEN_STATIONS):
 		return false
+	for o in c.divers:
+		if not o.down and int(o.station) == s:
+			return false
 	return int(d.station) != s
 
 # `used` is the fuzzer's OWN count of overdrafts accepted since the last

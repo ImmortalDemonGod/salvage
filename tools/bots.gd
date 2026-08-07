@@ -18,7 +18,13 @@ static func legal(c: Combat) -> Array:
 			out.append({"kind": "analyze", "i": d.id})
 		if c.can_move_now(d.id):
 			for s in c.OPEN_STATIONS:
-				if s != d.station:
+				if s == d.station:
+					continue
+				var busy := false
+				for o in c.divers:
+					if not o.down and int(o.station) == int(s):
+						busy = true
+				if not busy:
 					out.append({"kind": "move", "i": d.id, "s": int(s)})
 	return out
 

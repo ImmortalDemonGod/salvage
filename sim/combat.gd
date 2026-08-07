@@ -600,6 +600,14 @@ func act_move(i: int, station: int) -> bool:
 	var d = divers[i]
 	if outcome != "ongoing" or d.down or d.station == station:
 		return false
+	# one diver per station. The sim never enforced what every other
+	# layer assumed: the halos skip busy stations, the hints never name
+	# them, the station checks count occupancy singly, and yet a slip
+	# could legally stack two divers under one swing. The artist's
+	# select-versus-move confusion made it reachable in one mis-click.
+	for o in divers:
+		if not o.down and int(o.station) == station:
+			return false
 	var cost := move_cost(i)
 	if cost > 0 and not afford(cost):
 		return false
