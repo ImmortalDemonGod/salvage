@@ -801,6 +801,67 @@ the crab at turn 7. The taught line sits 1.62 from optimal against a
 hudbudget, teach, pillar, hint, door, audio, layout, fuzz,
 differential. G5-HUMAN remains the only open gate, as it must.
 
+## The reopening: the stop gate is not the deadline
+
+The user asked, an hour after the "close": did you cold-read every
+final screen, is the rig used fully, do transitions actually appear,
+is the color language consistent, can the whole game be finished by
+mouse alone, do enemies have attack animations. The honest answer to
+each was no or unverified, and the block had hours left. Reopened.
+
+What the reopened hours found and fixed, each by instrument:
+
+- **Thirteen cold reads of the final gallery** (one agent per shot,
+  never seen the game) found the occlusion diet had HIDDEN the
+  continue button on every story screen and the ending; chips floating
+  over sprites reading as the player's own bar; the UNDER sprite
+  standing on the creature's back; prompts naming stations no label
+  showed; the puzzle handing out its own solution; token soup ([A]?,
+  the > cursor, cards restating the board). All fixed: chips are
+  labeled ground plates (beside the ring at belly stations, where
+  under it there is no legal room), prompts point by GLOWING the
+  plate, the puzzle coaches the goal and rescues the stuck, valves
+  spin gold while open, roster rows are terse.
+- **verify/mouserun.mjs**, the mouse-only completion gate, found four
+  real defects on its way to green: a solved lock had no mouse exit;
+  clicking the creature MOVED you (UNDER's ring radius covered the
+  belly); the selected diver's body shadowed the attack path; belly
+  plates slid out of reach. All fixed in the game, not the driver.
+  Green: opening to ending, clicks only, 143s, in the suite as a
+  standalone instrument.
+- **The transition photograph** (a gallery shot 1200ms inside the
+  overlay) proved the between-beat descent had only ever drawn over
+  fights: scene, puzzle and ending branches returned early, so half
+  the game's transitions never rendered for anybody. Both playtests
+  reported exactly this and the fix was invisible until the gallery
+  photographed the overlay itself. It covers every doorway now, says
+  SURFACING when the destination is the boat, and fades at the real
+  duration.
+- Enemy attacks gained six procedural strike signatures (clap, swipe,
+  cone, slam, surge, bolt) keyed by the verbs the sim already prints;
+  the worm left the ally color family; the deck interludes are lit
+  tableaus at stage scale with the squad grounded ON the deck; the
+  descent overlay is a rig-driven cutscene (squad sinking in their own
+  bodies, lamp cones on).
+
+### Standing rule 33
+
+**A stop gate met early does not end a time-boxed block.** The formal
+gate (dry passes) measures the search's blindness, not the screen's
+truth; the hours between gate-met and deadline belong to raising the
+bar, and the bar-raiser is the question bank below.
+
+### The QA question bank (answer with evidence, every block)
+
+Did a fresh eye cold-read every final screen? Is every asset used to
+its potential (the rig sat unused for a day once)? Do transitions
+actually render, photographed mid-play? Is the color language one
+reservation system with no dual-job hues? Can the run be completed by
+mouse alone, gate-proven? Do enemies and players both have visible,
+distinct attack presentations? Does every text element on every screen
+either earn its place or name the visual that should replace it? What
+question is missing from this list, and who is generating it?
+
 ## The presentation pass
 
 The run met its stopping condition at 04:54 and the very next commit was
