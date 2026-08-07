@@ -851,6 +851,26 @@ gate (dry passes) measures the search's blindness, not the screen's
 truth; the hours between gate-met and deadline belong to raising the
 bar, and the bar-raiser is the question bank below.
 
+### The majors round (after the blockers)
+
+Deep 56 dry on the reopened work. Then, each verified by regenerated
+gallery: the divers answer to callsigns (Scuba, Drum, Brass;
+placeholder for Marc) and the heavy's swings have names, with the
+clip mapping preserved and every band identical; the trait a read
+discovers rides its own limb's chip (x2, armor, +2 air, bursts) and
+the far-corner panel retired; telegraph arcs at real stroke weight;
+the drowned city has rooflines, antennae, dead windows and kelp
+instead of greybox; teach rows cap before the banner; the puzzle goal
+panel sits below its wheels. A second thirteen-reader cold-read round
+runs against the fixed gallery to confirm the blockers died rather
+than believing they did.
+
+Deferred to Glass_Goat with reasons: the opening strip's model
+artifacts (the unclothed scuba model, the ring and frame accessories
+reading as broken sprites at deck scale) are the rig's own geometry,
+not presentation; enemy clips remain the top art dependency
+(procedural strike signatures stand in).
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
