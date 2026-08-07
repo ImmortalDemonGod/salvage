@@ -158,7 +158,14 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 	var kits := [
 		# Double Knee trades nothing for the step: at 1 damage against Axe
 		# Kick's 2 it was strictly worse whenever you did not want to move.
-		[{"name": "Axe Kick", "dmg": 2, "kind": "hit"},
+		# SPEC 2.9 verbatim: Axe Kick "knocks the target limb's guard
+		# open, or shoves an enemy part". Shipped as a plain hit and the
+		# audit called the reversal out; built as written now. The shove
+		# re-aims the limb's ANNOUNCED swing to its own station, so the
+		# telegraph changes in front of you and where the attack lands is
+		# something you steer. Displacement, the genre's biggest source of
+		# non-damage variety, at zero state-space cost.
+		[{"name": "Axe Kick", "dmg": 2, "kind": "hit_shove"},
 		 {"name": "Double Knee", "dmg": 2, "kind": "hit_and_step"}],
 		[{"name": "Palm Strike", "dmg": 2, "kind": "shut", "turns": 1},
 		 {"name": "Dual Palm", "dmg": 0, "kind": "shut", "turns": 2}],
@@ -443,6 +450,15 @@ func act_ability(i: int, slot: int) -> bool:
 	else:
 		log_lines.append("%s: %s on the %s" % [d.dname, String(ab.name), LIMB_NAMES[limb]])
 	match String(ab.kind):
+		"hit_shove":
+			for a2 in locked:
+				if int(a2.limb) == limb and not limb_broken[limb]:
+					var home := int((enc.limbs[limb] as Dictionary).station)
+					if a2.stations != [home]:
+						a2.stations = [home]
+						a2.hunts = false
+						log_lines.append("the %s is knocked around: its swing re-aims at %s" % [
+							LIMB_NAMES[limb], STATION_NAMES[home]])
 		"shut":
 			if can_shut(limb):
 				limb_stun[limb] = int(eff.turns)

@@ -753,9 +753,21 @@ gallery's 800-tall captures. New gate verify/hudbudget.gd: HUD may
 cover at most 33%% of a fight screen (was 47-50, now 24-28) and 72
 sampled points on the creature's body must be under no panel.
 
-Remaining: P1 undo, P1 tutorial fight, P1 transitions/win moments,
-P2 imports (displacement, salvage on the board, valve flow), aspect
-clamp for wide windows, deep passes.
+**P1 rewind, tutorial, transitions, F-lesson, water flow, aspect,
+wide capture: ALL LANDED** (commits e581c28 through the evening; see
+log). Deep pass 50 caught the trait ontology killing analyze (fixed by
+the physical/aimed split), the judge mispricing free dodges (priced by
+the announced number, capped after a dodge-thrash), and its own
+per-diver over-split of the analyze action. Pass 51: DRY, streak 1
+of 3.
+
+**P2 displacement: LANDED.** Axe Kick is SPEC 2.9's shove now: the
+struck limb's announced swing re-aims to its home station, hunts
+included, the telegraph updates in front of you. Judge prices steered
+damage like prevention; bands re-measured in band (65.0/71.8/67.1).
+
+Remaining: salvage on the board (P2, optional by rulings), two more
+dry deep passes, and G5-HUMAN, which only a person can close.
 
 ## The presentation pass
 

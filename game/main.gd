@@ -602,6 +602,11 @@ func _motion(lines: Array, from: int) -> void:
 						if line.find(String(ab.name)) >= 0:
 							kind = String(ab.kind)
 					match kind:
+						"hit_shove":
+							# the strike carries THROUGH: the limb is sent
+							# back the way the kick travels
+							fx.add("lunge", 0.46, a, tgt, "", DEALT, who)
+							fx.add("flash", 0.5, tgt + (tgt - a).normalized() * 26.0, Vector2.ZERO, "", DEALT, -1, lb)
 						"hit_and_step":
 							# it hits and then moves: a long committed lunge
 							fx.add("lunge", 0.52, a, tgt, "", DEALT, who)
@@ -1349,6 +1354,7 @@ func bar_buttons() -> Array:
 		var what := ""
 		match String(ab.kind):
 			"hit": what = "%d dmg" % int(eff.dmg)
+			"hit_shove": what = "%d dmg, re-aims its swing home" % int(eff.dmg)
 			"hit_and_step": what = "%d dmg, then step free" % int(eff.dmg)
 			"hit_wide": what = "%d dmg, spills to both sides" % int(eff.dmg)
 			"shut": what = "shuts the limb %d turn%s" % [int(eff.turns), "" if int(eff.turns) == 1 else "s"]

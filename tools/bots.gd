@@ -107,6 +107,18 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 				continue
 			var adm: int = int(ab.dmg)
 			score = float(min(adm, c.limb_hp[limb])) / float(d.cost)
+			if String(ab.kind) == "hit_shove" and limb >= 0:
+				# a shove is worth the damage it steers off occupied ground,
+				# priced like the shut and below parity for the same reason
+				for it in all_intents:
+					if int(it.limb) != limb:
+						continue
+					var home3 := int((c.enc.limbs[limb] as Dictionary).station)
+					var steered := 0
+					for dd in c.divers:
+						if not dd.down and int(dd.station) in it.stations and int(dd.station) != home3:
+							steered += int(it.dmg)
+					score += float(steered) / float(d.cost) * 0.5
 			if String(ab.kind) == "hit_wide":
 				for st in c.neighbours(d.station):
 					var lb3: int = c.STATION_LIMB[int(st)]
