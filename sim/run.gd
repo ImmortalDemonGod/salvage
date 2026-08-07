@@ -145,4 +145,7 @@ func state_line() -> String:
 	var b := current()
 	if finished:
 		return "run complete"
-	return "dive %d of %d  ·  %s" % [beat + 1, built_beats().size(), String(b.get("title", "?"))]
+	var n := built_beats().size()
+	if beat + 1 == n:
+		return "last dive  ·  %s" % String(b.get("title", "?"))
+	return "dive %d of %d  ·  %s" % [beat + 1, n, String(b.get("title", "?"))]

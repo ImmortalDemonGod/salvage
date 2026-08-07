@@ -39,7 +39,7 @@ static var ALL := {
 	"crab": {
 		"title": "the hunter crab",
 		"art": {"kind": "crab", "scale": 158.0, "pos": [872, 330], "tint": [1.0, 1.0, 1.0]},
-		"places": {"0": [590, 392], "1": [788, 288], "2": [896, 520], "3": [1108, 300]},
+		"places": {"0": [590, 392], "1": [788, 322], "2": [896, 520], "3": [1108, 322]},
 		# TWO divers. One was tried and REFUTED by measurement: the crab
 		# became unwinnable (G2 0/40), casual fell to 5.2 percent, and
 		# UNDER went dead because a lone diver never has a reason to stand
@@ -107,7 +107,7 @@ static var ALL := {
 		# a LONGER, thinner body: the stations sit further apart along it,
 		# so the board itself reads differently from the crab's
 		"art": {"kind": "worm", "scale": 188.0, "pos": [910, 312], "tint": [0.72, 0.78, 0.42]},
-		"places": {"0": [584, 386], "1": [860, 270], "2": [952, 516], "4": [338, 386]},
+		"places": {"0": [584, 386], "1": [860, 318], "2": [952, 516], "4": [338, 386]},
 		"party": 2,
 		# The drum is fitted before this fight, so it is declared HERE.
 		# While gear was a global set by the run, the bands measured the
@@ -158,7 +158,7 @@ static var ALL := {
 	"dredge": {
 		"title": "the dredge",
 		"art": {"kind": "dredge", "scale": 168.0, "pos": [884, 320], "tint": [0.46, 0.40, 0.30]},
-		"places": {"0": [614, 400], "1": [782, 296], "3": [1108, 348], "4": [338, 400]},
+		"places": {"0": [614, 400], "1": [782, 326], "3": [1108, 348], "4": [338, 400]},
 		"party": 3,
 		"drum": true,
 		# UNDER is closed here. Every open station must either expose a limb

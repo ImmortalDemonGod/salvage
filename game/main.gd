@@ -69,7 +69,7 @@ func _ready() -> void:
 # of Proto5's chest, and it read as HUD chrome rather than a unit on the
 # board. Declared here so verify/layout.gd can check it.
 const HUD_BOTTOM := 212.0   # the lowest a diver SPRITE may reach
-const PANEL_FLOOR := 262.0  # the prompt band ends at 252; readouts clamp below it
+const PANEL_FLOOR := 300.0  # the prompt band ends at 292; readouts clamp below it
 const DIVER_SCALE := 66.0
 # The team's rig, baked to frames (art/baked, see REPORT.md there): the
 # divers are Glass_Goat's actual characters now, not code-drawn stand-ins.
@@ -2052,6 +2052,9 @@ func _draw_salvage() -> void:
 	draw_line(box.position + Vector2(w * 0.33, 0), box.position + Vector2(w * 0.33, h), Color(0.30, 0.24, 0.16), 3.0)
 	draw_line(box.position + Vector2(w * 0.66, 0), box.position + Vector2(w * 0.66, h), Color(0.30, 0.24, 0.16), 3.0)
 	var df2: Font = ThemeDB.fallback_font
+	for off2 in [Vector2(1, 1), Vector2(-1, -1)]:
+		draw_string(df2, box.position + Vector2(-8, h + 26.0) + off2, "THE PART",
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.02, 0.05, 0.08))
 	draw_string(df2, box.position + Vector2(-8, h + 26.0), "THE PART", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 		Color(0.98, 0.90, 0.60))
 	var mx := float(int((combat.enc.salvage as Dictionary).hp))
@@ -2150,7 +2153,7 @@ func _draw_actionbar() -> void:
 		return
 	var btns: Array = bar_buttons()
 	var dfm: Font = ThemeDB.fallback_font
-	var mv_y: float = BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 14.0
+	var mv_y: float = BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 8.0
 	draw_string(dfm, Vector2(BAR_X + 4.0, mv_y), "move: click a station plate",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.62, 0.70, 0.76))
 	var df: Font = ThemeDB.fallback_font
@@ -2158,8 +2161,8 @@ func _draw_actionbar() -> void:
 		var b: Dictionary = btns[i]
 		var r: Rect2 = btn_rect(i, btns.size())
 		var on: bool = action_legal(String(b.id))
-		var face := Color(0.19, 0.24, 0.19, 0.94) if on else Color(0.10, 0.12, 0.13, 0.88)
-		var edge := Color(0.78, 0.86, 0.66, 0.9) if on else Color(0.42, 0.46, 0.48, 0.7)
+		var face := Color(0.16, 0.21, 0.26, 0.94) if on else Color(0.09, 0.11, 0.12, 0.88)
+		var edge := Color(0.66, 0.76, 0.84, 0.9) if on else Color(0.38, 0.42, 0.44, 0.7)
 		var ink := Color(0.95, 0.97, 0.91) if on else Color(0.74, 0.77, 0.79)
 		draw_rect(r, face)
 		draw_rect(r, edge, false, 2.0)
@@ -2231,7 +2234,7 @@ func _draw_limb_bars() -> void:
 		if int(combat.limb_stun[lb]) > 0:
 			suffix = "  SHUT %d" % int(combat.limb_stun[lb])
 		elif not combat.known(lb):
-			suffix = "  unknown"
+			suffix = "  weak: ?"
 		else:
 			match combat.trait_of(lb):
 				"brittle": suffix = "  takes x2"

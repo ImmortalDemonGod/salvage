@@ -155,10 +155,11 @@ static func draw_crab(ci: CanvasItem, pos: Vector2, scale: float, limb_broken: A
 	var tail_gone := _broken(limb_broken, TAIL)
 	if kind == "crab":
 		_crab_legs_far(ci, xf)
-	if tail_gone:
-		_crab_tail_broken(ci, xf)
-	else:
-		_crab_tail(ci, xf)
+	if kind != "lurker":
+		if tail_gone:
+			_crab_tail_broken(ci, xf)
+		else:
+			_crab_tail(ci, xf)
 	if kind != "lurker":
 		_crab_shell(ci, xf)
 		_crab_belly(ci, xf)
@@ -170,14 +171,19 @@ static func draw_crab(ci: CanvasItem, pos: Vector2, scale: float, limb_broken: A
 		_dredge_body(ci, xf)
 	else:
 		_crab_legs_near(ci, xf)
+	if kind == "lurker":
+		# the neck: bulk to bite, one animal
+		_tube(ci, xf, Vector2(0.02, -0.30), Vector2(-0.34, -0.24), 0.075, 0.045, SHELL)
+		_tube(ci, xf, Vector2(-0.30, -0.25), Vector2(-0.46, -0.20), 0.050, 0.034, SHELL)
 	if jaw_gone:
 		_crab_jaw_broken(ci, xf)
 	else:
 		_crab_jaw(ci, xf)
-	if claw_gone:
-		_crab_claw_broken(ci, xf)
-	else:
-		_crab_claw(ci, xf)
+	if kind != "lurker":
+		if claw_gone:
+			_crab_claw_broken(ci, xf)
+		else:
+			_crab_claw(ci, xf)
 
 
 # ---- primitives --------------------------------------------------------
