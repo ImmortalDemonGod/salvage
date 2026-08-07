@@ -87,7 +87,10 @@ const RIG_BY_ABILITY := {
 	"Piston Swing": "proto5_attck1", "Wide Sweep": "proto5_attck2",
 }
 const RIG_TINT := {
-	0: Color(1.00, 0.85, 0.74),
+	# Scuba wears a wetsuit tint: the clay bake has no materials, and
+	# skin-toned clay read as a nude placeholder in every cold review.
+	# One constant is tonight's fix; her real texture is the model's.
+	0: Color(0.48, 0.66, 0.72),
 	1: Color(1.00, 0.66, 0.34),
 	2: Color(0.88, 0.76, 0.48),
 }
@@ -505,7 +508,8 @@ func _recent() -> void:
 		keep.append(String(src[i]))
 	# on a story beat the scene panel IS the content, and the log would sit
 	# on top of it
-	ui_log.get_parent().visible = not keep.is_empty() and (combat != null or run.puzzle != null)
+	# retired with the ticker (team ruling): the strip below is faces now
+	ui_log.get_parent().visible = false
 	ui_log.text = "\n".join(keep)
 
 func _voice() -> void:
@@ -1983,7 +1987,7 @@ func _draw_windup() -> void:
 				# it bites where it stands: ring the station instead
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
-				var pip0: Vector2 = Vector2(dst.x, max(dst.y - 64.0, 306.0))
+				var pip0: Vector2 = Vector2(dst.x + 58.0, max(dst.y - 64.0, 306.0))
 				if int(st) in drawn:
 					continue
 				drawn.append(int(st))
@@ -2314,6 +2318,11 @@ func _draw_traits() -> void:
 func _draw_limb_bars() -> void:
 	var df: Font = ThemeDB.fallback_font
 	var placed: Array = []
+	# plates always render above drawn pills, so pills treat every
+	# visible plate rect as already-placed ground to dodge
+	for sti2 in range(5):
+		if combat.station_open(sti2) and ui_stations[sti2].visible:
+			placed.append(Rect2(ui_stations[sti2].position, ui_stations[sti2].size))
 	for lb in range(combat.limb_hp.size()):
 		var st := -1
 		for s2 in range(5):
@@ -2321,7 +2330,7 @@ func _draw_limb_bars() -> void:
 				st = s2
 		if st < 0:
 			continue
-		var at: Vector2 = _limb_at(lb).lerp(_body_at(), 0.35) + Vector2(float(lb % 2) * 56.0 - 28.0, float(lb % 2) * -20.0)
+		var at: Vector2 = _limb_at(lb).lerp(_body_at(), 0.10) + Vector2(float(lb % 2) * 44.0 - 22.0, float(lb % 2) * -18.0)
 		if combat.limb_broken[lb]:
 			draw_string(df, at + Vector2(-34, -14), "BROKEN", HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 				Color(0.60, 0.66, 0.70, 0.9))
@@ -2358,7 +2367,8 @@ func _draw_limb_bars() -> void:
 		placed.append(pill)
 		tx = pill.position.x + 6.0
 		draw_line(Vector2(clampf(_limb_at(lb).x, pill.position.x, pill.end.x), pill.end.y),
-			_limb_at(lb), Color(0.85, 0.75, 0.60, 0.65), 1.5)
+			_limb_at(lb), Color(0.95, 0.85, 0.60, 0.9), 2.5)
+		draw_circle(_limb_at(lb), 3.5, Color(0.95, 0.85, 0.60, 0.9))
 		draw_rect(pill, Color(0.04, 0.07, 0.10, 0.88))
 		draw_rect(pill, Color(0.55, 0.48, 0.38, 0.7), false, 1.0)
 		draw_string(df, Vector2(tx, at.y - 34.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
