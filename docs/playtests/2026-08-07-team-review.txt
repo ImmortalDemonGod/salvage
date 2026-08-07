@@ -1,0 +1,28 @@
+Discord, Aug 7 (verbatim)
+
+1. ImmortalDemon - 8:15 AM
+the last prototype is done give it a play @Glass_Goat @Mhanna https://salvage-chi.vercel.app/
+2. Mhanna - 10:34 AM
+@ImmortalDemon when's the latest time today you can meet to discuss the prototype results? Or do we prefer to meet on Sunday
+3. Glass_Goat - 12:20 PM
+Alright now this is a great prototype
+4. the mechanics are rewarding
+5. The attacks types logical
+6. it just needs a portrait to choose which character will act, because I sometimes select another character when I want to move or vise versa
+7. I think in the final product we need a few normal enemies have less limbs or don't have them for some diversity
+8. but the space system is looking hella good
+9. that I can see winning a game Jam or becoming a real game
+10. the damage numbers look great now
+11. we only need to Iron the details and polish but this is already more function than the other two games of the other jams
+12. Glass_Goat - 12:32 PM
+but
+13. I talked with my brother and the user experience is horrible, which is not a problem since this was just a proof of concept
+14. I like the keys to move and act to make it more dynamic, but at the same time is currently pure pollution
+15. I have a suggestions which involves using less keys
+16. Glass_Goat - 12:40 PM
+-Core keys to do actions
+   * One key and you select your character
+   * One Key and you choose to move
+ That way you cut all those keys there are which look ugly and are mother bothering and you also solve the character select, which is a problem selecting and moving which conflict a lot
+17. lastly because I have to ask, what you think of the animations?
+18. did you like them?
