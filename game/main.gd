@@ -1595,6 +1595,19 @@ func _draw_rig() -> void:
 # click test still believed 250, so every valve was clickable 72px from
 # where it was drawn. One constant, read by both -- the same fix the ring
 # and the legend needed when they disagreed.
+func _flow(a: Vector2, b: Vector2, on: bool) -> void:
+	# beads sliding a to b while the pipe is open: water MOVING, so which
+	# valve feeds which chamber is watchable, not decodable. "Why doesn't
+	# the water flow... I could have figured this out" -- now it flows.
+	if not on:
+		return
+	var n := int(a.distance_to(b) / 34.0) + 1
+	for k in range(n):
+		var ph := fposmod(_clock * 0.55 + float(k) / float(n), 1.0)
+		var at := a.lerp(b, ph)
+		var pulse := 0.65 + 0.35 * sin(_clock * 6.0 + float(k))
+		draw_circle(at, 4.0, Color(0.55, 0.85, 0.95, 0.85 * pulse))
+
 func _draw_lock(p) -> void:
 	var tall := LOCK_TALL
 	if p.stage == 2:
@@ -1610,11 +1623,13 @@ func _draw_lock(p) -> void:
 		var pipe_y := top + tall - 26.0
 		draw_line(Vector2(ax + wide, pipe_y), Vector2(bx, pipe_y),
 			OPEN_C if p.valve[p.CROSS] else Color(0.42, 0.48, 0.55), 9.0)
+		_flow(Vector2(ax + wide, pipe_y), Vector2(bx, pipe_y), bool(p.valve[p.CROSS]))
 		_valve_dot(_valve_pos(p.CROSS), "4", p.valve[p.CROSS], p.reachable(p.CROSS))
 		for src in [[0, ax + 60.0], [1, ax + 170.0], [2, bx + 110.0]]:
 			var vp: Vector2 = _valve_pos(int(src[0]))
 			draw_line(vp + Vector2(0, -18), Vector2(float(src[1]), top + tall),
 				OPEN_C if p.valve[int(src[0])] else Color(0.42, 0.48, 0.55), 7.0)
+			_flow(vp + Vector2(0, -18), Vector2(float(src[1]), top + tall), bool(p.valve[int(src[0])]))
 		_valve_dot(_valve_pos(0), "1", p.valve[0], true)
 		_valve_dot(_valve_pos(1), "2", p.valve[1], true)
 		_valve_dot(_valve_pos(2), "3", p.valve[2], true)
@@ -1629,11 +1644,13 @@ func _draw_lock(p) -> void:
 		var vp2: Vector2 = _valve_pos(int(src2[0]))
 		draw_line(vp2 + Vector2(0, -18), Vector2(float(src2[1]), top + tall),
 			OPEN_C if p.valve[int(src2[0])] else Color(0.42, 0.48, 0.55), 7.0)
+		_flow(vp2 + Vector2(0, -18), Vector2(float(src2[1]), top + tall), bool(p.valve[int(src2[0])]))
 	_valve_dot(_valve_pos(0), "1", p.valve[0], p.reachable(0))
 	_valve_dot(_valve_pos(1), "2", p.valve[1], p.reachable(1))
 	# a pipe for the seized valve too, so all three are visibly plumbed
 	draw_line(_valve_pos(p.SEIZED) - Vector2(18, 0), Vector2(x + wide, top + tall - 26.0),
 		OPEN_C if p.valve[p.SEIZED] else Color(0.42, 0.48, 0.55), 7.0)
+	_flow(_valve_pos(p.SEIZED) - Vector2(18, 0), Vector2(x + wide, top + tall - 26.0), bool(p.valve[p.SEIZED]))
 	_valve_dot(_valve_pos(p.SEIZED), "3", p.valve[p.SEIZED], p.reachable(p.SEIZED))
 
 # how deep we are, 0 at the rig and 1 at the bottom
