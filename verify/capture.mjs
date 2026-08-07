@@ -71,7 +71,11 @@ const GL_ARGS = [
   "--ignore-gpu-blocklist",
 ];
 const browser = await chromium.launch({ headless: true, args: GL_ARGS, ...(exe ? { executablePath: exe } : {}) });
-const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+// rule 31: the evidence pipeline looks through the player's window, not
+// the developer's. WIDE=1 shoots at an ultrawide-ish aspect, where the
+// off-centre bug class lived invisibly for three playtests.
+const vw = process.env.WIDE ? { width: 1720, height: 800 } : { width: 1280, height: 800 };
+const page = await browser.newPage({ viewport: vw });
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });

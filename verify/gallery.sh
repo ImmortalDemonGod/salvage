@@ -49,5 +49,8 @@ shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,Space,E
 # every limb unread and a reviewer concluded, reasonably, that the whole
 # mechanic was skippable and skipped
 shoot "$(printf '%02d' $((n+2)))-fight1-read" "Enter,Space,Space,Enter,KeyW,KeyA,Space,Enter,KeyR,KeyA,Space" "fight1"
+# and the same mid-fight state through a WIDE window: three playtests
+# reported off-centre UI that the 1280-wide capture could not see
+WIDE=1 shoot "$(printf '%02d' $((n+3)))-fight1-wide" "Enter,Space,Space,Enter,Space,Enter,KeyW,Space,Space,Enter,Space,Space,Enter" "fight1"
 if [ $rc -ne 0 ]; then echo "GALLERY: replay landed on the wrong beat"; exit 1; fi
 echo "GALLERY: $((n+1)) shots, every replay landed where it claimed"
