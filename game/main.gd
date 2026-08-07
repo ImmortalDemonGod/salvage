@@ -888,14 +888,14 @@ func _escape_line(d) -> String:
 		return t + ("   " + kill + "." if kill != "" else ".")
 	if kill != "":
 		var only: String = kill.trim_prefix("or ")
-		return "%s  ·  about to be hit, nowhere clear to stand. %s%s." % [
+		return "%s  ·  about to be hit, no safe plate to stand on. %s%s." % [
 			_incoming(d), only.substr(0, 1).to_upper(), only.substr(1)]
 	var d9 = combat.divers[selected]
 	if d9.kit.size() > 0 and String(d9.kit[0].kind) == "hit_shove" and combat.target_limb(d9) >= 0:
 		for it9 in combat.locked:
 			if int(it9.limb) == combat.target_limb(d9) and int(d9.station) in it9.stations:
-				return "%s  ·  about to be hit, nowhere clear. Take it, or kick its swing back home (SPACE)." % _incoming(d)
-	return "%s  ·  about to be hit, nowhere clear to stand. Take it, and break what you can." % _incoming(d)
+				return "%s  ·  about to be hit, no safe plate. Take it, or kick its swing back home (SPACE)." % _incoming(d)
+	return "%s  ·  about to be hit, no safe plate to stand on. Take it, and break what you can." % _incoming(d)
 
 func _lock_step(p) -> String:
 	if p.solved():
@@ -1075,7 +1075,14 @@ func _refresh() -> void:
 		if place(i).y >= body0.y - 20.0:
 			tag_at = place(i) + Vector2(side_out * 166.0 - mk.size.x * 0.5, 4.0)
 		else:
-			tag_at = place(i) + Vector2(0, 34.0) - Vector2(mk.size.x * 0.5, 0)
+			# an occupied plate drops ten more pixels: the baked sprite's
+			# frame margin reaches past the foot anchor, and a sidestep
+			# broke the plate-under-ring convention two ways at once
+			var occ_drop := 0.0
+			for od2 in combat.divers:
+				if not od2.down and int(od2.station) == i:
+					occ_drop = 12.0
+			tag_at = place(i) + Vector2(0, 34.0 + occ_drop) - Vector2(mk.size.x * 0.5, 0)
 		var slide_x: float = side_out * 56.0
 		for _try in range(9):
 			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
@@ -2052,10 +2059,11 @@ func _draw_salvage() -> void:
 	draw_line(box.position + Vector2(w * 0.33, 0), box.position + Vector2(w * 0.33, h), Color(0.30, 0.24, 0.16), 3.0)
 	draw_line(box.position + Vector2(w * 0.66, 0), box.position + Vector2(w * 0.66, h), Color(0.30, 0.24, 0.16), 3.0)
 	var df2: Font = ThemeDB.fallback_font
+	var part_lbl := "THE PART %d/%d" % [combat.salvage_hp, int((combat.enc.salvage as Dictionary).hp)]
 	for off2 in [Vector2(1, 1), Vector2(-1, -1)]:
-		draw_string(df2, box.position + Vector2(-8, h + 26.0) + off2, "THE PART",
+		draw_string(df2, box.position + Vector2(-10, -14.0) + off2, part_lbl,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.02, 0.05, 0.08))
-	draw_string(df2, box.position + Vector2(-8, h + 26.0), "THE PART", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+	draw_string(df2, box.position + Vector2(-10, -14.0), part_lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 		Color(0.98, 0.90, 0.60))
 	var mx := float(int((combat.enc.salvage as Dictionary).hp))
 	for k in range(int(mx)):
@@ -2262,8 +2270,9 @@ func _draw_limb_bars() -> void:
 			var would: int = combat._after_trait(lb, int(ef.dmg))
 			if would > 0:
 				var wf: float = clampf(float(would) / max(1.0, mx), 0.0, fr)
+				var pv_a: float = 0.35 + 0.45 * (0.5 + 0.5 * sin(_clock * 5.0))
 				draw_rect(Rect2(Vector2(bx + bw * (fr - wf), at.y - 28), Vector2(bw * wf, 5)),
-					Color(0.99, 0.90, 0.55))
+					Color(0.99, 0.90, 0.55, pv_a))
 
 func _draw_bars() -> void:
 	# The limb bars used to be painted on the board, and the station tags
@@ -2284,6 +2293,13 @@ func _draw_bars() -> void:
 		# sit BESIDE their ring, so below-feet ground there is clear.
 		var belly_here: bool = combat != null and place(int(d.station)).y >= _body_at().y - 20.0
 		var by: float = (min(f.y + 30.0, 560.0)) if belly_here else max(f.y - DIVER_SCALE - 8.0, PANEL_FLOOR)
+		# and never inside the station plate's own rect: the pill ducks
+		# above the plate rather than being struck through by it
+		var chip2: Control = ui_stations[int(d.station)]
+		if chip2.visible:
+			var crect := Rect2(chip2.position, chip2.size)
+			if by + 16.0 > crect.position.y and by < crect.end.y:
+				by = crect.position.y - 20.0
 		var df: Font = ThemeDB.fallback_font
 		var plate := "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)]
 		var pw: float = df.get_string_size(plate, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 10.0
