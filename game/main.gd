@@ -143,7 +143,7 @@ func _draw_teach() -> void:
 			draw_string(df, tp + off, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.02, 0.05, 0.08, a))
 		draw_string(df, tp, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.98, 0.92, 0.70, a))
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
-const CARD_TOP := 584.0
+const CARD_TOP := 596.0
 # The action bar: the third playtest's ruling made buttons a hard
 # requirement ("having buttons on screen would replace the need of the
 # keyboard and make it visually obvious what to do"). One geometry,
@@ -304,18 +304,34 @@ func _build_ui() -> void:
 		ui_stations.append(m)
 
 	# diver cards along the bottom
+	var head_crops := [Rect2(139, 193, 70, 70), Rect2(154, 196, 74, 74), Rect2(133, 82, 88, 88)]
+	var idle_frames := ["res://art/baked/scuba_idle1/frame_00.png",
+		"res://art/baked/prototype1_idle1/frame_00.png",
+		"res://art/baked/proto5_idle/frame_00.png"]
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(320, 86)
+		p.size = Vector2(320, 96)
 		p.position = Vector2(24 + i * 334, CARD_TOP)
 		p.add_theme_stylebox_override("panel", skin_card())
 		_rivet(p)
 		add_child(p)
+		var face := TextureRect.new()
+		face.name = "portrait"
+		var atl := AtlasTexture.new()
+		atl.atlas = load(String(idle_frames[i]))
+		atl.region = head_crops[i]
+		face.texture = atl
+		face.position = Vector2(10, 13)
+		face.size = Vector2(70, 70)
+		face.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		face.stretch_mode = TextureRect.STRETCH_SCALE
+		face.modulate = RIG_TINT.get(i, Color.WHITE)
+		p.add_child(face)
 		var l := Label.new()
 		l.name = "label"
 		l.set_anchors_preset(Control.PRESET_FULL_RECT)
-		l.offset_left = 14; l.offset_right = -14
+		l.offset_left = 92; l.offset_right = -10
 		l.offset_top = 8; l.offset_bottom = -8
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		p.add_child(l)
@@ -432,6 +448,7 @@ func _build_ui() -> void:
 	step_panel.add_child(ui_step)
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
+	log_panel.visible = false
 	log_panel.size = Vector2(1232, 40)
 	log_panel.position = Vector2(24, 680)
 	var lst := StyleBoxFlat.new()
@@ -1366,7 +1383,7 @@ func _dead_player_overdraft() -> bool:
 # same dispatcher. Legality is answered by trying the action on a CLONE,
 # so the greyed state can never disagree with what a press would do.
 func _keys_rect() -> Rect2:
-	return Rect2(Vector2(BAR_X, BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 16.0), Vector2(52.0, 20.0))
+	return Rect2(Vector2(BAR_X + 186.0, BAR_TOP - 26.0), Vector2(52.0, 20.0))
 
 func _lit_stations() -> Array:
 	var out: Array = []
@@ -2192,8 +2209,7 @@ func _draw_actionbar() -> void:
 		return
 	var btns: Array = bar_buttons()
 	var dfm: Font = ThemeDB.fallback_font
-	var mv_y: float = BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 8.0
-	draw_string(dfm, Vector2(BAR_X + 4.0, mv_y), "move: click a lit plate",
+	draw_string(dfm, Vector2(BAR_X + 4.0, BAR_TOP - 10.0), "move: click a lit plate",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.62, 0.70, 0.76))
 	var kb := _keys_rect()
 	draw_rect(kb, Color(0.09, 0.11, 0.12, 0.9))
