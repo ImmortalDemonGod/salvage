@@ -84,7 +84,7 @@ const RIG_CLIPS := {
 const RIG_BY_ABILITY := {
 	"Axe Kick": "scuba_axe_kick", "Double Knee": "scuba_double_knee",
 	"Palm Strike": "prototype1_palm_strike", "Dual Palm": "prototype1_dualpalm",
-	"Attck1": "proto5_attck1", "Attck2": "proto5_attck2",
+	"Piston Swing": "proto5_attck1", "Wide Sweep": "proto5_attck2",
 }
 const RIG_TINT := {
 	0: Color(1.00, 0.85, 0.74),
@@ -1141,6 +1141,15 @@ func _refresh() -> void:
 				suffix = " SHUT %d" % int(combat.limb_stun[lb])
 			elif not combat.known(lb):
 				suffix = " unread"
+			else:
+				# the read's finding, at the limb it describes, in the
+				# compact form: the far corner panel it replaces made a
+				# reviewer hunt for which limb it meant
+				match combat.trait_of(lb):
+					"brittle": suffix = " x2"
+					"plated": suffix = " armor"
+					"leaking": suffix = " +2 air"
+					"pressurised": suffix = " bursts"
 			lbl.text = "%s %d/%d [%s]%s" % [String(combat.LIMB_NAMES[lb]).to_upper(),
 				int(combat.limb_hp[lb]), maxhp, String(keys2[i]), suffix]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
@@ -1162,7 +1171,9 @@ func _refresh() -> void:
 		if tr9 != "":
 			told = "%s  ·  %s" % [String(combat.LIMB_NAMES[lb9]).to_upper(), String(Combat.TRAITS[tr9])]
 			break
-	ui_goal.get_parent().visible = told != ""
+	# retired in fights: the finding now rides the limb's own chip in
+	# compact form, where a reviewer does not have to hunt for its limb
+	ui_goal.get_parent().visible = false
 	ui_goal.text = told
 	var all_it: Array = combat.intents()
 	if all_it.is_empty():
@@ -1856,6 +1867,8 @@ func _draw_windup() -> void:
 			var n: Vector2 = dir.normalized()
 			var a: Vector2 = src + n * 30.0
 			var b: Vector2 = dst - n * 48.0
+			# stroke and alpha lifted: the arc is the only attacker-victim
+			# link on the board and it was drowning at 2px
 			# a bowed arc rather than a straight line: the direct route runs
 			# under the station cards and arrives as disconnected strokes
 			var lift: float = min(90.0, dir.length() * 0.30)
@@ -1866,8 +1879,8 @@ func _draw_windup() -> void:
 				var t: float = float(i) / float(segs)
 				var q: Vector2 = a.lerp(ctrl, t).lerp(ctrl.lerp(b, t), t)
 				# taper: thin where it leaves, heavy where it lands
-				draw_line(prev, q, Color(0.98, 0.46, 0.34, 0.30 + 0.55 * pulse * t),
-					2.0 + 5.0 * t)
+				draw_line(prev, q, Color(0.98, 0.46, 0.34, 0.48 + 0.45 * pulse * t),
+					3.2 + 5.5 * t)
 				prev = q
 			# an arrowhead, so the direction is never in question
 			var tipd: Vector2 = (b - prev).normalized() if (b - prev).length() > 1.0 else n

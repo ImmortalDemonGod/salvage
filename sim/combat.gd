@@ -164,7 +164,12 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 		limb_stun.append(0)
 	var hp: Array = TUNE.diver_hp
 	var dm: Array = TUNE.diver_dmg
-	var roster := [["Scuba", 1, false], ["Prototype1", 2, false], ["Proto5", 3, false]]
+	# Callsigns, placeholder for Marc: the rig's working identifiers
+	# (Prototype1, Proto5) read as debug scaffolding on screen, which
+	# eight cold reviews and the playtester flagged independently. The
+	# callsign IS the readable fact about each diver: the bare swimmer,
+	# the drum carrier, the brass suit.
+	var roster := [["Scuba", 1, false], ["Drum", 2, false], ["Brass", 3, false]]
 	# Two abilities per diver, named for the clips that actually exist in
 	# the rig (standing rule: ability names come FROM the animation list).
 	# SPEC 2.9 gives each diver one verb expressed twice.
@@ -185,8 +190,11 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 		# Attck2 spills onto every neighbouring station, so 5 became 10+ per
 		# action and cleared the dredge in 2 turns against a teaching floor
 		# of 6. The crowd answer trades per-target damage for reach.
-		[{"name": "Attck1", "dmg": 8, "kind": "hit"},
-		 {"name": "Attck2", "dmg": 3, "kind": "hit_wide"}],
+		# display names for the heavy's two swings; the CLIPS stay keyed
+		# by their rig names in RIG_BY_ABILITY, so the motion-name match
+		# the naming rule exists for is preserved by the mapping
+		[{"name": "Piston Swing", "dmg": 8, "kind": "hit"},
+		 {"name": "Wide Sweep", "dmg": 3, "kind": "hit_wide"}],
 	]
 	var starts: Array = enc.get("starts", [])
 	divers = []
@@ -194,7 +202,7 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 	for i in range(n):
 		var start: int = int(starts[i]) if i < starts.size() else int(OPEN_STATIONS[i % OPEN_STATIONS.size()])
 		var dv := Diver.new(i, String(roster[i][0]), int(roster[i][1]), int(hp[i]), int(dm[i]), start)
-		dv.disables = String(roster[i][0]) == "Prototype1" and bool(enc.get("drum", false))
+		dv.disables = String(roster[i][0]) == "Drum" and bool(enc.get("drum", false))
 		dv.kit = (kits[i] as Array).duplicate(true)
 		if kit_size > 0 and dv.kit.size() > kit_size:
 			dv.kit.resize(kit_size)

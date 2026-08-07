@@ -116,7 +116,7 @@ func key(a: Dictionary) -> String:
 	if a.kind == "move":
 		return "move->%s" % Combat.STATION_NAMES[a.s]
 	if a.kind == "attack":
-		return ["Axe Kick", "Double Knee", "Palm Strike", "Dual Palm", "Attck1", "Attck2"][int(a.i) * 2 + int(a.get("slot", 0))]
+		return ["Axe Kick", "Double Knee", "Palm Strike", "Dual Palm", "Piston Swing", "Wide Sweep"][int(a.i) * 2 + int(a.get("slot", 0))]
 	if a.kind == "analyze":
 		# one mechanic, not three: the read is squad-shared and costs the
 		# same from every diver, so which one performs it is incidental.
@@ -124,7 +124,7 @@ func key(a: Dictionary) -> String:
 		# construction and the slice reported a live mechanic dead (pass
 		# 50, the night the trait ontology was split).
 		return "analyze"
-	return "%s:%s" % [a.kind, ["Scuba", "Prototype1", "Proto5"][a.i]]
+	return "%s:%s" % [a.kind, ["Scuba", "Drum", "Brass"][a.i]]
 
 # ---- G4: is every action uniquely optimal somewhere? -------------------
 # Depth-limited over SAMPLED reachable states, not a complete solve. That

@@ -46,9 +46,8 @@ reads, `U` rewinds, `ENTER` ends the turn.
   about 60 percent of the time, measured. Attack-only button mashing is
   supposed to lose it. If you mashed your way through everything anyway,
   that is a bug we want badly.
-- Character names (`Prototype1`, `Proto5`) and two ability names
-  (`Attck1`, `Attck2`) are working identifiers taken from the animation
-  rig. They will not ship.
+- The divers answer to callsigns (Scuba, Drum, Brass), placeholder
+  until Marc names them.
 
 ## If it breaks
 

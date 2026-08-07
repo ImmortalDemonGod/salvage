@@ -75,7 +75,7 @@ static var LADDER := [
 		"grants_ability": 2,
 		"built": true,
 		"lines": [
-			{"role": "who", "text": "(placeholder) The crab is dealt with and everyone came back up. That bought us a night on deck, and we spent it fitting the drum to Prototype1's suit."},
+			{"role": "who", "text": "(placeholder) The crab is dealt with and everyone came back up. That bought us a night on deck, and we spent it fitting the drum to the middle suit. Its diver answers to Drum now."},
 			{"role": "want", "text": "(placeholder) Point the drum at whatever is winding up and it stops. It reaches from the back line, so you do not have to be in front of the thing to shut it."},
 			{"role": "want", "text": "(placeholder) There was time to drill, too. Every diver now has a second use for what they already carry. The part is deeper than we got today, and the pump is not waiting. We go back down."},
 			{"role": "controls", "text": "ENTER to descend"},

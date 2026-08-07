@@ -70,8 +70,8 @@ whether the puzzles work. Judge the decisions, not the finish.
   cues; their clips do not exist yet.
 - The music is a few procedural notes, not a score.
 - There is no boss, and the run stops after the dredge.
-- `Prototype1`, `Proto5`, `Attck1` are working identifiers from the
-  animation rig. They will not ship.
+- The divers answer to callsigns (Scuba, Drum, Brass), placeholder
+  until Marc names them.
 
 ## If you are playtesting
 
