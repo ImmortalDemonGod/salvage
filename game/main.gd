@@ -205,7 +205,7 @@ const BRASS := Color(0.44, 0.40, 0.30)
 const BRASS_LIT := Color(0.90, 0.72, 0.38)
 const PLATE := Color(0.085, 0.105, 0.120)
 const PLATE_DEEP := Color(0.055, 0.070, 0.085)
-const RIVET := Color(0.36, 0.33, 0.26)
+const RIVET := Color(0.36, 0.33, 0.26, 0.55)
 
 static func _skin(bg: Color, border: Color, radius := 6) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
@@ -883,14 +883,14 @@ func _escape_line(d) -> String:
 				break
 	if refuge >= 0 and combat.can_move_now(int(d.id)):
 		_hint_station = refuge
-		var t := "%s -- about to be hit. Move to the glowing plate (press %s)" % [
+		var t := "%s  ·  about to be hit: Move to the glowing plate (press %s)" % [
 			_incoming(d), ["Q", "W", "E", "R", "T"][refuge]]
 		return t + ("   " + kill + "." if kill != "" else ".")
 	if kill != "":
 		var only: String = kill.trim_prefix("or ")
-		return "%s -- about to be hit, nowhere clear to stand. %s%s." % [
+		return "%s  ·  about to be hit, nowhere clear to stand. %s%s." % [
 			_incoming(d), only.substr(0, 1).to_upper(), only.substr(1)]
-	return "%s -- about to be hit, nowhere clear to stand. Take it, and break what you can." % _incoming(d)
+	return "%s  ·  about to be hit, nowhere clear to stand. Take it, and break what you can." % _incoming(d)
 
 func _lock_step(p) -> String:
 	if p.solved():
@@ -1154,10 +1154,14 @@ func _refresh() -> void:
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
+	var live_divers := 0
+	for da in combat.divers:
+		if not da.down:
+			live_divers += 1
 	if combat.air_penalty > 0:
-		ui_air.text = "AIR   %d line cut" % combat.air_penalty
+		ui_air.text = "AIR  %d of 4   ·   %d line cut" % [combat.air, combat.air_penalty]
 	else:
-		ui_air.text = "AIR   one shared tank"
+		ui_air.text = "AIR  %d of 4%s" % [combat.air, "   ·   one shared tank" if live_divers > 1 else ""]
 	var live := 0
 	for lb in range(combat.limb_broken.size()):
 		if not combat.limb_broken[lb]:
@@ -1242,7 +1246,8 @@ func _refresh() -> void:
 		# the roster row says who and how healthy; the board says where
 		# and what they threaten (cold readers called the rest console
 		# output, and they were right)
-		card.get_node("label").text = "%d  %s   %s%s" % [i + 1, d.dname, state, afford]
+		var num := "%d  " % (i + 1) if combat.divers.size() > 1 else ""
+		card.get_node("label").text = "%s%s   %s%s" % [num, d.dname, state, afford]
 
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []
@@ -2056,7 +2061,8 @@ func _draw_affordances() -> void:
 	# by light rather than by both reciting station names
 	if _hint_station >= 0 and combat.station_open(_hint_station):
 		var hr: Rect2 = Rect2(ui_stations[_hint_station].position, ui_stations[_hint_station].size)
-		draw_rect(hr.grow(3.0), Color(0.95, 0.85, 0.45, 0.45 + 0.4 * t), false, 3.0)
+		draw_rect(hr, Color(0.95, 0.85, 0.45, 0.10 + 0.05 * t))
+		draw_rect(hr.grow(3.0), Color(0.95, 0.85, 0.45, 0.75 + 0.2 * t), false, 3.0)
 	# 1. who is acting: a pulsing ring underfoot
 	var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 	draw_arc(foot + Vector2(0, 4), 26.0 + 3.0 * t, 0, TAU, 30, Color(0.95, 0.85, 0.45, 0.65 + 0.3 * t), 3.0)
