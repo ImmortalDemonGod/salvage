@@ -20,6 +20,8 @@ static func classify(line: String) -> int:
 		return Kind.CUT
 	if line.find("runs hotter") >= 0:
 		return Kind.RAMP
+	if line.find("wound back") >= 0:
+		return Kind.VALVE
 	if line.find("BREAKS") >= 0:
 		return Kind.BREAK
 	if line.find("is shut down") >= 0:

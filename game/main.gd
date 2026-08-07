@@ -95,6 +95,13 @@ const RIG_FPS := 10.0
 const RIG_SCALE := 0.22
 var _rig_cache: Dictionary = {}
 var _danim: Dictionary = {}   # diver id -> {"clip": String, "t0": float}
+# Into the Breach's turn reset, the audit's top-ranked import and the
+# playtest's "playing around with the keys wastes my turn. There's no way
+# to strategize". Deterministic sim, no hidden rolls, so a rewind cannot
+# fish for outcomes; it only lets you finish thinking. Once per fight,
+# and the snapshot is taken at each turn start.
+var _turn_start: Combat = null
+var _rewound := false
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
 const CARD_TOP := 584.0
 # The action bar: the third playtest's ruling made buttons a hard
@@ -834,7 +841,12 @@ func _lock_step(p) -> String:
 		return "Valve 3 is under water now. Shut one of the others to drop the level, then turn 3."
 	return "Valve 3 is open. Turn the rest to fill the chamber to the line."
 
+var _snap_of: Combat = null
 func _refresh() -> void:
+	if combat != _snap_of:
+		_snap_of = combat
+		_turn_start = combat.clone() if combat != null and combat.outcome == "ongoing" else null
+		_rewound = false
 	if _dive <= 0.0:
 		_hud(true)
 	_auto_select()
@@ -1279,6 +1291,7 @@ func action_legal(id: String) -> bool:
 		"ability0": return c2.act_ability(selected, 0)
 		"ability1": return c2.act_ability(selected, 1)
 		"analyze": return c2.act_analyze(selected)
+		"rewind": return not _rewound and _turn_start != null
 		"end": return true
 	return false
 
@@ -1287,6 +1300,7 @@ func _action(id: String) -> void:
 		"ability0": player_ability(0)
 		"ability1": player_ability(1)
 		"analyze": player_analyze()
+		"rewind": rewind_turn()
 		"end":
 			player_end_turn()
 			_refresh()
@@ -1312,14 +1326,28 @@ func bar_buttons() -> Array:
 			"label": "%s  %d air  [%s]" % [String(ab.name), int(d.cost), "SPACE" if slot == 0 else "F"],
 			"sub": what})
 	out.append({"id": "analyze", "label": "Read limb  1 air  [A]", "sub": "what is it weak to?"})
+	out.append({"id": "rewind", "label": "Rewind turn  [U]", "sub": "take the turn back, once a dive"})
 	out.append({"id": "end", "label": "End turn  [ENTER]", "sub": ""})
 	return out
 
 func btn_rect(i: int, _n: int) -> Rect2:
 	return Rect2(Vector2(BAR_X, BAR_TOP + float(i) * (BAR_H + BAR_GAP)), Vector2(238.0, BAR_H))
 
+func rewind_turn() -> bool:
+	if _rewound or _turn_start == null or combat == null or combat.outcome != "ongoing":
+		return false
+	combat = _turn_start.clone()
+	if run != null:
+		run.combat = combat
+	_rewound = true
+	refusal = ""
+	combat.log_lines.append("the turn is wound back; once a dive")
+	_refresh()
+	return true
+
 func player_end_turn() -> void:
 	combat.end_turn()
+	_turn_start = combat.clone() if combat.outcome == "ongoing" else null
 	_after()
 
 # A finished fight advances the ladder. The run owns progression; the
@@ -1371,6 +1399,9 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_R: player_move(Combat.REAR)
 		KEY_T: player_move(Combat.BACKLINE)
 		KEY_A: player_analyze()
+		KEY_U:
+			if combat != null:
+				rewind_turn()
 		KEY_SPACE: player_ability(0)
 		KEY_F: player_ability(1)
 		KEY_LEFT, KEY_RIGHT:

@@ -54,13 +54,14 @@ func _init() -> void:
 						"ability0": actual = c2.act_ability(i, 0)
 						"ability1": actual = c2.act_ability(i, 1)
 						"analyze": actual = c2.act_analyze(i)
+						"rewind": actual = scene.action_legal("rewind")
 						"end": actual = true
 					checked += 1
 					if predicted != actual:
 						fail("%s: button '%s' shows %s and the sim says %s for %s on turn %d" % [
 							enc_id, String(b.id), "enabled" if predicted else "disabled",
 							"yes" if actual else "no", c.divers[i].dname, c.turn])
-				for want in ["analyze", "end"]:
+				for want in ["analyze", "rewind", "end"]:
 					if not (want in ids):
 						fail("%s: no button exists for '%s'" % [enc_id, want])
 			for _s in range(5):
