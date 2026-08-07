@@ -53,7 +53,13 @@ shoot "$(printf '%02d' $((n+2)))-fight1-read" "Enter,Space,Space,Enter,KeyW,KeyA
 # crab falls: the win line, the sinking squad, the destination name.
 # Unverified transitions shipped invisible once (the log row lesson's
 # cousin); this line keeps them photographed.
-TRANSITION_MS=1200 shoot "$(printf '%02d' $((n+4)))-transition" "Enter,Space,Space,Enter,KeyW,KeyA,Space,Enter,KeyR,KeyA,Space,Space,Enter,KeyQ,Space,Space,Enter,Space,Space,Enter,Space,Space" "fight1"
+# reuse the machine-derived route to boat1 (the beat AFTER the crab):
+# 1200ms into that replay's final key, the descent overlay is mid-play.
+# A hand-authored kill sequence here photographed a live fight instead.
+boat1_seq=$(echo "$paths" | awk -F'\t' '$1=="boat1"{print $2}')
+if [ -n "$boat1_seq" ]; then
+  TRANSITION_MS=1200 shoot "$(printf '%02d' $((n+4)))-transition" "$boat1_seq" "boat1"
+fi
 # and the same mid-fight state through a WIDE window: three playtests
 # reported off-centre UI that the 1280-wide capture could not see
 WIDE=1 shoot "$(printf '%02d' $((n+3)))-fight1-wide" "Enter,Space,Space,Enter,Space,Enter,KeyW,Space,Space,Enter,Space,Space,Enter" "fight1"

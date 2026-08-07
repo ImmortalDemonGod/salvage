@@ -907,6 +907,7 @@ func _refresh() -> void:
 		sfx.set_mood(mood, _depth())
 	ui_intent.get_parent().visible = true
 	var hp0: Control = ui_help.get_parent()
+	hp0.visible = combat == null or run.puzzle != null
 	if run.puzzle != null or combat != null:
 		hp0.position = Vector2(30, 166)
 		hp0.size = Vector2(1220, 40)
@@ -1746,7 +1747,8 @@ func _draw_dive(k: float) -> void:
 	if _won != "":
 		draw_string(f, Vector2(w.x * 0.5 - 340.0, w.y * 0.62 - 58.0), _won,
 			HORIZONTAL_ALIGNMENT_CENTER, 680.0, 30, Color(0.90, 0.72, 0.38, fade))
-	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.62), "DESCENDING",
+	var word := "SURFACING" if String(b.get("kind", "scene")) == "scene" or run.finished else "DESCENDING"
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.62), word,
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 26, Color(0.72, 0.86, 0.92, fade))
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.62 + 42.0), String(b.get("title", "")).to_upper(),
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.92, 0.95, 0.97, fade))
@@ -2166,13 +2168,21 @@ func _draw() -> void:
 	# the lock is inside the wreck, so it is lit by what you brought
 	if run != null and run.finished:
 		_draw_ending()
+		_overlay_dive()
 		return
 
 	if run != null and run.puzzle != null:
 		_draw_lock(run.puzzle)
+		_overlay_dive()
 		return
 	if combat == null and run != null and not run.finished:
 		_draw_rig()
+		# the descent between beats draws over EVERY destination. It only
+		# ever drew over fights, so half the game's transitions (into
+		# boats, locks, the ending) never rendered for anyone, which is
+		# what "the transitions are too short to explain anything" was
+		# actually reporting
+		_overlay_dive()
 		return
 	var jolt := Vector2.ZERO
 	if fx.shake > 0.01:
@@ -2277,8 +2287,11 @@ func _draw() -> void:
 	_draw_windup()
 	_draw_bars()
 	_draw_fx()
+	_overlay_dive()
+
+func _overlay_dive() -> void:
 	if _dive > 0.0:
-		_draw_dive(1.0 - clampf(_dive / 1.7, 0.0, 1.0))
+		_draw_dive(1.0 - clampf(_dive / 3.2, 0.0, 1.0))
 
 # --- the effects themselves, painted over the board ---------------------
 # the strike signature: which drawn animation an enemy verb produces.
