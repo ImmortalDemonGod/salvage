@@ -892,6 +892,28 @@ urgency check and hint gate key on, and the gate caught it within
 the minute. A targeted third round confirms the fight screens before
 the block hands over.
 
+### The verdict arc, closed
+
+Six cold-read rounds, thirteen readers at the widest, three at the
+narrowest, every round against a freshly regenerated gallery of the
+deployed build: blockers went uncounted, then 19, then 7, then 7
+with specifics, then 2, then 2 cosmetic one-liners, and in round six
+EVERY screen carried a hand-it-to-a-playtester-tonight verdict. The
+closing fixes: the lurker reduced to bulk, neck and bite (the shared
+crab renderer had been drawing claw and tail as scenery on the
+teaching beat); plates name their occupants; pills duck their plates;
+the preview pulses instead of impersonating damage; the banner claims
+safety, not geometry. Every fix cycle ended fast-green, committed,
+deployed hash-verified, and re-photographed before the next round
+judged it.
+
+Remaining for the team, documented and owned: the unclothed scuba rig
+model and the enemy animation clips (Glass_Goat; the top art
+dependency since INPUTS.md), the beat title "running on empty" beside
+a full tank (Marc's copy), and iconography for the recurring
+information atoms (a look decision). G5-HUMAN stays the only open
+gate.
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
