@@ -961,6 +961,42 @@ roster cards (art derivable today). 4. Fewer-limb enemies: how many,
 which beat slots. 5. The animations conversation he asked for, plus
 what unblocks better use: swim, enemy, and death clips.
 
+## The final sprint (Aug 7 afternoon): the team's feedback, built
+
+Rulings: everything ships today or tomorrow; the prototype is judged
+on what exists. All four approved items landed, each deployed and
+hash-verified the hour it finished:
+
+- **The one-rule grammar.** Occupied = WHO, empty-lit = WHERE,
+  creature = WHAT. Bodies select and only select; a plate wearing a
+  name selects its wearer; rings stopped being click targets. Two
+  advertised keys (TAB; arrows walk a gold pointer along lit plates,
+  ENTER goes) realize the artist's two-key scheme with selection as
+  the mode; the plate letters he called pollution are gone; a quiet
+  keys chip opens the full list; every old key stays bound, silent.
+- **The portrait roster.** His own baked faces, team-tinted, on the
+  cards that were always the selector; the log ticker he wanted gone
+  is gone.
+- **Read-gated steering.** The kick pushes blind; steering needs the
+  read. Bands moved a point. The masher WARNING stands, sharpened:
+  mash-and-move was never attack-only, because the drum carrier's
+  slot-0 IS the shut. Doctrine question, documented for the meeting.
+- **The barnacle** (dive 7 of 10). Fewer limbs as real content: a
+  shell that squats FLANK until broken, pried from beside it, a
+  brittle feeler guarding the pry ground. Three sim rules born and
+  fuzz-mirrored (blocks, prying, corpses release their aim - the last
+  one a real targeting bug the fight exposed); one judge amendment
+  logged in place (a healthy judge fights, a hurt one dodges); the
+  single-limb shape documented as degenerate (a one-HP cliff between
+  t4 and t41). Casual 87.6, greedy t10 paying 14, G2 40/40 over ten
+  beats.
+- **The sighted driver.** The build reports selection, air, limbs,
+  positions and every plate's true position in its title; mouserun
+  plays with eyes and completes all ten beats by mouse alone in 118s.
+  Three blind-driver rewrites had been paid before the channel; plate
+  escapes can stack, so only the build itself can say where its
+  plates are.
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
