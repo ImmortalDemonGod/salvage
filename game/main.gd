@@ -912,7 +912,7 @@ func _escape_line(d) -> String:
 		return "%s  ·  about to be hit, no safe plate to stand on. %s%s." % [
 			_incoming(d), only.substr(0, 1).to_upper(), only.substr(1)]
 	var d9 = combat.divers[selected]
-	if d9.kit.size() > 0 and String(d9.kit[0].kind) == "hit_shove" and combat.target_limb(d9) >= 0:
+	if d9.kit.size() > 0 and String(d9.kit[0].kind) == "hit_shove" and combat.target_limb(d9) >= 0 			and combat.known(combat.target_limb(d9)):
 		for it9 in combat.locked:
 			if int(it9.limb) == combat.target_limb(d9) and int(d9.station) in it9.stations:
 				return "%s  ·  about to be hit, no safe plate. Take it, or kick its swing back home (SPACE)." % _incoming(d)
@@ -1187,6 +1187,11 @@ func _refresh() -> void:
 		for od in combat.divers:
 			if not od.down and int(od.station) == i:
 				occ_name = "  ·  %s" % String(od.dname)
+		var lb8: int = combat.STATION_LIMB[i]
+		if occ_name == "" and lb8 >= 0 and not combat.limb_broken[lb8] 				and bool((combat.enc.limbs[lb8] as Dictionary).get("blocks", false)):
+			occ_name = "  ·  %s" % String(combat.LIMB_NAMES[lb8]).to_upper()
+		if occ_name == "" and combat.salvage_station == i and not combat.salvage_crushed:
+			occ_name = "  ·  the part"
 		lbl.text = "%s%s" % [Combat.STATION_NAMES[i], occ_name]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
@@ -1454,6 +1459,9 @@ func bar_buttons() -> Array:
 			"shut": what = "shuts the limb %d turn%s" % [int(eff.turns), "" if int(eff.turns) == 1 else "s"]
 		if tier == Combat.Tier.DESPERATE:
 			what += "  costs %d HP" % int(eff.hp_cost)
+		var able := action_legal("ability%d" % slot)
+		if not able:
+			what = "no target from here" if combat.target_limb(d) < 0 else "not enough air"
 		out.append({"id": "ability%d" % slot,
 			"label": "%s  %d air  [%s]" % [String(ab.name), int(d.cost), "SPACE" if slot == 0 else "F"],
 			"sub": what})
@@ -2125,10 +2133,11 @@ func _draw_salvage() -> void:
 	draw_line(box.position + Vector2(w * 0.66, 0), box.position + Vector2(w * 0.66, h), Color(0.30, 0.24, 0.16), 3.0)
 	var df2: Font = ThemeDB.fallback_font
 	var part_lbl := "THE PART %d/%d" % [combat.salvage_hp, int((combat.enc.salvage as Dictionary).hp)]
+	# label sits left of the crate, never under it
 	for off2 in [Vector2(1, 1), Vector2(-1, -1)]:
-		draw_string(df2, box.position + Vector2(-10, -14.0) + off2, part_lbl,
+		draw_string(df2, box.position + Vector2(-58, -14.0) + off2, part_lbl,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.02, 0.05, 0.08))
-	draw_string(df2, box.position + Vector2(-10, -14.0), part_lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+	draw_string(df2, box.position + Vector2(-58, -14.0), part_lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 		Color(0.98, 0.90, 0.60))
 	var mx := float(int((combat.enc.salvage as Dictionary).hp))
 	for k in range(int(mx)):
@@ -2304,6 +2313,7 @@ func _draw_traits() -> void:
 # it rides the z-order of the board it belongs to.
 func _draw_limb_bars() -> void:
 	var df: Font = ThemeDB.fallback_font
+	var placed: Array = []
 	for lb in range(combat.limb_hp.size()):
 		var st := -1
 		for s2 in range(5):
@@ -2325,19 +2335,34 @@ func _draw_limb_bars() -> void:
 			suffix = "  weak: ?"
 		else:
 			match combat.trait_of(lb):
-				"brittle": suffix = "  takes x2"
-				"plated": suffix = "  -1 dmg"
-				"leaking": suffix = "  +2 air"
-				"pressurised": suffix = "  bursts"
+				"brittle": suffix = "  weak: x2 dmg"
+				"plated": suffix = "  weak: armor"
+				"leaking": suffix = "  weak: +2 air"
+				"pressurised": suffix = "  weak: bursts"
 		var label := "%s %d/%d%s" % [String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), int(mx), suffix]
 		var tw: float = df.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 		var tx: float = clampf(at.x - tw * 0.5, 8.0, 1280.0 - tw - 8.0)
-		# lifted clear of the reticle that shares this anchor
-		for off in [Vector2(1, 1), Vector2(-1, -1)]:
-			draw_string(df, Vector2(tx, at.y - 34.0) + off, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
-				Color(0.02, 0.05, 0.08, 0.9))
+		# the backing pill and the leader line: cold readers could not bind
+		# a floating label to a limb, and bars printed through neighbour
+		# text. Pills also part from each other before they draw.
+		var pill := Rect2(Vector2(tx - 6.0, at.y - 48.0), Vector2(tw + 12.0, 32.0))
+		for _t9 in range(3):
+			var hit9 := false
+			for pr in placed:
+				if pill.grow(4.0).intersects(pr):
+					hit9 = true
+			if not hit9:
+				break
+			pill.position.y -= 36.0
+			at.y -= 36.0
+		placed.append(pill)
+		tx = pill.position.x + 6.0
+		draw_line(Vector2(clampf(_limb_at(lb).x, pill.position.x, pill.end.x), pill.end.y),
+			_limb_at(lb), Color(0.85, 0.75, 0.60, 0.65), 1.5)
+		draw_rect(pill, Color(0.04, 0.07, 0.10, 0.88))
+		draw_rect(pill, Color(0.55, 0.48, 0.38, 0.7), false, 1.0)
 		draw_string(df, Vector2(tx, at.y - 34.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
-			Color(0.98, 0.88, 0.82))
+			Color(0.98, 0.90, 0.84))
 		var bw := 56.0
 		var bx: float = at.x - bw * 0.5
 		draw_rect(Rect2(Vector2(bx - 1, at.y - 29), Vector2(bw + 2, 7)), Color(0.03, 0.05, 0.07, 0.92))
