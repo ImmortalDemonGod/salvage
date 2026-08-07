@@ -119,7 +119,13 @@ func check_station_design() -> void:
 			var i := int(st)
 			if i == Combat.BACKLINE and drum:
 				continue
-			if limb_at[i] < 0 and threatened.has(i):
+			var pries := false
+			var probe2 := Combat.new(String(key))
+			for nb in probe2.neighbours(i):
+				var bl := int(probe2.STATION_LIMB[int(nb)])
+				if bl >= 0 and bool((probe2.enc.limbs[bl] as Dictionary).get("blocks", false)):
+					pries = true
+			if limb_at[i] < 0 and threatened.has(i) and not pries:
 				fail("STATION DEAD BY DESIGN in %s: %s is threatened but exposes no limb, so standing there costs damage and buys nothing"
 					% [String(key), Combat.STATION_NAMES[i]])
 			if limb_at[i] < 0 and not threatened.has(i):
@@ -182,8 +188,12 @@ func check_stations(n: int, enc_id := "crab") -> void:
 		if not open_here:
 			continue
 		if pct == 0.0:
-			if i == refuge and refuge_needed and not refuge_in_arc:
-				pass # a valid refuge: never in an arc, and sometimes the only safe ground
+			var blocked_ground := false
+			var bl9: int = int(probe.STATION_LIMB[i])
+			if bl9 >= 0 and bool((probe.enc.limbs[bl9] as Dictionary).get("blocks", false)):
+				blocked_ground = true # a squatter's ground is for TAKING, not standing
+			if (i == refuge and refuge_needed and not refuge_in_arc) or blocked_ground:
+				pass
 			else:
 				fail("DEAD STATION in %s: %s is never occupied in optimal play" % [enc_id, Combat.STATION_NAMES[i]])
 		if pct > 60.0 and OPEN.size() > 1:

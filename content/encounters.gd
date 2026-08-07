@@ -95,6 +95,35 @@ static var ALL := {
 			{"limb": 2, "stations": [REAR, FLANK], "dmg": 4, "name": "sweeps"},
 		],
 	},
+	# Beat `reef1`. The artist's diversity ask made content: ONE limb,
+	# and the limb is a squatter. The shell sits on FLANK and nobody
+	# stands there until it is broken; its slam alternates around the
+	# board, so the fight is a race to crack an armored thing that has
+	# taken your ground. Fewer limbs, new question.
+	"barnacle": {
+		"title": "the barnacle",
+		"art": {"kind": "crab", "scale": 120.0, "pos": [880, 330], "tint": [0.80, 0.62, 0.50]},
+		"places": {"0": [600, 392], "1": [842, 330], "3": [1096, 392], "4": [338, 392]},
+		"party": 2,
+		"drum": true,
+		"open_stations": [FRONT, FLANK, REAR, BACKLINE],
+		"starts": [FRONT, BACKLINE],
+		# two limbs is still the artist's "fewer": the single-limb space
+		# proved degenerate against the pinned judge (a one-HP cliff
+		# between clears-in-4 and stalemates-at-41), the same narrowness
+		# the two-diver crab documented. The shell squats; the feeler
+		# punishes the ground you pry from.
+		"limbs": [
+			{"name": "shell", "hp": 20, "station": FLANK, "trait": "leaking", "blocks": true},
+			{"name": "feeler", "hp": 13, "station": REAR, "trait": "brittle"},
+		],
+		"attacks": [
+			{"limb": 0, "stations": [REAR], "dmg": 5, "name": "slams"},
+			{"limb": 0, "hunts": true, "stations": [], "dmg": 5, "name": "snaps toward"},
+			{"limb": 1, "stations": [FRONT], "dmg": 4, "name": "scrapes at"},
+			{"limb": 1, "stations": [FRONT, REAR], "dmg": 4, "name": "rakes"},
+		],
+	},
 	# Beat `fight2`. A DIFFERENT anatomy, which is the question the whole
 	# station design rests on: does the geometry survive a different body?
 	# It inverts fight one deliberately. There, UNDER was the empty station

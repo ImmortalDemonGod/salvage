@@ -24,6 +24,9 @@ static func legal(c: Combat) -> Array:
 				for o in c.divers:
 					if not o.down and int(o.station) == int(s):
 						busy = true
+				var bl2: int = c.STATION_LIMB[int(s)]
+				if bl2 >= 0 and not c.limb_broken[bl2] and bool((c.enc.limbs[bl2] as Dictionary).get("blocks", false)):
+					busy = true
 				if not busy:
 					out.append({"kind": "move", "i": d.id, "s": int(s)})
 	return out
@@ -192,10 +195,14 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 					if int(d.station) in it.stations and int(c.limb_stun[int(it.limb)]) <= 0 and not c.limb_broken[int(it.limb)]:
 						would2 += int(it.dmg)
 				# capped below an attack's typical score: uncapped, the
-				# judge dodge-thrashed (41-turn crab, G2 0/40). A dodge is
-				# the best action when attacking is weak, never instead of
-				# every attack forever.
-				score += minf(float(would2) * 0.45, 1.2)
+				# judge dodge-thrashed (41-turn crab, G2 0/40). And a
+				# HEALTHY diver discounts the dodge further: unconditional
+				# dodge value stalemated every squatter shape at t41 (the
+				# shut-forever pathology in movement clothes). A judge
+				# fights while healthy and dodges while hurt, which is
+				# also what a floor should measure.
+				var dodge_w: float = 0.45 if float(d.hp) / float(d.max_hp) < 0.6 else 0.18
+				score += minf(float(would2) * dodge_w, 1.2)
 				if float(d.hp) / float(d.max_hp) < 0.5:
 					score += 0.6
 		if score > best_score:

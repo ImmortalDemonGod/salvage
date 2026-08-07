@@ -777,15 +777,9 @@ func _next_step() -> String:
 		return hurt + "   Nothing is announced where they stand: keep them there and hit with SPACE."
 	if not combat.can_attack(d):
 		var safe_far := -1
-		for st in combat.OPEN_STATIONS:
+		for st in _lit_stations():
 			var lbx: int = combat.STATION_LIMB[int(st)]
-			if lbx < 0 or combat.limb_broken[lbx]:
-				continue
-			var busy := false
-			for o in combat.divers:
-				if not o.down and int(o.station) == int(st):
-					busy = true
-			if not busy:
+			if lbx >= 0 and not combat.limb_broken[lbx]:
 				safe_far = int(st)
 				break
 		if safe_far >= 0 and combat.can_move_now(int(d.id)):
@@ -873,16 +867,11 @@ func _incoming_old(d) -> String:
 
 func _escape_line(d) -> String:
 	var refuge := -1
-	for st in combat.OPEN_STATIONS:
-		if int(st) == int(d.station) or int(st) in combat.threatened_stations():
+	for st in _lit_stations():
+		if int(st) in combat.threatened_stations():
 			continue
-		var occupied := false
-		for o in combat.divers:
-			if not o.down and int(o.station) == int(st):
-				occupied = true
-		if not occupied:
-			refuge = int(st)
-			break
+		refuge = int(st)
+		break
 	var lb: int = combat.target_limb(d)
 	var kill := ""
 	if lb >= 0:
@@ -1399,6 +1388,9 @@ func _lit_stations() -> Array:
 		for o in combat.divers:
 			if not o.down and int(o.station) == int(st):
 				busy = true
+		var bl: int = combat.STATION_LIMB[int(st)]
+		if bl >= 0 and not combat.limb_broken[bl] and bool((combat.enc.limbs[bl] as Dictionary).get("blocks", false)):
+			busy = true
 		if not busy:
 			out.append(int(st))
 	return out
@@ -2302,7 +2294,7 @@ func _draw_limb_bars() -> void:
 				st = s2
 		if st < 0:
 			continue
-		var at: Vector2 = _limb_at(lb).lerp(_body_at(), 0.35) + Vector2(0, float(lb % 2) * -20.0)
+		var at: Vector2 = _limb_at(lb).lerp(_body_at(), 0.35) + Vector2(float(lb % 2) * 56.0 - 28.0, float(lb % 2) * -20.0)
 		if combat.limb_broken[lb]:
 			draw_string(df, at + Vector2(-34, -14), "BROKEN", HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 				Color(0.60, 0.66, 0.70, 0.9))

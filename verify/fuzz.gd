@@ -112,9 +112,13 @@ func expect_attack(c: Combat, i: int) -> bool:
 				return true
 		return false
 	var limb: int = c.STATION_LIMB[int(d.station)]
-	if limb < 0:
-		return false
-	return not bool(c.limb_broken[limb])
+	if limb >= 0 and not bool(c.limb_broken[limb]):
+		return true
+	for nb in c.neighbours(int(d.station)):
+		var bl: int = int(c.STATION_LIMB[int(nb)])
+		if bl >= 0 and not c.limb_broken[bl] and bool((c.enc.limbs[bl] as Dictionary).get("blocks", false)):
+			return true
+	return false
 
 func expect_move(c: Combat, i: int, s: int) -> bool:
 	var d = c.divers[i]
@@ -130,6 +134,9 @@ func expect_move(c: Combat, i: int, s: int) -> bool:
 	for o in c.divers:
 		if not o.down and int(o.station) == s:
 			return false
+	var bl: int = c.STATION_LIMB[s]
+	if bl >= 0 and not c.limb_broken[bl] and bool((c.enc.limbs[bl] as Dictionary).get("blocks", false)):
+		return false
 	return int(d.station) != s
 
 # `used` is the fuzzer's OWN count of overdrafts accepted since the last

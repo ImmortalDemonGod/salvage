@@ -239,7 +239,14 @@ func live_attacks() -> Array:
 	var out: Array = []
 	for key in by_limb.keys():
 		var opts: Array = by_limb[key]
-		out.append(opts[turn % opts.size()])
+		if bool(enc.get("ferocious", false)):
+			# a fewer-limbed thing fights with everything it has, every
+			# turn: one limb, all its arcs. Diversity means new questions,
+			# not less fight.
+			for o in opts:
+				out.append(o)
+		else:
+			out.append(opts[turn % opts.size()])
 	return out
 
 # The telegraph. Deterministic, shown at the START of the player's turn,
@@ -363,7 +370,8 @@ func can_attack(d) -> bool:
 	# the key, and the press did nothing. Ask the same question both do.
 	if d.disables and d.station == BACKLINE:
 		return target_limb(d) >= 0
-	return STATION_LIMB[d.station] >= 0 and not limb_broken[STATION_LIMB[d.station]]
+	var tl: int = target_limb(d)
+	return tl >= 0 and not limb_broken[tl]
 
 # which limb this diver would hit from where it stands
 func target_limb(d) -> int:
@@ -375,7 +383,16 @@ func target_limb(d) -> int:
 			if can_shut(int(it.limb)):
 				return int(it.limb)
 		return -1
-	return int(STATION_LIMB[d.station])
+	var own: int = int(STATION_LIMB[d.station])
+	if own >= 0 and not limb_broken[own]:
+		return own
+	# a blocking limb is pried at from BESIDE it: it took the station you
+	# would stand on, so the neighbouring stations are the way at it
+	for nb in neighbours(int(d.station)):
+		var bl: int = int(STATION_LIMB[int(nb)])
+		if bl >= 0 and not limb_broken[bl] and bool((enc.limbs[bl] as Dictionary).get("blocks", false)):
+			return bl
+	return -1
 
 func afford(cost: int) -> bool:
 	return air >= cost
@@ -613,6 +630,9 @@ func act_move(i: int, station: int) -> bool:
 	for o in divers:
 		if not o.down and int(o.station) == station:
 			return false
+	var bl: int = STATION_LIMB[station]
+	if bl >= 0 and not limb_broken[bl] and bool((enc.limbs[bl] as Dictionary).get("blocks", false)):
+		return false
 	var cost := move_cost(i)
 	if cost > 0 and not afford(cost):
 		return false

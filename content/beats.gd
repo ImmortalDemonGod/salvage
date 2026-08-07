@@ -101,6 +101,17 @@ static var LADDER := [
 		"expect": {"encounter": "spitter", "divers": 2, "open_stations": 4, "limbs": 3},
 	},
 	{
+		"id": "reef1",
+		"kind": "combat",
+		"encounter": "barnacle",
+		"title": "the barnacle",
+		"teaches": "blocks",
+		"uses": ["stations", "air", "limbs", "telegraph", "conditions", "backline"],
+		"built": true,
+		"expect": {"encounter": "barnacle", "divers": 2, "open_stations": 4, "limbs": 2},
+		"note": "the squat: a limb that TAKES your station until broken, pried at from beside it",
+	},
+	{
 		"id": "puzzle2",
 		"kind": "puzzle",
 		"stage": 2,
@@ -146,4 +157,4 @@ static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
 
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
 	"telegraph", "cost_tiers", "heavy_tier", "water_level", "conditions", "backline",
-	"overdraft", "umbilical", "analyze", "hunts", "ramp", "salvage"]
+	"overdraft", "umbilical", "analyze", "hunts", "ramp", "salvage", "blocks"]

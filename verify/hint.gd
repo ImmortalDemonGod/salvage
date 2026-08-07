@@ -96,6 +96,9 @@ func _audit(scene, c, enc_id: String) -> void:
 			if not o.down and int(o.station) == st and int(o.id) != int(d.id):
 				fail("%s: prompt sends %s to %s, which the screen labels taken (%s is there)" % [
 					enc_id, d.dname, name, o.dname])
+		var blk: int = int(c.STATION_LIMB[st])
+		if blk >= 0 and not c.limb_broken[blk] and bool((c.enc.limbs[blk] as Dictionary).get("blocks", false)):
+			fail("%s: prompt glows %s while the %s squats on it" % [enc_id, name, c.LIMB_NAMES[blk]])
 		if not c.can_move_now(scene.selected):
 			fail("%s: prompt says move when %s has spent the free move and the tank cannot pay for another" % [
 				enc_id, d.dname])
