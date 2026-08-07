@@ -147,10 +147,16 @@ func _init() -> void:
 	# bound the region to the HIT arm itself. Taking everything AFTER it
 	# swept in the card-text builder, which names the same kinds for a
 	# different purpose, and the check passed a deliberate sabotage.
-	var motion := main.split("SfxEvents.Kind.HIT:")
+	# bound to _motion FIRST: the file gained a second Kind.HIT match arm
+	# (_rig_react, which picks animation clips) and splitting on the bare
+	# marker read that arm instead, reporting three kinds uncovered while
+	# the real motion arm still covered them all
+	var motion_fn := main.split("func _motion(")
 	var arm := ""
-	if motion.size() > 1:
-		arm = String(motion[1]).split("SfxEvents.Kind.TAKE:")[0]
+	if motion_fn.size() > 1:
+		var motion := String(motion_fn[motion_fn.size() - 1]).split("SfxEvents.Kind.HIT:")
+		if motion.size() > 1:
+			arm = String(motion[1]).split("SfxEvents.Kind.TAKE:")[0]
 	if arm.strip_edges() == "":
 		fail("NO MOTION ARM FOUND in game/main.gd -- this check is asleep")
 	var covered: Array = []
