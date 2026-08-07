@@ -193,11 +193,11 @@ func place(i: int) -> Vector2:
 # One design language, in one place. PRIMARY is for the things that change
 # every turn, QUIET for the things that never do, so the eye has somewhere
 # to go first.
-const BRASS := Color(0.72, 0.54, 0.26)
+const BRASS := Color(0.44, 0.40, 0.30)
 const BRASS_LIT := Color(0.90, 0.72, 0.38)
 const PLATE := Color(0.085, 0.105, 0.120)
 const PLATE_DEEP := Color(0.055, 0.070, 0.085)
-const RIVET := Color(0.52, 0.44, 0.30)
+const RIVET := Color(0.36, 0.33, 0.26)
 
 static func _skin(bg: Color, border: Color, radius := 6) -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
@@ -1177,11 +1177,8 @@ func _refresh() -> void:
 	var live_cards := 0
 	for d0 in combat.divers:
 		live_cards += 1
-	var span: float = float(live_cards) * 320.0 + float(max(0, live_cards - 1)) * 14.0
-	var left: float = (DESIGN.x - span) * 0.5
 	for i in range(ui_divers.size()):
-		if i < live_cards:
-			ui_divers[i].position = Vector2(left + float(i) * 334.0, CARD_TOP)
+		ui_divers[i].position = Vector2(24.0 + float(i) * 334.0, CARD_TOP)
 		var card: Panel = ui_divers[i]
 		if i >= combat.divers.size():
 			card.visible = false
@@ -1733,6 +1730,14 @@ func _draw_water() -> void:
 		var bw: float = 52.0 + float((i * 37) % 60)
 		var bh: float = 60.0 + float((i * 53) % 150)
 		draw_rect(Rect2(Vector2(bx0, sky - bh), Vector2(bw, bh + 40.0)), far)
+	# a middle skyline between them: the missing value step that made
+	# depth read as binary (visual assessment F-004)
+	var mid: Color = far.lerp(near, 0.5).lightened(0.05)
+	for i in range(9):
+		var mx0: float = w.x * (float(i) / 9.0) - 55.0 + sin(float(i) * 3.1) * 38.0
+		var mw: float = 70.0 + float((i * 43) % 70)
+		var mh: float = 50.0 + float((i * 61) % 110)
+		draw_rect(Rect2(Vector2(mx0, sky - mh * 0.6 + 60.0), Vector2(mw, mh + 60.0)), mid)
 	# and a nearer one, lower and darker, which gives the floor its edge
 	for i in range(8):
 		var cx0: float = w.x * (float(i) / 8.0) - 70.0 + cos(float(i) * 1.7) * 44.0
@@ -1998,9 +2003,9 @@ func _draw_actionbar() -> void:
 		var b: Dictionary = btns[i]
 		var r: Rect2 = btn_rect(i, btns.size())
 		var on: bool = action_legal(String(b.id))
-		var face := Color(0.30, 0.36, 0.30, 0.92) if on else Color(0.16, 0.18, 0.19, 0.85)
-		var edge := Color(0.78, 0.86, 0.66, 0.9) if on else Color(0.40, 0.44, 0.46, 0.6)
-		var ink := Color(0.94, 0.97, 0.90) if on else Color(0.55, 0.58, 0.60)
+		var face := Color(0.19, 0.24, 0.19, 0.94) if on else Color(0.10, 0.12, 0.13, 0.88)
+		var edge := Color(0.78, 0.86, 0.66, 0.9) if on else Color(0.42, 0.46, 0.48, 0.7)
+		var ink := Color(0.95, 0.97, 0.91) if on else Color(0.74, 0.77, 0.79)
 		draw_rect(r, face)
 		draw_rect(r, edge, false, 2.0)
 		var txt := String(b.label)
@@ -2012,7 +2017,7 @@ func _draw_actionbar() -> void:
 		else:
 			draw_string(df, r.position + Vector2(10.0, 18.0), txt,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)
-			var sink := Color(ink.r, ink.g, ink.b, ink.a * 0.75)
+			var sink := Color(ink.r, ink.g, ink.b, ink.a * 0.92)
 			draw_string(df, r.position + Vector2(10.0, 34.0), sub,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 12, sink)
 

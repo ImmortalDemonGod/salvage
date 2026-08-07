@@ -20,7 +20,7 @@ static var ALL := {
 	# geography exists to complicate either (SPEC 2.7, one idea per beat).
 	"descent": {
 		"title": "something in the dark",
-		"art": {"kind": "lurker", "scale": 150.0, "pos": [900, 330], "tint": [0.30, 0.36, 0.42]},
+		"art": {"kind": "lurker", "scale": 150.0, "pos": [900, 330], "tint": [0.46, 0.55, 0.62]},
 		"places": {"0": [600, 400]},
 		# TEACHING BEAT, exempt from the difficulty bands and from the
 		# dominant-station check by declaration, not by a silent special
