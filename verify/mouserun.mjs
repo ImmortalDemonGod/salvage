@@ -50,16 +50,28 @@ const T0 = Date.now();
 //   (4, then 1, 2, 3) -- sim/puzzle.gd level_a needs valve3 AND the
 //   crossover open, and B drains through, ending dry.
 const ORDER = ["opening", "descent", "fight1", "boat1", "puzzle1",
-  "fight2", "puzzle2", "boat2", "deep1", "ending"];
+  "fight2", "reef1", "puzzle2", "boat2", "deep1", "ending"];
+// per fight: plate positions BY STATION INDEX (sparse: only open ones),
+// and per limb the stations that can attack it (own station, or the
+// squat's neighbours). Station indices are the sim's own 0..4.
 const FIGHTS = {
   descent: { body: [900, 480], party: 1, buttons: 4,
-    places: [[600, 400]] },
+    plate: { 0: [600, 400] },
+    attackFrom: [[0]] },
   fight1:  { body: [872, 480], party: 2, buttons: 4,
-    places: [[590, 392], [788, 288], [896, 520], [1108, 300]] },
+    plate: { 0: [590, 392], 1: [788, 322], 2: [896, 520], 3: [1108, 322] },
+    attackFrom: [[0], [1], [3]] },
   fight2:  { body: [910, 462], party: 2, buttons: 5,
-    places: [[584, 386], [860, 270], [952, 516], [286, 386]] },
+    plate: { 0: [584, 386], 1: [860, 318], 2: [952, 516], 4: [338, 386] },
+    attackFrom: [[0], [1], [2]] },
+  reef1:   { body: [880, 480], party: 2, buttons: 5,
+    plate: { 0: [600, 392], 1: [842, 330], 3: [1096, 392], 4: [338, 392] },
+    // shell squats FLANK(1): pried from its neighbours FRONT/REAR;
+    // feeler sits at REAR
+    attackFrom: [[0, 3], [3]] },
   deep1:   { body: [884, 470], party: 3, buttons: 5,
-    places: [[614, 400], [782, 296], [1108, 348], [286, 400]] },
+    plate: { 0: [614, 400], 1: [782, 326], 3: [1108, 348], 4: [338, 400] },
+    attackFrom: [[0], [1], [3]] },
 };
 const PUZZLES = {
   puzzle1: [[876, 482], [500, 592], [580, 592]],
@@ -133,6 +145,18 @@ killer.unref?.();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const beatNow = async () => ((await page.title()).match(/beat=([\w-]+)/)?.[1] ?? "");
+const stateNow = async () => {
+  const t = await page.title();
+  const limbs = (t.match(/limbs=([\d,]+)/)?.[1] ?? "").split(",").filter(Boolean).map(Number);
+  const pos = (t.match(/pos=([\dx,]+)/)?.[1] ?? "").split(",").filter(Boolean);
+  const air = Number(t.match(/air=(\d+)/)?.[1] ?? 0);
+  const plates = {};
+  for (const m of (t.match(/pl=([\d:,\-]+)/)?.[1] ?? "").split(",").filter(Boolean)) {
+    const [st, x, y] = m.split(":").map(Number);
+    plates[st] = [x + 112, y + 20];
+  }
+  return { limbs, pos, air, plates };
+};
 async function click(x, y) { await page.mouse.click(x, y); }
 
 // ---- boot ---------------------------------------------------------------
@@ -164,57 +188,38 @@ async function driveFight(b) {
   const f = FIGHTS[b];
   for (let turn = 1; turn <= 40; turn++) {
     console.log(`MOUSERUN beat=${b} turn=${turn}`);
-    // Each diver: select its card, take the one FREE move of the turn to a
-    // ROTATING station (a fixed walk order left both divers parked on
-    // limbless stations while the last limb sat elsewhere -- the first run
-    // of this gate stalled fight1 at CLAW 1/12 exactly that way), then
-    // hammer the creature body. A body click is player_ability(0) with the
-    // selected diver; refusals (no air, nothing to hit) are silent no-ops
-    // from out here. Clicking the station you already stand on attacks too.
+    if (process.env.MOUSE_DEBUG === "1") console.log("  title:", await page.title());
     for (let d = 0; d < f.party; d++) {
-      // select FIRST, reposition, then select AGAIN: a station click that
-      // lands on another diver's body selects them instead (that is the
-      // game's real click grammar), so the re-select restores the diver
-      // this loop is driving before it reads and swings
-      await click(...CARD(d)); await sleep(90);
+      await click(...CARD(d)); await sleep(80);
       if (await beatNow() !== b) return true;
-      // ONE-RULE GRAMMAR (Aug 7): a plate click moves when the plate is
-      // empty and selects its occupant when it is not, so clicking EVERY
-      // plate each diver-turn is safe and maximizes legal repositioning;
-      // the card re-select below restores the diver this loop drives
-      // rotate the sweep so each diver-turn ENDS at a different plate:
-      // the last successful move decides the attack station, and a fixed
-      // order parked everyone at the limbless belly
-      for (let j = 0; j < f.places.length; j++) {
-        const q = f.places[(turn + d + j) % f.places.length];
-        const belly = q[1] >= f.body[1] - 20;
-        const side = q[0] >= f.body[0] ? 1 : -1;
-        if (belly) { await click(q[0] + side * 166, q[1] + 22); }
-        else { await click(q[0], q[1] + 52); }
-        await sleep(70);
+      // THE SIGHTED POLICY: the title's state channel says which limbs
+      // still stand and where every diver is. Aim: first unbroken limb,
+      // first of its attack-from stations not held by a teammate.
+      const st = await stateNow();
+      let dest = -1;
+      for (let lb = 0; lb < st.limbs.length; lb++) {
+        if (st.limbs[lb] <= 0) continue;
+        for (const a of (f.attackFrom[lb] ?? [])) {
+          const holder = st.pos.findIndex((p2) => p2 === String(a));
+          if (holder === -1 || holder === d) { dest = a; break; }
+        }
+        if (dest >= 0) break;
       }
-      await click(...CARD(d)); await sleep(90);
-      if (await beatNow() !== b) return true;
-      // read the limb in front of you when the tank allows: the analyze
-      // button is always third from the bar's end ([..., analyze,
-      // rewind, end]). Since the brittle bonus became AIMED (a read
-      // gates the x2), a never-reading policy cannot break 15 HP limbs
-      // inside the turn cap -- which is the design working.
-      await click(...BTN(f.buttons - 3)); await sleep(90);
+      if (dest >= 0 && st.pos[d] !== String(dest) && st.plates[dest]) {
+        // the build reports every plate's real position (pl= in the
+        // title), so escaped plates are clicked where they actually are
+        await click(...st.plates[dest]);
+        await sleep(110);
+        await click(...CARD(d)); await sleep(80);
+        if (await beatNow() !== b) return true;
+      }
+      // read when it buys aim (brittle x2 and steering are read-gated)
+      await click(...BTN(f.buttons - 3)); await sleep(80);
       for (let k = 0; k < 3; k++) {
-        await click(...f.body); await sleep(120);
-        // the winning click flips the title IMMEDIATELY (main.gd _after
-        // advances the run before the dive transition plays). Checking
-        // after every click keeps a stray follow-up click from advancing
-        // the next scene beat unseen.
+        await click(...f.body); await sleep(110);
         if (await beatNow() !== b) return true;
       }
     }
-    // end turn: ALWAYS the last button. 4 buttons while the ladder has
-    // granted one ability (descent, fight1), 5 after boat1 grants the
-    // second (fight2, deep1). A click on the empty rect below a 4-button
-    // bar would hit nothing, but the count here is derived from the same
-    // ladder the game reads, so it is not a guess.
     await click(...BTN(f.buttons - 1));
     await sleep(800);
     if (await beatNow() !== b) return true;

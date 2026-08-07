@@ -727,7 +727,24 @@ func _process(dt: float) -> void:
 
 func _stamp_title() -> void:
 	var b: Dictionary = run.current()
-	DisplayServer.window_set_title("SALVAGE beat=%s" % ("ending" if run.finished else String(b.get("id", "?"))))
+	# the title is the build's instrumentation channel: the beat for the
+	# gallery's landed-where-it-claimed assertion, and a compact combat
+	# state so the mouse-only driver can play with eyes instead of
+	# sweeping blind (its blindness cost three driver rewrites)
+	var tstate := ""
+	if combat != null and not run.finished:
+		var lhp: Array = []
+		for v in combat.limb_hp:
+			lhp.append(str(int(v)))
+		var pos: Array = []
+		for dd0 in combat.divers:
+			pos.append("x" if dd0.down else str(int(dd0.station)))
+		var plt: Array = []
+		for sti in range(5):
+			if combat.station_open(sti) and ui_stations[sti].visible:
+				plt.append("%d:%d:%d" % [sti, int(ui_stations[sti].position.x), int(ui_stations[sti].position.y)])
+		tstate = " sel=%d air=%d limbs=%s pos=%s pl=%s" % [selected, combat.air, ",".join(lhp), ",".join(pos), ",".join(plt)]
+	DisplayServer.window_set_title("SALVAGE beat=%s%s" % [("ending" if run.finished else String(b.get("id", "?"))), tstate])
 
 func _draw_ending() -> void:
 	var f: Font = ThemeDB.fallback_font
