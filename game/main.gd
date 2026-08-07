@@ -96,14 +96,14 @@ const RIG_SCALE := 0.22
 var _rig_cache: Dictionary = {}
 var _danim: Dictionary = {}   # diver id -> {"clip": String, "t0": float}
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
-const CARD_TOP := 522.0
+const CARD_TOP := 584.0
 # The action bar: the third playtest's ruling made buttons a hard
 # requirement ("having buttons on screen would replace the need of the
 # keyboard and make it visually obvious what to do"). One geometry,
 # drawn and hit-tested from the same rects (standing rule 29), enabled
 # state predicted by ASKING the sim on a clone, never by a parallel
 # rule that can drift.
-const BAR_H := 40.0
+const BAR_H := 42.0
 # a vertical action menu on the LEFT, in the open water where nothing
 # else lives: the first horizontal placement sat under the UNDER station
 # tag, because Controls render above custom drawing and the bottom band
@@ -223,7 +223,10 @@ func _build_ui() -> void:
 	for i in range(5):
 		var m := Panel.new()
 		m.name = "station_" + Combat.STATION_NAMES[i]
-		m.size = Vector2(300, 74)
+		# the diet: 300x74 tags covered the creature they described. The
+		# playtest line that forced it: "I legitimately cannot even see
+		# the thing I'm supposed to be fighting." One line and a bar.
+		m.size = Vector2(224, 44)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
 		var bg := ColorRect.new()
@@ -257,8 +260,8 @@ func _build_ui() -> void:
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(392, 190)
-		p.position = Vector2(24 + i * 406, CARD_TOP)
+		p.size = Vector2(320, 92)
+		p.position = Vector2(24 + i * 334, CARD_TOP)
 		p.add_theme_stylebox_override("panel", skin_card())
 		_rivet(p)
 		add_child(p)
@@ -364,7 +367,6 @@ func _build_ui() -> void:
 	help_panel.size = Vector2(1220, 40)
 	help_panel.position = Vector2(30, 166)
 	help_panel.add_theme_stylebox_override("panel", skin_quiet())
-	_rivet(help_panel)
 	add_child(help_panel)
 	var step_panel := Panel.new()
 	step_panel.name = "step_panel"
@@ -384,7 +386,7 @@ func _build_ui() -> void:
 	var log_panel := Panel.new()
 	log_panel.name = "log_panel"
 	log_panel.size = Vector2(1232, 40)
-	log_panel.position = Vector2(24, 718)
+	log_panel.position = Vector2(24, 680)
 	var lst := StyleBoxFlat.new()
 	lst.bg_color = Color(0.03, 0.09, 0.14, 0.92)
 	lst.border_color = Color(0.34, 0.52, 0.62, 0.85)
@@ -846,6 +848,7 @@ func _refresh() -> void:
 		sfx.set_mood(mood, _depth())
 	ui_intent.get_parent().visible = true
 	var hp0: Control = ui_help.get_parent()
+	hp0.visible = run.puzzle != null
 	if run.puzzle != null or combat != null:
 		hp0.position = Vector2(30, 166)
 		hp0.size = Vector2(1220, 40)
@@ -938,13 +941,15 @@ func _refresh() -> void:
 		return
 	ui_scene.get_parent().visible = false
 	var step := _next_step()
+	if refusal != "":
+		step = refusal
 	ui_step.text = step
 	# only interrupt when there is a decision to make; a narrator on every
 	# routine turn teaches the player to stop reading the one line that
 	# sometimes matters
 	var urgent := step.find("about to be hit") >= 0 or step.find("go down soon") >= 0 \
 		or step.find("tank is empty") >= 0 or step.find("read the") >= 0 \
-		or step.find("Nothing to hit") >= 0 or combat == null
+		or step.find("Nothing to hit") >= 0 or combat == null or refusal != ""
 	ui_step.get_parent().visible = step != "" and urgent
 	ui_air.get_parent().visible = true
 	# the bottles: full ones lit brass, spent ones dark, ones cut off by a
@@ -970,7 +975,52 @@ func _refresh() -> void:
 		# above the card row. Lifting the whole board to dodge that pushed
 		# the FLANK sprite up into the HUD instead, so the station moved
 		# rather than everything else.
-		mk.position = place(i) - mk.size * 0.5 + Vector2(0, 56)
+		# the tag stands on the far side of its station from the creature,
+		# so the board's words ring the body instead of covering it. The
+		# HUD budget gate samples the body and fails any tag that drifts
+		# back over it.
+		var body0: Vector2 = _body_at()
+		var away: Vector2 = (place(i) - body0)
+		away = away.normalized() if away.length() > 1.0 else Vector2(0, 1)
+		var push := 62.0
+		var tag_at := Vector2.ZERO
+		# push until the whole tag clears the creature window the budget
+		# gate samples (radius 110 plus margin), screen clamp last
+		for _try in range(6):
+			tag_at = place(i) + away * push + Vector2(0, 30.0) - mk.size * 0.5
+			tag_at.x = clampf(tag_at.x, 8.0, 1280.0 - mk.size.x - 8.0)
+			tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
+			var rect := Rect2(tag_at, mk.size)
+			var nearest := Vector2(clampf(body0.x, rect.position.x, rect.end.x),
+				clampf(body0.y, rect.position.y, rect.end.y))
+			if nearest.distance_to(body0) >= 114.0:
+				break
+			push += 34.0
+		# tags may not stack on each other either: nudge along the same
+		# away vector until this one clears every tag already placed
+		for _try2 in range(5):
+			var mine := Rect2(tag_at, mk.size)
+			var clear := true
+			for j in range(i):
+				if not combat.station_open(j):
+					continue
+				var other := Rect2(ui_stations[j].position, ui_stations[j].size)
+				if mine.grow(4.0).intersects(other):
+					clear = false
+			if clear:
+				break
+			var before := tag_at
+			tag_at += away * 40.0
+			tag_at.x = clampf(tag_at.x, 8.0, 1280.0 - mk.size.x - 8.0)
+			tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
+			if tag_at.distance_to(before) < 8.0:
+				# the away direction is pinned against the screen edge, so
+				# slide down the edge instead (or up when out of room)
+				tag_at.y = before.y + 52.0
+				if tag_at.y > 566.0 - mk.size.y:
+					tag_at.y = before.y - 52.0
+				tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
+		mk.position = tag_at
 		# The limb bar. This was written once and lost: the script carrying
 		# it aborted on a failing anchor further down and never reached the
 		# write, so limb health has been TEXT ONLY ever since -- which is
@@ -984,8 +1034,8 @@ func _refresh() -> void:
 		if show_bar:
 			var mx: float = float(int((combat.enc.limbs[lb0] as Dictionary).hp))
 			var fr: float = clampf(float(combat.limb_hp[lb0]) / max(1.0, mx), 0.0, 1.0)
-			bgr.position = Vector2(10, mk.size.y - 13)
-			bgr.size = Vector2(mk.size.x - 20, 8)
+			bgr.position = Vector2(8, mk.size.y - 11)
+			bgr.size = Vector2(mk.size.x - 16, 7)
 			flr.position = bgr.position
 			flr.size = Vector2(bgr.size.x * fr, 8)
 			# the preview chunk: the part of this bar the selected diver's
@@ -1010,24 +1060,21 @@ func _refresh() -> void:
 		var lb: int = combat.STATION_LIMB[i]
 		var lbl: Label = ui_stations[i].get_node("label")
 		if lb < 0:
-			var reach := "nothing to hit here"
-			for dr in combat.divers:
-				if not dr.down and int(dr.station) == i and combat.can_attack(dr):
-					reach = "reaches from here"
-			lbl.text = "%s  [%s]%s\n%s" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), reach]
+			lbl.text = "%s  [%s]" % [Combat.STATION_NAMES[i], String(keys2[i])]
 		elif combat.limb_broken[lb]:
-			lbl.text = "%s  [%s]%s\n%s BROKEN" % [Combat.STATION_NAMES[i], String(keys2[i]), here_free(i), String(combat.LIMB_NAMES[lb]).to_upper()]
+			lbl.text = "%s BROKEN" % String(combat.LIMB_NAMES[lb]).to_upper()
 		else:
-			var stun := "  ·  SHUT %d" % int(combat.limb_stun[lb]) if int(combat.limb_stun[lb]) > 0 else ""
 			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
-			var read := ""
-			if combat.known(lb):
-				var tr := combat.trait_of(lb)
-				read = ""   # the trait is drawn on the limb itself now
-			else:
-				read = "   [A]?"
-			lbl.text = "%s  [%s]%s%s\n%s %d/%d%s" % [Combat.STATION_NAMES[i], String(keys2[i]), stun, here_free(i),
-				String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), maxhp, read]
+			# one suffix, not a pile: SHUT outranks the read hint while it
+			# lasts (a stunned limb is not the one you are deciding about),
+			# which is also what keeps the line inside the chip
+			var suffix := ""
+			if int(combat.limb_stun[lb]) > 0:
+				suffix = " SHUT %d" % int(combat.limb_stun[lb])
+			elif not combat.known(lb):
+				suffix = " [A]?"
+			lbl.text = "%s %d/%d [%s]%s" % [String(combat.LIMB_NAMES[lb]).to_upper(),
+				int(combat.limb_hp[lb]), maxhp, String(keys2[i]), suffix]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -1076,11 +1123,11 @@ func _refresh() -> void:
 	var live_cards := 0
 	for d0 in combat.divers:
 		live_cards += 1
-	var span: float = float(live_cards) * 392.0 + float(max(0, live_cards - 1)) * 14.0
+	var span: float = float(live_cards) * 320.0 + float(max(0, live_cards - 1)) * 14.0
 	var left: float = (DESIGN.x - span) * 0.5
 	for i in range(ui_divers.size()):
 		if i < live_cards:
-			ui_divers[i].position = Vector2(left + float(i) * 406.0, CARD_TOP)
+			ui_divers[i].position = Vector2(left + float(i) * 334.0, CARD_TOP)
 		var card: Panel = ui_divers[i]
 		if i >= combat.divers.size():
 			card.visible = false
@@ -1117,8 +1164,11 @@ func _refresh() -> void:
 			if tl >= 0:
 				onto = "  ·  hits %s %d/%d" % [String(combat.LIMB_NAMES[tl]).to_upper(),
 					int(combat.limb_hp[tl]), int((combat.enc.limbs[tl] as Dictionary).hp)]
-		card.get_node("label").text = "%s%d %s  %d air per ability%s\n%s%s\n%s" % [mark, i + 1, d.dname, d.cost, afford, state, onto, "\n".join(lines)]
-	ui_help.text = (refusal + "        ") if refusal != "" else ""
+		# the diet: ability details moved onto the action bar's buttons,
+		# where they sit next to the click that uses them. The card is the
+		# roster row: who, how healthy, where, what it would hit.
+		card.get_node("label").text = "%s%d %s   %s%s%s" % [mark, i + 1, d.dname, state, onto, afford]
+
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []
 	for i in range(5):
@@ -1135,8 +1185,6 @@ func _refresh() -> void:
 	for i in range(5):
 		if combat.station_open(i):
 			mkeys.append(String(keys[i]))
-	ui_help.get_parent().visible = run.beat <= 2
-	ui_help.text += "click to move, click again to attack  ·  %s  ·  station key moves there  ·  A reads a limb (1 air)  ·  %s  ·  ENTER end turn" % [pick, use]
 	queue_redraw()
 
 # ---- the player's door. The bot calls these same Combat methods. -------
@@ -1248,16 +1296,27 @@ func bar_buttons() -> Array:
 		return []
 	var d = combat.divers[selected]
 	var out: Array = []
-	if d.kit.size() > 0:
-		out.append({"id": "ability0", "label": "%s  %d air  [SPACE]" % [String(d.kit[0].name), int(d.cost)]})
-	if d.kit.size() > 1:
-		out.append({"id": "ability1", "label": "%s  %d air  [F]" % [String(d.kit[1].name), int(d.cost)]})
-	out.append({"id": "analyze", "label": "Read limb  1 air  [A]"})
-	out.append({"id": "end", "label": "End turn  [ENTER]"})
+	var tier: int = combat.tier_for(d)
+	for slot in range(min(2, d.kit.size())):
+		var ab: Dictionary = d.kit[slot]
+		var eff: Dictionary = combat.effect_at(d, slot, tier)
+		var what := ""
+		match String(ab.kind):
+			"hit": what = "%d dmg" % int(eff.dmg)
+			"hit_and_step": what = "%d dmg, then step free" % int(eff.dmg)
+			"hit_wide": what = "%d dmg, spills to both sides" % int(eff.dmg)
+			"shut": what = "shuts the limb %d turn%s" % [int(eff.turns), "" if int(eff.turns) == 1 else "s"]
+		if tier == Combat.Tier.DESPERATE:
+			what += "  costs %d HP" % int(eff.hp_cost)
+		out.append({"id": "ability%d" % slot,
+			"label": "%s  %d air  [%s]" % [String(ab.name), int(d.cost), "SPACE" if slot == 0 else "F"],
+			"sub": what})
+	out.append({"id": "analyze", "label": "Read limb  1 air  [A]", "sub": "what is it weak to?"})
+	out.append({"id": "end", "label": "End turn  [ENTER]", "sub": ""})
 	return out
 
 func btn_rect(i: int, _n: int) -> Rect2:
-	return Rect2(Vector2(BAR_X, BAR_TOP + float(i) * (BAR_H + BAR_GAP)), Vector2(232.0, BAR_H))
+	return Rect2(Vector2(BAR_X, BAR_TOP + float(i) * (BAR_H + BAR_GAP)), Vector2(238.0, BAR_H))
 
 func player_end_turn() -> void:
 	combat.end_turn()
@@ -1782,9 +1841,17 @@ func _draw_actionbar() -> void:
 		draw_rect(r, face)
 		draw_rect(r, edge, false, 2.0)
 		var txt := String(b.label)
-		var tw: float = df.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-		draw_string(df, r.position + Vector2((r.size.x - tw) * 0.5, 26.0), txt,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+		var sub := String(b.get("sub", ""))
+		if sub == "":
+			var tw: float = df.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+			draw_string(df, r.position + Vector2((r.size.x - tw) * 0.5, 26.0), txt,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
+		else:
+			draw_string(df, r.position + Vector2(10.0, 18.0), txt,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)
+			var sink := Color(ink.r, ink.g, ink.b, ink.a * 0.75)
+			draw_string(df, r.position + Vector2(10.0, 34.0), sub,
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 12, sink)
 
 func _draw_traits() -> void:
 	for st in range(5):

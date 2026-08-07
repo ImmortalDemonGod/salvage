@@ -730,9 +730,32 @@ New gate verify/mousedoor.gd walks fights asserting button-enabled
 equals sim-accepts for every action id, plus on-screen bounds. The bake
 pipeline's scripts were fixed and re-included in the parse walks.
 
-Next: the occlusion diet with the HUD budget gate, folding in the baked
-rig frames (report at art/baked/REPORT.md: 114 frames verified, front
-facing, shared camera, floor anchor y=434).
+**Rig integration: LANDED** (043f0a8). The divers ARE Glass_Goat's
+characters: idle loops, the named attack clip on each swing, damaged on
+hit, and a downed diver stays as a body. Found on the way: the export
+preset excluded art/* since the scaffold, so no export had ever shipped
+an art directory; the editor drew frames while the web build silently
+drew nothing. Second find: adding a rig match arm made the motion gate
+read the WRONG arm and report three phantom findings; bounded to
+_motion. Recorded: that deploy went out before the findings were read,
+which is the wrong order.
+
+**P0 occlusion diet: LANDED.** Station tags 300x74 -> 224x44 chips that
+stand on the far side of their station from the creature and push until
+they clear a sampled creature window, sliding along a pinned screen
+edge when the push direction is exhausted; the permanent help row is
+retired (refusals join the urgent prompt band); cards 392x190 ->
+320x92 roster rows (ability details live on the buttons now, with
+effect text); the ENTER button lost its rivets ("is that a button or
+just a bolt"); and the log row, parked at y=718 of a 720 viewport,
+was OFF SCREEN on any exact 16:9 window and only ever visible in the
+gallery's 800-tall captures. New gate verify/hudbudget.gd: HUD may
+cover at most 33%% of a fight screen (was 47-50, now 24-28) and 72
+sampled points on the creature's body must be under no panel.
+
+Remaining: P1 undo, P1 tutorial fight, P1 transitions/win moments,
+P2 imports (displacement, salvage on the board, valve flow), aspect
+clamp for wide windows, deep passes.
 
 ## The presentation pass
 

@@ -52,7 +52,7 @@ while IFS= read -r f; do
 done < <(find verify tools game -name '*.gd' 2>/dev/null | sort)
 
 # --- the detectors, with 2. engine stderr gated ---------------------------
-for s in verify/checks.gd verify/teach.gd verify/pillar.gd verify/select.gd verify/hint.gd verify/door.gd verify/mousedoor.gd verify/masher.gd verify/audio.gd verify/layout.gd verify/fuzz.gd verify/differential.gd; do
+for s in verify/checks.gd verify/teach.gd verify/pillar.gd verify/select.gd verify/hint.gd verify/door.gd verify/mousedoor.gd verify/masher.gd verify/hudbudget.gd verify/audio.gd verify/layout.gd verify/fuzz.gd verify/differential.gd; do
   [ -f "$s" ] || continue
   out=$(godot --headless --path "$PWD" --script "$s" 2>&1 | grep -vE "^Godot Engine|^$")
   echo "$out" | grep -vE "^(ERROR|SCRIPT ERROR|WARNING|USER ERROR)|^ *at:|^ *GDScript backtrace|^ *\[[0-9]+\]"
