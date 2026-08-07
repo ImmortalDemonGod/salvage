@@ -914,6 +914,15 @@ a full tank (Marc's copy), and iconography for the recurring
 information atoms (a look decision). G5-HUMAN stays the only open
 gate.
 
+### The bookend
+
+Deep pass 57, launched on the closing commit after the verdict arc
+shut: DRY. Six rounds of presentation rework left the decision
+structure untouched, which is what sim purity was for. The block's
+final state: every instrument green on one commit, every screen
+carrying a fresh cold reader's yes, the served bytes proven at the
+URL, and the only open gate the one a machine cannot close.
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
