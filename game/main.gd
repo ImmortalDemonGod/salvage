@@ -1892,6 +1892,16 @@ func _draw_affordances() -> void:
 func _teach_triggers() -> void:
 	if combat == null or combat.outcome != "ongoing":
 		return
+	# the second ability arrives at the boat, where nothing can swing; the
+	# lesson waits for the first board it can be USED on, anchored to its
+	# own button ("I press F, and nothing happens" was the boat's version)
+	var dd = combat.divers[selected]
+	if dd.kit.size() > 1 and not dd.down:
+		var btns2: Array = bar_buttons()
+		for bi in range(btns2.size()):
+			if String(btns2[bi].id) == "ability1":
+				_teach("ability1", btn_rect(bi, btns2.size()).get_center() + Vector2(60, -6),
+					"new since the boat: %s, on F or its button" % String(dd.kit[1].name))
 	# lesson 1, first telegraph of the run: the arc means a place and a number
 	for it in combat.locked:
 		for st in it.stations:

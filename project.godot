@@ -10,7 +10,7 @@ boot_splash/bg_color=Color(0.02, 0.05, 0.08, 1)
 [display]
 
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/stretch/aspect="keep"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
