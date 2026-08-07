@@ -167,6 +167,10 @@ static var ALL := {
 		# earns that because the drum reaches from it.
 		"open_stations": [FRONT, FLANK, REAR, BACKLINE],
 		"starts": [FRONT, BACKLINE, FLANK],
+		# the pump part, physically on the board at the winch's own
+		# station: the thing the whole run is FOR, defensible at the cost
+		# of standing there. Sized to survive two lashes, not three.
+		"salvage": {"station": REAR, "hp": 7},
 		"limbs": [
 			# swept after the boiler widened to three stations. Measured:
 			# casual 63.3%, greedy 7.0 turns, 8.0 squad HP lost.

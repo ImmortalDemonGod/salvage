@@ -125,7 +125,11 @@ func _draw_teach() -> void:
 		var at: Vector2 = tc.at
 		var txt := String(tc.text)
 		var tw: float = df.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-		var tp := Vector2(clampf(at.x - tw * 0.5, 12.0, 1280.0 - tw - 12.0), at.y - 46.0)
+		# the words live in the sky band no panel occupies; the pointer
+		# line carries them to their object. Anchored raw, a station tag
+		# (a Control, so above all drawing) ate half a lesson.
+		var tp := Vector2(clampf(at.x - tw * 0.5, 12.0, 1280.0 - tw - 12.0),
+			clampf(at.y - 46.0, 168.0, 206.0))
 		draw_line(at + Vector2(0, -8), Vector2(tp.x + tw * 0.5, tp.y + 6.0), Color(0.95, 0.85, 0.45, 0.5 * a), 1.5)
 		for off in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 			draw_string(df, tp + off, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.02, 0.05, 0.08, a))
@@ -1037,7 +1041,7 @@ func _refresh() -> void:
 		# gate samples (radius 110 plus margin), screen clamp last
 		for _try in range(6):
 			tag_at = place(i) + away * push + Vector2(0, 30.0) - mk.size * 0.5
-			tag_at.x = clampf(tag_at.x, 8.0, 1280.0 - mk.size.x - 8.0)
+			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
 			tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
 			var rect := Rect2(tag_at, mk.size)
 			var nearest := Vector2(clampf(body0.x, rect.position.x, rect.end.x),
@@ -1060,7 +1064,7 @@ func _refresh() -> void:
 				break
 			var before := tag_at
 			tag_at += away * 40.0
-			tag_at.x = clampf(tag_at.x, 8.0, 1280.0 - mk.size.x - 8.0)
+			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
 			tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
 			if tag_at.distance_to(before) < 8.0:
 				# the away direction is pinned against the screen edge, so
@@ -1069,6 +1073,7 @@ func _refresh() -> void:
 				if tag_at.y > 566.0 - mk.size.y:
 					tag_at.y = before.y - 52.0
 				tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
+			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
 		mk.position = tag_at
 		# The limb bar. This was written once and lost: the script carrying
 		# it aborted on a failing anchor further down and never reached the
@@ -1876,6 +1881,38 @@ func _click(at: Vector2) -> void:
 func here_free(_st: int) -> String:
 	return ""
 
+func _draw_salvage() -> void:
+	if combat.salvage_station < 0:
+		return
+	var at: Vector2 = place(combat.salvage_station) + Vector2(34, 26)
+	if combat.salvage_crushed:
+		# splinters, not absence: the loss stays visible
+		for k in range(5):
+			var ang := TAU * float(k) / 5.0 + 0.5
+			draw_line(at + Vector2.from_angle(ang) * 6.0, at + Vector2.from_angle(ang) * 20.0,
+				Color(0.45, 0.38, 0.30, 0.8), 3.0)
+		return
+	var w := 40.0
+	var h := 28.0
+	var box := Rect2(at - Vector2(w * 0.5, h), Vector2(w, h))
+	# it must read against the creature's own browns: a lamp halo and a
+	# breathing outline say "yours, protect it" the way the selection ring
+	# says "you"
+	var tpulse: float = 0.5 + 0.5 * sin(_clock * 2.6)
+	draw_circle(at + Vector2(0, -h * 0.5), 34.0 + 3.0 * tpulse, Color(0.95, 0.85, 0.45, 0.10 + 0.05 * tpulse))
+	draw_rect(box.grow(3.0), Color(0.98, 0.88, 0.55, 0.35 + 0.25 * tpulse), false, 2.0)
+	draw_rect(box, Color(0.52, 0.42, 0.28))
+	draw_rect(box, Color(0.80, 0.70, 0.45), false, 2.0)
+	draw_line(box.position + Vector2(w * 0.33, 0), box.position + Vector2(w * 0.33, h), Color(0.30, 0.24, 0.16), 3.0)
+	draw_line(box.position + Vector2(w * 0.66, 0), box.position + Vector2(w * 0.66, h), Color(0.30, 0.24, 0.16), 3.0)
+	var mx := float(int((combat.enc.salvage as Dictionary).hp))
+	for k in range(int(mx)):
+		var lit: bool = k < combat.salvage_hp
+		draw_circle(box.position + Vector2(6.0 + float(k) * 5.4, -5.0), 2.2,
+			Color(0.95, 0.83, 0.40, 1.0) if lit else Color(0.2, 0.22, 0.24, 0.9))
+	_teach("salvage", at + Vector2(0, -h),
+		"the pump part: unblocked swings here chip it. Stand here to shield it")
+
 func _draw_affordances() -> void:
 	if combat.outcome != "ongoing":
 		return
@@ -2146,6 +2183,7 @@ func _draw() -> void:
 			_draw_baked(int(d.id), foot, RIG_SCALE, 0.45)
 			continue
 		_draw_baked(int(d.id), foot, RIG_SCALE)
+	_draw_salvage()
 	_draw_affordances()
 	_draw_traits()
 	_draw_actionbar()

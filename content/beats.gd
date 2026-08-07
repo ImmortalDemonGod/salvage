@@ -129,7 +129,7 @@ static var LADDER := [
 		"encounter": "dredge",
 		"title": "running on empty",
 		"teaches": "umbilical",
-		"parts": ["overdraft", "ramp"],
+		"parts": ["overdraft", "ramp", "salvage"],
 		"uses": ["goal", "stations", "air", "limbs", "telegraph", "cost_tiers", "heavy_tier", "conditions", "backline", "umbilical", "overdraft"],
 		"built": true,
 		"expect": {"encounter": "dredge", "divers": 3, "open_stations": 4, "limbs": 3},
@@ -146,4 +146,4 @@ static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
 
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
 	"telegraph", "cost_tiers", "heavy_tier", "water_level", "conditions", "backline",
-	"overdraft", "umbilical", "analyze", "hunts", "ramp"]
+	"overdraft", "umbilical", "analyze", "hunts", "ramp", "salvage"]

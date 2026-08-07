@@ -130,6 +130,12 @@ func advance() -> bool:
 			salvage_lost += 1
 			_enter()
 			return true
+		if combat.salvage_crushed:
+			# won the fight, lost the cargo: the run continues, the ending
+			# counts what the winning cost. A careless splice here once put
+			# these two lines inside the defeat branch and broke A4 and G2
+			# in the same edit; the fast set caught both within the minute.
+			salvage_lost += 1
 		_bank_hp()
 	beat += 1
 	_enter()

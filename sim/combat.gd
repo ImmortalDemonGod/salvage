@@ -110,6 +110,15 @@ var _ramp: Dictionary = {}       # limb index -> accumulated bonus damage
 # player turn after the stun expires, printed nowhere as a number: the
 # rule is one sentence and the telegraph shows the consequence.
 var _no_reshut: Dictionary = {}  # limb index -> true while a re-shut will not hold
+# The salvage on the board (Into the Breach's buildings, sized to one
+# crate): the thing you came down for sits at a station, announced
+# attacks that land there unblocked chip it, and a diver standing there
+# takes the hit instead. It cannot win or lose the fight; it decides
+# what you surface WITH, which is the ending screen's story. Offense
+# and defense finally compete for the same free move.
+var salvage_hp := 0
+var salvage_station := -1
+var salvage_crushed := false
 # STUN: a limb that is stunned does not attack on its next turn. Chosen
 # because it is deterministic (Q1 forbids hidden rolls) and because it makes
 # the telegraph ACTIONABLE: you see the jaw winding up and you shut it. That
@@ -136,6 +145,10 @@ func _init(encounter := "crab", kit_size := 0) -> void:
 	analyzed = []
 	for _l in enc.limbs:
 		analyzed.append(false)
+	var sv: Dictionary = enc.get("salvage", {})
+	if not sv.is_empty():
+		salvage_hp = int(sv.hp)
+		salvage_station = int(sv.station)
 	var freebie: int = int(enc.get("read_free", -1))
 	if freebie >= 0 and freebie < analyzed.size():
 		analyzed[freebie] = true
@@ -649,7 +662,18 @@ func end_turn() -> void:
 					d.hp = 0
 					d.down = true
 					log_lines.append("%s is down" % d.dname)
-		if not hit:
+		if not hit and salvage_station >= 0 and not salvage_crushed and salvage_station in a.stations:
+			# the crate does not dodge: an unblocked swing through its
+			# station lands on the salvage, not on empty water
+			hit = true
+			any_hit = true
+			salvage_hp -= int(a.dmg)
+			log_lines.append("the %s %s the salvage crate for %d" % [LIMB_NAMES[a.limb], a.name, int(a.dmg)])
+			if salvage_hp <= 0:
+				salvage_hp = 0
+				salvage_crushed = true
+				log_lines.append("the salvage is crushed; you will surface with nothing")
+		elif not hit:
 			log_lines.append("the %s hits empty water and cuts an air line" % LIMB_NAMES[a.limb])
 	# The vacate rule: a swing that lands on nobody cuts the umbilicals.
 	# Without it three divers empty every targeted station every turn and
@@ -696,6 +720,9 @@ func clone() -> Combat:
 	c._desperate = _desperate.duplicate()
 	c._ramp = _ramp.duplicate()
 	c._no_reshut = _no_reshut.duplicate()
+	c.salvage_hp = salvage_hp
+	c.salvage_station = salvage_station
+	c.salvage_crushed = salvage_crushed
 	# found while adding _moved: clones were losing their limb reads, so
 	# every searched line played with amnesia about traits it had paid for
 	c.analyzed = analyzed.duplicate()
