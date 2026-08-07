@@ -88,6 +88,18 @@ static func draw_diver(ci: CanvasItem, tier: int, pos: Vector2, scale: float, fa
 # limb_broken: [jaw, claw, tail] of bools, as Combat.limb_broken.
 # The crab always faces left; the divers ring it.
 static func _lurker_body(ci: CanvasItem, xf: Transform2D) -> void:
+	# ONE creature, not floating debris: a continuous membrane joins the
+	# bulk to its trailing parts before the dots ride on top, and a pale
+	# rim marks the silhouette against water the same value (three cold
+	# reads could not find where the monster was, and said so)
+	_poly(ci, xf, [
+		Vector2(-0.14, -0.40), Vector2(0.16, -0.44), Vector2(0.40, -0.36),
+		Vector2(0.58, -0.30), Vector2(0.55, -0.22), Vector2(0.30, -0.16),
+		Vector2(0.05, -0.14), Vector2(-0.16, -0.22)], Color(SHELL_DK.r, SHELL_DK.g, SHELL_DK.b, 0.55))
+	for k in range(10):
+		var a0: float = PI * 0.85 + float(k) * 0.09
+		_dot(ci, xf, Vector2(-0.14, -0.30) + Vector2(cos(a0), sin(a0)) * 0.17, 0.012,
+			Color(0.72, 0.84, 0.90, 0.35))
 	# a suggestion of bulk that fades into nothing
 	for i in range(5):
 		var t: float = 0.10 + float(i) * 0.085

@@ -2087,7 +2087,8 @@ func _draw_affordances() -> void:
 	var lb: int = combat.target_limb(d)
 	if lb >= 0 and not combat.limb_broken[lb]:
 		var at: Vector2 = _limb_at(lb)
-		draw_line(foot + Vector2(0, -10), at, Color(0.95, 0.85, 0.45, 0.55), 2.5)
+		var tside: Vector2 = Vector2(14.0 if at.x >= foot.x else -14.0, -26.0)
+		draw_line(foot + tside, at, Color(0.95, 0.85, 0.45, 0.55), 2.5)
 		var rr: float = 22.0 + 2.0 * t
 		draw_arc(at, rr, 0, TAU, 28, Color(0.95, 0.85, 0.45, 0.95), 3.5)
 		for k in range(4):
@@ -2227,16 +2228,17 @@ func _draw_limb_bars() -> void:
 		var label := "%s %d/%d%s" % [String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), int(mx), suffix]
 		var tw: float = df.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 		var tx: float = clampf(at.x - tw * 0.5, 8.0, 1280.0 - tw - 8.0)
+		# lifted clear of the reticle that shares this anchor
 		for off in [Vector2(1, 1), Vector2(-1, -1)]:
-			draw_string(df, Vector2(tx, at.y - 16.0) + off, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+			draw_string(df, Vector2(tx, at.y - 34.0) + off, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 				Color(0.02, 0.05, 0.08, 0.9))
-		draw_string(df, Vector2(tx, at.y - 16.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+		draw_string(df, Vector2(tx, at.y - 34.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 			Color(0.98, 0.88, 0.82))
 		var bw := 56.0
 		var bx: float = at.x - bw * 0.5
-		draw_rect(Rect2(Vector2(bx - 1, at.y - 11), Vector2(bw + 2, 7)), Color(0.03, 0.05, 0.07, 0.92))
+		draw_rect(Rect2(Vector2(bx - 1, at.y - 29), Vector2(bw + 2, 7)), Color(0.03, 0.05, 0.07, 0.92))
 		var bcol := BAR_LIMB.lerp(Color(1, 1, 1), fx.limb_flash(lb))
-		draw_rect(Rect2(Vector2(bx, at.y - 10), Vector2(bw * fr, 5)), bcol)
+		draw_rect(Rect2(Vector2(bx, at.y - 28), Vector2(bw * fr, 5)), bcol)
 		# the preview chunk: what the selected diver's SPACE would remove
 		var ds = combat.divers[selected]
 		if not ds.down and combat.target_limb(ds) == lb and combat.outcome == "ongoing":
@@ -2244,7 +2246,7 @@ func _draw_limb_bars() -> void:
 			var would: int = combat._after_trait(lb, int(ef.dmg))
 			if would > 0:
 				var wf: float = clampf(float(would) / max(1.0, mx), 0.0, fr)
-				draw_rect(Rect2(Vector2(bx + bw * (fr - wf), at.y - 10), Vector2(bw * wf, 5)),
+				draw_rect(Rect2(Vector2(bx + bw * (fr - wf), at.y - 28), Vector2(bw * wf, 5)),
 					Color(0.99, 0.90, 0.55))
 
 func _draw_bars() -> void:
