@@ -71,6 +71,30 @@ func _ready() -> void:
 const HUD_BOTTOM := 212.0   # the lowest a diver SPRITE may reach
 const PANEL_FLOOR := 262.0  # the prompt band ends at 252; readouts clamp below it
 const DIVER_SCALE := 66.0
+# The team's rig, baked to frames (art/baked, see REPORT.md there): the
+# divers are Glass_Goat's actual characters now, not code-drawn stand-ins.
+# Clay renders tinted toward the INPUTS colorway; the sprite IS the cost
+# tier (bare skin 1, suit 2, plate 3), which was the whole point of the
+# mapping. Frames are 352x512 with the floor anchor at y=434.
+const RIG_CLIPS := {
+	0: {"idle": "scuba_idle1", "hurt": "scuba_damaged1"},
+	1: {"idle": "prototype1_idle1", "hurt": "prototype1_damaged"},
+	2: {"idle": "proto5_idle", "hurt": "proto5_damaged"},
+}
+const RIG_BY_ABILITY := {
+	"Axe Kick": "scuba_axe_kick", "Double Knee": "scuba_double_knee",
+	"Palm Strike": "prototype1_palm_strike", "Dual Palm": "prototype1_dualpalm",
+	"Attck1": "proto5_attck1", "Attck2": "proto5_attck2",
+}
+const RIG_TINT := {
+	0: Color(1.00, 0.85, 0.74),
+	1: Color(1.00, 0.66, 0.34),
+	2: Color(0.88, 0.76, 0.48),
+}
+const RIG_FPS := 10.0
+const RIG_SCALE := 0.22
+var _rig_cache: Dictionary = {}
+var _danim: Dictionary = {}   # diver id -> {"clip": String, "t0": float}
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
 const CARD_TOP := 522.0
 # The action bar: the third playtest's ruling made buttons a hard
@@ -462,12 +486,69 @@ func _amount(line: String) -> int:
 const HURT := Color(0.95, 0.42, 0.32)
 const DEALT := Color(0.96, 0.93, 0.80)
 
+func _rig_frames(clip: String) -> Array:
+	if _rig_cache.has(clip):
+		return _rig_cache[clip]
+	var out: Array = []
+	for i in range(24):
+		var path := "res://art/baked/%s/frame_%02d.png" % [clip, i]
+		if not ResourceLoader.exists(path):
+			break
+		out.append(load(path))
+	_rig_cache[clip] = out
+	return out
+
+func _rig_play(id: int, clip: String) -> void:
+	if clip != "" and not _rig_frames(clip).is_empty():
+		_danim[id] = {"clip": clip, "t0": _clock}
+
+func _rig_react(ev: int, line: String, who: int) -> void:
+	if who < 0:
+		return
+	match ev:
+		SfxEvents.Kind.HIT:
+			for ab in RIG_BY_ABILITY.keys():
+				if line.find(String(ab)) >= 0:
+					_rig_play(who, String(RIG_BY_ABILITY[ab]))
+					return
+		SfxEvents.Kind.TAKE, SfxEvents.Kind.DOWN:
+			if RIG_CLIPS.has(who):
+				_rig_play(who, String(RIG_CLIPS[who].hurt))
+
+# the current frame for a diver: a one-shot clip while it lasts, idle after
+func _rig_frame(id: int, down: bool) -> Texture2D:
+	var base: Dictionary = RIG_CLIPS.get(id, RIG_CLIPS[0])
+	if down:
+		var hurt: Array = _rig_frames(String(base.hurt))
+		return hurt[hurt.size() - 1] if not hurt.is_empty() else null
+	if _danim.has(id):
+		var st: Dictionary = _danim[id]
+		var frames: Array = _rig_frames(String(st.clip))
+		var f: int = int((_clock - float(st.t0)) * RIG_FPS)
+		if f < frames.size():
+			return frames[f]
+		_danim.erase(id)
+	var idle: Array = _rig_frames(String(base.idle))
+	if idle.is_empty():
+		return null
+	return idle[int(_clock * 6.0 + float(id) * 2.0) % idle.size()]
+
+func _draw_baked(id: int, foot: Vector2, s: float, alpha: float = 1.0) -> void:
+	var tex: Texture2D = _rig_frame(id, alpha < 1.0)
+	if tex == null:
+		return
+	var tint: Color = RIG_TINT.get(id, Color.WHITE)
+	tint.a = alpha
+	draw_texture_rect(tex, Rect2(foot - Vector2(352.0 * s * 0.5, 434.0 * s),
+		Vector2(352.0 * s, 512.0 * s)), false, tint)
+
 func _motion(lines: Array, from: int) -> void:
 	for i in range(from, lines.size()):
 		var line := String(lines[i])
 		var ev: int = SfxEvents.classify(line)
 		var who := _diver_named(line)
 		var lb := _limb_named(line)
+		_rig_react(ev, line, who)
 		var n := _amount(line)
 		match ev:
 			SfxEvents.Kind.HIT:
@@ -1379,7 +1460,7 @@ func _draw_rig() -> void:
 		draw_line(Vector2(lx, surf - 28), Vector2(lx + 10.0, surf + 96.0), Color(0.18, 0.20, 0.22), 7.0)
 	# the squad on the deck, the cast the copy is talking about
 	for i in range(3):
-		Art.draw_diver(self, i + 1, Vector2(dx + 110.0 + float(i) * 82.0, surf - 54.0) + fx.idle(i), 54.0, 1)
+		_draw_baked(i, Vector2(dx + 110.0 + float(i) * 82.0, surf - 8.0) + fx.idle(i), 0.17)
 	var b: Dictionary = run.current()
 	var title := String(b.get("title", "")).to_upper()
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 84.0), title,
@@ -1864,9 +1945,14 @@ func _draw() -> void:
 			Color(0.72, 0.90, 0.98, 0.055))
 		draw_circle(head, 5.0, Color(0.88, 0.96, 1.0, 0.55))
 	for d in combat.divers:
+		var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 		if d.down:
+			# a downed diver stays on the board, held on the last frame of
+			# the damaged clip: "one of my characters is dead" should be
+			# visible as a body, not as an absence
+			_draw_baked(int(d.id), foot, RIG_SCALE, 0.45)
 			continue
-		Art.draw_diver(self, d.cost, diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id)), DIVER_SCALE, 1)
+		_draw_baked(int(d.id), foot, RIG_SCALE)
 	_draw_affordances()
 	_draw_traits()
 	_draw_actionbar()
