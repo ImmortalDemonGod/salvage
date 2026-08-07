@@ -472,14 +472,19 @@ func act_ability(i: int, slot: int) -> bool:
 		log_lines.append("%s: %s on the %s" % [d.dname, String(ab.name), LIMB_NAMES[limb]])
 	match String(ab.kind):
 		"hit_shove":
-			for a2 in locked:
-				if int(a2.limb) == limb and not limb_broken[limb]:
-					var home := int((enc.limbs[limb] as Dictionary).station)
-					if a2.stations != [home]:
-						a2.stations = [home]
-						a2.hunts = false
-						log_lines.append("the %s is knocked around: its swing re-aims at %s" % [
-							LIMB_NAMES[limb], STATION_NAMES[home]])
+			# the kick pushes blind; STEERING needs the read. Unread, the
+			# hit lands and nothing redirects: you cannot aim a joint you
+			# do not understand. (The masher gate's honest answer: the
+			# policy that never reads loses its free defense.)
+			if known(limb):
+				for a2 in locked:
+					if int(a2.limb) == limb and not limb_broken[limb]:
+						var home := int((enc.limbs[limb] as Dictionary).station)
+						if a2.stations != [home]:
+							a2.stations = [home]
+							a2.hunts = false
+							log_lines.append("the %s is knocked around: its swing re-aims at %s" % [
+								LIMB_NAMES[limb], STATION_NAMES[home]])
 		"shut":
 			if can_shut(limb):
 				limb_stun[limb] = int(eff.turns)

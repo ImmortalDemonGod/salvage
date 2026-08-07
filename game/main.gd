@@ -1437,7 +1437,9 @@ func bar_buttons() -> Array:
 		var what := ""
 		match String(ab.kind):
 			"hit": what = "%d dmg" % int(eff.dmg)
-			"hit_shove": what = "%d dmg, pushes its swing off you" % int(eff.dmg)
+			"hit_shove":
+				var lb9: int = combat.target_limb(d)
+				what = ("%d dmg, steers its swing home" % int(eff.dmg)) if lb9 >= 0 and combat.known(lb9) else ("%d dmg (read it to steer its swing)" % int(eff.dmg))
 			"hit_and_step": what = "%d dmg, then step free" % int(eff.dmg)
 			"hit_wide": what = "%d dmg, spills to both sides" % int(eff.dmg)
 			"shut": what = "shuts the limb %d turn%s" % [int(eff.turns), "" if int(eff.turns) == 1 else "s"]
