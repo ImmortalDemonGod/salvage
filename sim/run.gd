@@ -125,7 +125,7 @@ func advance() -> bool:
 			# A4: the dive fails, you surface, you KEEP progress and lose the
 			# salvage. Resetting to beat 0 destroyed progress, which is the
 			# opposite of the ruling. Retry this beat with a patched squad.
-			log_lines.append("the dive fails; the squad surfaces and loses the salvage")
+			log_lines.append("the dive fails; the squad surfaces and loses the cargo")
 			carried_hp.clear()
 			salvage_lost += 1
 			_enter()

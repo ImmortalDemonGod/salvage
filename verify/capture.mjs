@@ -114,9 +114,12 @@ if (keySpec) {
     await page.keyboard.up(k);
     await page.waitForTimeout(all ? 320 : 90);
     if (all || i === keys.length - 1) {
-      // the descent between beats runs 1.7s; shooting before it finishes
-      // photographs the transition instead of the board it leads to
-      await page.waitForTimeout(all ? 0 : 3600);
+      // the descent between beats runs 3.2s; the default waits it out so
+      // the shot shows the board it leads to. TRANSITION_MS flips that on
+      // purpose: shoot INSIDE the overlay, so the gallery proves the
+      // transition itself renders (it went unverified all night once).
+      const tms = Number(process.env.TRANSITION_MS ?? 0);
+      await page.waitForTimeout(all ? 0 : (tms > 0 ? tms : 3600));
       await page.screenshot({ path: join(outdir, `${String(shot++).padStart(5, "0")}-${k}.png`) });
     }
   }

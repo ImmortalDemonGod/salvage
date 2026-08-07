@@ -128,8 +128,14 @@ func _draw_teach() -> void:
 		# the words live in the sky band no panel occupies; the pointer
 		# line carries them to their object. Anchored raw, a station tag
 		# (a Control, so above all drawing) ate half a lesson.
+		var row := 0
+		for k2 in _taught.keys():
+			if String(k2) == String(key):
+				break
+			if _clock - float((_taught[k2] as Dictionary).t) <= TEACH_SECS:
+				row += 1
 		var tp := Vector2(clampf(at.x - tw * 0.5, 12.0, 1280.0 - tw - 12.0),
-			clampf(at.y - 46.0, 168.0, 206.0))
+			clampf(at.y - 46.0, 148.0, 206.0) + float(row) * 21.0)
 		draw_line(at + Vector2(0, -8), Vector2(tp.x + tw * 0.5, tp.y + 6.0), Color(0.95, 0.85, 0.45, 0.5 * a), 1.5)
 		for off in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 			draw_string(df, tp + off, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.02, 0.05, 0.08, a))
@@ -265,7 +271,7 @@ func _build_ui() -> void:
 		# the diet: 300x74 tags covered the creature they described. The
 		# playtest line that forced it: "I legitimately cannot even see
 		# the thing I'm supposed to be fighting." One line and a bar.
-		m.size = Vector2(224, 44)
+		m.size = Vector2(224, 40)
 		m.position = Vector2.ZERO   # placed per encounter in _refresh
 		m.add_theme_stylebox_override("panel", skin_station())
 		var bg := ColorRect.new()
@@ -299,7 +305,7 @@ func _build_ui() -> void:
 	for i in range(3):
 		var p := Panel.new()
 		p.name = "diver_card_" + str(i)
-		p.size = Vector2(320, 92)
+		p.size = Vector2(320, 86)
 		p.position = Vector2(24 + i * 334, CARD_TOP)
 		p.add_theme_stylebox_override("panel", skin_card())
 		_rivet(p)
@@ -641,8 +647,8 @@ func _motion(lines: Array, from: int) -> void:
 					var src: Vector2 = _limb_at(lb) if lb >= 0 else Vector2(DESIGN.x * 0.8, DESIGN.y * 0.4)
 					var dst: Vector2 = diver_foot(d)
 					fx.add("body", 0.36, src, dst, "", HURT)
-					fx.add("bolt", 0.28, src, dst, "", HURT)
 					fx.add("recoil", 0.42, src, dst, "", HURT, who)
+					_strike(line, src, dst)
 					fx.add("float", 1.30, dst + Vector2(0, -70), Vector2.ZERO, "-%d" % n, HURT)
 					fx.kick(0.40 + 0.05 * n)
 			SfxEvents.Kind.BREAK:
@@ -715,7 +721,7 @@ func _draw_ending() -> void:
 	draw_string(f, Vector2(cx, y), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.86, 0.93, 0.96))
 	var rows: Array = [
 		"dives cleared        %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
-		"salvage lost         %d" % lost,
+		"cargo crushed         %d" % lost,
 		"the squad came back  %s" % ("whole" if lost == 0 else "lighter than it went down"),
 	]
 	for i in range(rows.size()):
@@ -727,6 +733,7 @@ func _draw_ending() -> void:
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.66, 0.74, 0.80))
 
 func _next_step() -> String:
+	_hint_station = -1
 	if run.puzzle != null:
 		return _lock_step(run.puzzle)
 	if combat == null:
@@ -763,8 +770,8 @@ func _next_step() -> String:
 				safe_far = int(st)
 				break
 		if safe_far >= 0 and combat.can_move_now(int(d.id)):
-			return "Nothing to hit from %s. Move to %s (press %s), or click it.%s" % [
-				Combat.STATION_NAMES[int(d.station)], Combat.STATION_NAMES[safe_far],
+			_hint_station = safe_far
+			return "Nothing to hit here. Move to the glowing plate (press %s), or click it.%s" % [
 				["Q", "W", "E", "R", "T"][safe_far],
 				" Moving is free." if combat.move_cost(int(d.id)) == 0 else " A second move costs 1 air."]
 		return "Press ENTER to end the turn."
@@ -858,8 +865,9 @@ func _escape_line(d) -> String:
 					"SPACE" if slot == 0 else "F", String(combat.LIMB_NAMES[lb]).to_upper()]
 				break
 	if refuge >= 0 and combat.can_move_now(int(d.id)):
-		var t := "%s -- about to be hit. Move to %s (press %s)" % [
-			_incoming(d), Combat.STATION_NAMES[refuge], ["Q", "W", "E", "R", "T"][refuge]]
+		_hint_station = refuge
+		var t := "%s -- about to be hit. Move to the glowing plate (press %s)" % [
+			_incoming(d), ["Q", "W", "E", "R", "T"][refuge]]
 		return t + ("   " + kill + "." if kill != "" else ".")
 	if kill != "":
 		var only: String = kill.trim_prefix("or ")
@@ -871,16 +879,14 @@ func _lock_step(p) -> String:
 	if p.solved():
 		return "The way out is open. Press ENTER to go through."
 	if p.stage == 2:
-		if not p.valve[p.CROSS]:
-			if p.reachable(p.CROSS):
-				return "Open the crossover (4) FIRST, before any water goes into B. Its handle is at B floor level, so once B has water you can no longer reach it."
-			return "The crossover is under water. Shut valve 3 to drain chamber B, then open the crossover."
-		return "Crossover open. Fill chamber A to the line with 1 and 2, and 3 to push B's water across. A needs three; B must end dry."
-	if not p.valve[p.SEIZED]:
-		if p.reachable(p.SEIZED):
-			return "Turn valve 3 first. It is the one on the tank wall, low down, and once the water rises it goes under and cannot be turned."
-		return "Valve 3 is under water now. Shut one of the others to drop the level, then turn 3."
-	return "Valve 3 is open. Turn the rest to fill the chamber to the line."
+		if not p.reachable(p.CROSS) and not p.valve[p.CROSS]:
+			# the recovery line: a naive order locks itself out, and being
+			# stuck wordless was the first playtest's wound
+			return "The crossover is under water. Drain chamber B to reach it."
+		return "Fill A to the line. B must end dry. A valve under water cannot be turned."
+	if not p.reachable(p.SEIZED) and not p.valve[p.SEIZED]:
+		return "The low valve is under water. Drop the level to reach it."
+	return "Fill the chamber to the line. A valve under water cannot be turned."
 
 var _snap_of: Combat = null
 func _refresh() -> void:
@@ -901,7 +907,6 @@ func _refresh() -> void:
 		sfx.set_mood(mood, _depth())
 	ui_intent.get_parent().visible = true
 	var hp0: Control = ui_help.get_parent()
-	hp0.visible = run.puzzle != null
 	if run.puzzle != null or combat != null:
 		hp0.position = Vector2(30, 166)
 		hp0.size = Vector2(1220, 40)
@@ -945,7 +950,7 @@ func _refresh() -> void:
 		var labels: Array = []
 		for i in range(run.puzzle.valves()):
 			labels.append("%s=%s" % [vk[i], "crossover" if (run.puzzle.stage == 2 and i == run.puzzle.CROSS) else "valve %d" % (i + 1)])
-		ui_help.text = "turn a valve: " + "  ".join(labels) + "  ·  ENTER when the way is open"
+		ui_help.text = "click a valve to turn it  ·  ENTER when the way is open"
 		queue_redraw()
 		return
 	if combat == null:
@@ -1033,24 +1038,39 @@ func _refresh() -> void:
 		# HUD budget gate samples the body and fails any tag that drifts
 		# back over it.
 		var body0: Vector2 = _body_at()
-		var away: Vector2 = (place(i) - body0)
-		away = away.normalized() if away.length() > 1.0 else Vector2(0, 1)
-		var push := 62.0
-		var tag_at := Vector2.ZERO
-		# push until the whole tag clears the creature window the budget
-		# gate samples (radius 110 plus margin), screen clamp last
-		for _try in range(6):
-			tag_at = place(i) + away * push + Vector2(0, 30.0) - mk.size * 0.5
+		# the chip is the station's GROUND PLATE: it sits under the ring,
+		# under the feet of whoever stands there, never on a sprite and
+		# never between the station and the creature. Cold readers saw
+		# the old floating placement as the player's own health bar.
+		# a plate under a belly ring has no legal room (card row below,
+		# creature window above), so below-body plates start BESIDE their
+		# ring, outward from the body, at ring height: adjacent and
+		# findable instead of slid to a far corner
+		var side_out: float = 1.0 if place(i).x >= body0.x else -1.0
+		var tag_at: Vector2
+		if place(i).y >= body0.y - 20.0:
+			tag_at = place(i) + Vector2(side_out * 166.0 - mk.size.x * 0.5, 4.0)
+		else:
+			tag_at = place(i) + Vector2(0, 34.0) - Vector2(mk.size.x * 0.5, 0)
+		var slide_x: float = side_out * 56.0
+		for _try in range(9):
 			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
 			tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
 			var rect := Rect2(tag_at, mk.size)
 			var nearest := Vector2(clampf(body0.x, rect.position.x, rect.end.x),
 				clampf(body0.y, rect.position.y, rect.end.y))
-			if nearest.distance_to(body0) >= 114.0:
+			if nearest.distance_to(body0) >= 112.0:
 				break
-			push += 34.0
-		# tags may not stack on each other either: nudge along the same
-		# away vector until this one clears every tag already placed
+			if place(i).y < body0.y - 20.0:
+				tag_at.y -= 36.0
+				if tag_at.y <= 258.0:
+					tag_at.x += slide_x
+			elif tag_at.y < 566.0 - mk.size.y - 1.0:
+				tag_at.y += 40.0
+			else:
+				tag_at.x += slide_x
+		# plates may not stack: a plate that lands on an earlier one slides
+		# straight down, and up only when the floor runs out
 		for _try2 in range(5):
 			var mine := Rect2(tag_at, mk.size)
 			var clear := true
@@ -1062,18 +1082,11 @@ func _refresh() -> void:
 					clear = false
 			if clear:
 				break
-			var before := tag_at
-			tag_at += away * 40.0
+			tag_at.y += 48.0
+			if tag_at.y > 566.0 - mk.size.y:
+				tag_at.y -= 144.0
 			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
 			tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
-			if tag_at.distance_to(before) < 8.0:
-				# the away direction is pinned against the screen edge, so
-				# slide down the edge instead (or up when out of room)
-				tag_at.y = before.y + 52.0
-				if tag_at.y > 566.0 - mk.size.y:
-					tag_at.y = before.y - 52.0
-				tag_at.y = clampf(tag_at.y, 258.0, 566.0 - mk.size.y)
-			tag_at.x = clampf(tag_at.x, 284.0, 1280.0 - mk.size.x - 8.0)
 		mk.position = tag_at
 		# The limb bar. This was written once and lost: the script carrying
 		# it aborted on a failing anchor further down and never reached the
@@ -1126,7 +1139,7 @@ func _refresh() -> void:
 			if int(combat.limb_stun[lb]) > 0:
 				suffix = " SHUT %d" % int(combat.limb_stun[lb])
 			elif not combat.known(lb):
-				suffix = " [A]?"
+				suffix = " unread"
 			lbl.text = "%s %d/%d [%s]%s" % [String(combat.LIMB_NAMES[lb]).to_upper(),
 				int(combat.limb_hp[lb]), maxhp, String(keys2[i]), suffix]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
@@ -1185,8 +1198,8 @@ func _refresh() -> void:
 			continue
 		card.visible = true
 		var d = combat.divers[i]
-		var mark := ">" if i == selected else " "
-		var state := "DOWN, out for this fight, back at the boat" if d.down else "at %s   %d/%d HP" % [Combat.STATION_NAMES[d.station], d.hp, d.max_hp]
+		card.add_theme_stylebox_override("panel", skin_primary() if i == selected else skin_card())
+		var state := "DOWN this fight" if d.down else "%d/%d HP" % [d.hp, d.max_hp]
 		var afford := "" if combat.air >= d.cost else "   cannot afford"
 		var lines: Array = []
 		for slot in range(d.kit.size()):
@@ -1215,10 +1228,10 @@ func _refresh() -> void:
 			if tl >= 0:
 				onto = "  ·  hits %s %d/%d" % [String(combat.LIMB_NAMES[tl]).to_upper(),
 					int(combat.limb_hp[tl]), int((combat.enc.limbs[tl] as Dictionary).hp)]
-		# the diet: ability details moved onto the action bar's buttons,
-		# where they sit next to the click that uses them. The card is the
-		# roster row: who, how healthy, where, what it would hit.
-		card.get_node("label").text = "%s%d %s   %s%s%s" % [mark, i + 1, d.dname, state, onto, afford]
+		# the roster row says who and how healthy; the board says where
+		# and what they threaten (cold readers called the rest console
+		# output, and they were right)
+		card.get_node("label").text = "%d  %s   %s%s" % [i + 1, d.dname, state, afford]
 
 	var keys := ["Q", "W", "E", "R", "T"]
 	var moves: Array = []
@@ -1397,6 +1410,7 @@ func player_end_turn() -> void:
 var _hold := 0.0
 var _dive := 0.0        # seconds left of the descent between beats
 var _won := ""
+var _hint_station := -1
 
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
@@ -1478,14 +1492,18 @@ const OPEN_C := Color(0.45, 0.78, 0.55)
 const SHUT_C := Color(0.72, 0.34, 0.28)
 
 func _valve_dot(at: Vector2, key: String, is_open: bool, reachable: bool) -> void:
-	var col: Color = BRASS_LIT if is_open else BRASS
+	# an OPEN wheel is bright gold and visibly TURNING; a shut one is a
+	# still steel cross; an unreachable one is drowned dark. Cold readers
+	# called four identical wheels with no feedback, and after the chrome
+	# demotion they were right.
+	var col: Color = Color(0.95, 0.82, 0.42) if is_open else Color(0.42, 0.46, 0.50)
 	if not is_open and not reachable:
-		col = Color(0.32, 0.30, 0.28)      # under water: cannot be turned
+		col = Color(0.30, 0.28, 0.26)      # under water: cannot be turned
 	draw_circle(at, 19, Color(0.10, 0.11, 0.12))
 	draw_arc(at, 17, 0, TAU, 28, col, 4.0)
-	# spokes, so it reads as a wheel you turn
+	# spokes, so it reads as a wheel you turn, spinning while it flows
 	for k in range(4):
-		var ang: float = float(k) * PI * 0.5 + (0.6 if is_open else 0.0)
+		var ang: float = float(k) * PI * 0.5 + (_clock * 1.6 if is_open else 0.0)
 		var dirv := Vector2(cos(ang), sin(ang))
 		draw_line(at + dirv * 4.0, at + dirv * 15.0, col, 3.0)
 	draw_circle(at, 5.0, col)
@@ -1578,19 +1596,35 @@ func _draw_rig() -> void:
 		var bob: float = sin(_clock * 1.1 + float(i) * 0.6) * 3.0
 		draw_line(Vector2(x, surf + bob), Vector2(x + w.x / 46.0, surf - bob),
 			Color(0.55, 0.76, 0.84, 0.30), 2.0)
-	# the rig: a deck on legs, which is the thing the whole story is about
-	var dx: float = w.x * 0.5 - 190.0
-	draw_rect(Rect2(Vector2(dx, surf - 54), Vector2(380, 26)), Color(0.20, 0.22, 0.24))
-	draw_rect(Rect2(Vector2(dx - 16, surf - 104), Vector2(74, 50)), Color(0.24, 0.26, 0.28))
-	draw_rect(Rect2(Vector2(dx + 318, surf - 88), Vector2(44, 34)), Color(0.24, 0.26, 0.28))
-	# the failing pump, blinking
+	# the rig: a deck on legs, wide enough to be a stage. The interludes
+	# ARE the cutscenes this prototype gets, so the tableau earns it: a
+	# full-width deck, gantry, davit, the blinking pump, deck lamps that
+	# pool light under the cast, and the squad at close to combat scale.
+	var dx: float = w.x * 0.5 - 300.0
+	draw_rect(Rect2(Vector2(dx, surf - 54), Vector2(600, 30)), Color(0.20, 0.22, 0.24))
+	draw_rect(Rect2(Vector2(dx, surf - 60), Vector2(600, 6)), Color(0.28, 0.30, 0.32))
+	draw_rect(Rect2(Vector2(dx - 16, surf - 128), Vector2(96, 74)), Color(0.24, 0.26, 0.28))
+	draw_rect(Rect2(Vector2(dx + 10, surf - 112), Vector2(28, 20)), Color(0.10, 0.16, 0.20))
+	# the davit arm and its cable, the thing that lowers them every dive
+	draw_line(Vector2(dx + 520, surf - 58), Vector2(dx + 520, surf - 150), Color(0.26, 0.28, 0.30), 8.0)
+	draw_line(Vector2(dx + 516, surf - 148), Vector2(dx + 600, surf - 120), Color(0.26, 0.28, 0.30), 6.0)
+	draw_line(Vector2(dx + 598, surf - 122), Vector2(dx + 598, surf - 30), Color(0.40, 0.44, 0.46, 0.8), 2.0)
+	# the failing pump, blinking on its own housing
 	var lit: float = 0.35 + 0.65 * abs(sin(_clock * 2.3))
-	draw_circle(Vector2(dx + 340, surf - 96), 5.0, Color(0.92, 0.44, 0.30, lit))
-	for lx in [dx + 24.0, dx + 178.0, dx + 340.0]:
-		draw_line(Vector2(lx, surf - 28), Vector2(lx + 10.0, surf + 96.0), Color(0.18, 0.20, 0.22), 7.0)
-	# the squad on the deck, the cast the copy is talking about
+	draw_rect(Rect2(Vector2(dx + 428, surf - 96), Vector2(56, 42)), Color(0.24, 0.26, 0.28))
+	draw_circle(Vector2(dx + 456, surf - 104), 6.0, Color(0.92, 0.44, 0.30, lit))
+	for lx in [dx + 30.0, dx + 210.0, dx + 390.0, dx + 560.0]:
+		draw_line(Vector2(lx, surf - 26), Vector2(lx + 12.0, surf + 110.0), Color(0.18, 0.20, 0.22), 8.0)
+	# deck lamps pooling light on the cast
+	for lp in [dx + 150.0, dx + 300.0, dx + 450.0]:
+		draw_circle(Vector2(lp, surf - 130), 4.0, Color(0.95, 0.88, 0.60, 0.9))
+		draw_colored_polygon(PackedVector2Array([
+			Vector2(lp - 6, surf - 126), Vector2(lp + 6, surf - 126),
+			Vector2(lp + 52, surf - 28), Vector2(lp - 52, surf - 28)]),
+			Color(0.92, 0.86, 0.60, 0.05 + 0.02 * sin(_clock * 1.7 + lp)))
+	# the squad at stage scale, spaced like a poster, not a chess row
 	for i in range(3):
-		_draw_baked(i, Vector2(dx + 110.0 + float(i) * 82.0, surf - 8.0) + fx.idle(i), 0.17)
+		_draw_baked(i, Vector2(dx + 152.0 + float(i) * 148.0, surf - 6.0) + fx.idle(i), 0.26)
 	var b: Dictionary = run.current()
 	var title := String(b.get("title", "")).to_upper()
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 84.0), title,
@@ -1690,13 +1724,31 @@ func _draw_dive(k: float) -> void:
 		var y: float = fmod(float(i) * 97.3 + (1.0 - k) * 2600.0, w.y)
 		var len: float = 30.0 + float(i % 5) * 26.0
 		draw_line(Vector2(x, y), Vector2(x, y + len), Color(0.62, 0.82, 0.92, 0.30 * fade), 2.0)
+	# the dive itself is the cutscene: the squad sinking through the
+	# dark in their own bodies, lamp cones on, bubbles rising past them.
+	# The rig's clips were on the board all night; now they are in the
+	# transition too.
+	var sink: float = w.y * 0.30 + k * -70.0
+	for i in range(3):
+		var sway: float = sin(_clock * 1.4 + float(i) * 2.1) * 10.0
+		var foot := Vector2(w.x * 0.5 - 120.0 + float(i) * 120.0 + sway, sink + float(i % 2) * 34.0)
+		# a soft lamp cone under each diver, pointing down into the dark
+		draw_colored_polygon(PackedVector2Array([
+			foot + Vector2(-7, -30), foot + Vector2(7, -30),
+			foot + Vector2(30, 90.0), foot + Vector2(-30, 90.0)]),
+			Color(0.85, 0.90, 0.70, 0.05 * fade))
+		_draw_baked(i, foot, 0.17, fade)
+		for bb in range(4):
+			var byy: float = fposmod(float(bb) * 37.0 + _clock * 60.0, 140.0)
+			draw_circle(foot + Vector2(-14.0 + float(bb % 3) * 12.0, -60.0 - byy),
+				2.0 + float(bb % 2), Color(0.75, 0.90, 0.96, 0.35 * fade * (1.0 - byy / 140.0)))
 	var b: Dictionary = run.current()
 	if _won != "":
-		draw_string(f, Vector2(w.x * 0.5 - 340.0, w.y * 0.46 - 68.0), _won,
+		draw_string(f, Vector2(w.x * 0.5 - 340.0, w.y * 0.62 - 58.0), _won,
 			HORIZONTAL_ALIGNMENT_CENTER, 680.0, 30, Color(0.90, 0.72, 0.38, fade))
-	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.46), "DESCENDING",
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.62), "DESCENDING",
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 26, Color(0.72, 0.86, 0.92, fade))
-	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.46 + 42.0), String(b.get("title", "")).to_upper(),
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, w.y * 0.62 + 42.0), String(b.get("title", "")).to_upper(),
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.92, 0.95, 0.97, fade))
 
 func _draw_water() -> void:
@@ -1796,7 +1848,7 @@ func _draw_windup() -> void:
 				drawn.append(int(st))
 				draw_circle(pip0, 15.0, Color(0.10, 0.05, 0.06, 0.92))
 				draw_arc(pip0, 15.0, 0, TAU, 20, Color(0.98, 0.50, 0.38, 0.90), 2.0)
-				draw_string(f, pip0 + Vector2(-6 if int(incoming.get(int(st), 0)) < 10 else -12, 7), str(int(incoming.get(int(st), 0))),
+				draw_string(f, pip0 + Vector2(-10 if int(incoming.get(int(st), 0)) < 10 else -15, 7), "-%d" % int(incoming.get(int(st), 0)),
 					HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1.0, 0.82, 0.74))
 				continue
 			var n: Vector2 = dir.normalized()
@@ -1842,6 +1894,10 @@ func _click(at: Vector2) -> void:
 				run.puzzle.toggle(i)
 				_refresh()
 				return
+		# a solved lock opens to a click anywhere, like every other scene:
+		# the mouserun gate proved the door only answered to ENTER
+		if run.puzzle.solved():
+			run.advance(); combat = run.combat; selected = 0; _refresh()
 		return
 	if combat == null:
 		run.advance(); combat = run.combat; selected = 0; _refresh()
@@ -1859,29 +1915,48 @@ func _click(at: Vector2) -> void:
 			_refresh()
 			return
 	# a diver's body selects the diver; the third playtest clicked bodies
-	# expecting exactly that and moved someone instead
+	# expecting exactly that and moved someone instead. The SELECTED
+	# diver's body falls through to the attack path: with UNDER below the
+	# belly, its occupant's select radius shadowed the whole creature and
+	# mouse attacks silently died (the mouserun gate caught it as fifteen
+	# turns of clicks that never landed)
 	for i in range(combat.divers.size()):
 		var dd = combat.divers[i]
-		if not dd.down and at.distance_to(diver_foot(dd) + Vector2(0, -40)) < 34.0:
+		if i != selected and not dd.down and at.distance_to(diver_foot(dd) + Vector2(0, -40)) < 30.0:
 			_select(i)
 			_refresh()
 			return
+	# the ground plates are the movement handles: labeled, keyed, and
+	# glowing when the prompt points at one. They exist because UNDER now
+	# sits beneath the belly, where a bare click radius and the creature's
+	# own body fought over the same pixels (clicking the crab MOVED you
+	# under it; the mouserun gate caught fifteen turns of that)
 	for st in range(5):
 		if not combat.station_open(st):
 			continue
-		if at.distance_to(place(st)) < 54.0:
+		var chip: Control = ui_stations[st]
+		if chip.visible and Rect2(chip.position, chip.size).has_point(at):
+			var d0 = combat.divers[selected]
+			if int(d0.station) == st:
+				player_ability(0)
+			else:
+				player_move(st)
+			return
+	# the creature before bare station rings: a click on the body is the
+	# attack, from wherever the selected diver stands
+	if at.distance_to(_body_at()) < 130.0:
+		player_ability(0)
+		return
+	for st in range(5):
+		if not combat.station_open(st):
+			continue
+		if at.distance_to(place(st)) < 44.0:
 			var d = combat.divers[selected]
 			if int(d.station) == st:
 				player_ability(0)
 			else:
 				player_move(st)
 			return
-	# the creature's body means hit what you are standing next to; empty
-	# water means NOTHING. The old fallthrough fired ability 0 on any
-	# misclick, which the second playtest paid for in air ("at least I
-	# can click space to make this go away" was a paid attack every time)
-	if at.distance_to(_body_at()) < 130.0:
-		player_ability(0)
 
 func here_free(_st: int) -> String:
 	return ""
@@ -1925,6 +2000,11 @@ func _draw_affordances() -> void:
 	if d.down:
 		return
 	var t: float = 0.5 + 0.5 * sin(_clock * 3.2)
+	# the chip the prompt is talking about glows; words and board agree
+	# by light rather than by both reciting station names
+	if _hint_station >= 0 and combat.station_open(_hint_station):
+		var hr: Rect2 = Rect2(ui_stations[_hint_station].position, ui_stations[_hint_station].size)
+		draw_rect(hr.grow(3.0), Color(0.95, 0.85, 0.45, 0.45 + 0.4 * t), false, 3.0)
 	# 1. who is acting: a pulsing ring underfoot
 	var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 	draw_arc(foot + Vector2(0, 4), 26.0 + 3.0 * t, 0, TAU, 30, Color(0.95, 0.85, 0.45, 0.65 + 0.3 * t), 3.0)
@@ -1971,7 +2051,7 @@ func _teach_triggers() -> void:
 	for it in combat.locked:
 		for st in it.stations:
 			_teach("telegraph", place(int(st)) + Vector2(0, -30),
-				"the ring is a promise: %d lands HERE next enemy turn" % int(it.dmg))
+				"the ring is a promise: %d lands HERE when this turn ends" % int(it.dmg))
 			break
 		break
 	# lesson 2, the first time the SELECTED diver is standing in one
@@ -2201,11 +2281,76 @@ func _draw() -> void:
 		_draw_dive(1.0 - clampf(_dive / 1.7, 0.0, 1.0))
 
 # --- the effects themselves, painted over the board ---------------------
+# the strike signature: which drawn animation an enemy verb produces.
+# One vocabulary, listed once; an attack name outside it falls back to
+# the bolt, and the door gate's motion check keeps player kinds honest.
+func _strike(line: String, src: Vector2, dst: Vector2) -> void:
+	if line.find(" snaps ") >= 0 or line.find(" pinches ") >= 0:
+		fx.add("clap", 0.42, dst, src, "", HURT)
+	elif line.find(" sweeps ") >= 0 or line.find(" lashes ") >= 0 or line.find(" swings ") >= 0:
+		fx.add("swipe", 0.5, src, dst, "", HURT)
+	elif line.find(" sprays ") >= 0 or line.find(" vents ") >= 0 or line.find(" hisses ") >= 0:
+		fx.add("cone", 0.55, src, dst, "", Color(0.85, 0.92, 0.60))
+	elif line.find(" hammers ") >= 0:
+		fx.add("slam", 0.48, dst + Vector2(0, -90), dst, "", HURT)
+	elif line.find(" lunges ") >= 0 or line.find(" chases ") >= 0 or line.find(" curls ") >= 0:
+		fx.add("surge", 0.5, src, dst, "", HURT)
+	else:
+		fx.add("bolt", 0.28, src, dst, "", HURT)
+
 func _draw_fx() -> void:
 	var f: Font = ThemeDB.fallback_font
 	for e in fx.live:
 		var k: float = e.k()
 		match e.kind:
+			"clap":
+				# two jaws closing over the landing point
+				var gap: float = 34.0 * (1.0 - min(1.0, k * 1.4))
+				var jaw_c := Color(e.col.r, e.col.g, e.col.b, 1.0 - k * 0.6)
+				var toward: Vector2 = (e.to - e.at).normalized()
+				var side_v := Vector2(-toward.y, toward.x)
+				for sgn in [1.0, -1.0]:
+					var base: Vector2 = e.at + side_v * (gap + 10.0) * sgn
+					draw_colored_polygon(PackedVector2Array([
+						base + side_v * 16.0 * sgn - toward * 20.0,
+						base + side_v * 16.0 * sgn + toward * 20.0,
+						e.at + side_v * gap * sgn]), jaw_c)
+			"swipe":
+				# a crescent traveling through the station, the sweep as an
+				# object rather than a nudge
+				var ang0: float = (e.to - e.at).angle() - 1.1
+				var swept: float = ang0 + 2.2 * min(1.0, k * 1.3)
+				var sw_c := Color(e.col.r, e.col.g, e.col.b, 1.0 - k * 0.7)
+				draw_arc(e.to, 44.0, ang0, swept, 22, sw_c, 9.0 * (1.0 - k * 0.5))
+				draw_circle(e.to + Vector2.from_angle(swept) * 44.0, 7.0 * (1.0 - k * 0.4), sw_c)
+			"cone":
+				# a spray of droplets from the limb toward the station
+				var dirn: Vector2 = (e.to - e.at).normalized()
+				var perp := Vector2(-dirn.y, dirn.x)
+				var cn := Color(e.col.r, e.col.g, e.col.b, (1.0 - k) * 0.9)
+				for i in range(9):
+					var t2: float = fposmod(k * 1.5 + float(i) / 9.0, 1.0)
+					var spread: float = (float(i % 5) - 2.0) * 9.0 * t2
+					draw_circle(e.at.lerp(e.to, t2) + perp * spread, 4.0 - 2.0 * t2, cn)
+			"slam":
+				# a piston falling onto the station and a shock ring on land
+				var drop: Vector2 = e.at.lerp(e.to, min(1.0, k * 1.5))
+				var sl_c := Color(e.col.r, e.col.g, e.col.b, 1.0 - k * 0.5)
+				draw_rect(Rect2(drop - Vector2(9.0, 34.0), Vector2(18.0, 34.0)), sl_c)
+				if k > 0.66:
+					draw_arc(e.to, 20.0 + 70.0 * (k - 0.66) * 3.0, 0, TAU, 30,
+						Color(e.col.r, e.col.g, e.col.b, (1.0 - k) * 1.4), 4.0)
+			"surge":
+				# the body itself arriving: a bow wave ahead of the motion
+				var head2: Vector2 = e.at.lerp(e.to, min(1.0, k * 1.2))
+				var dirn2: Vector2 = (e.to - e.at).normalized()
+				var pp := Vector2(-dirn2.y, dirn2.x)
+				var sg := Color(e.col.r, e.col.g, e.col.b, (1.0 - k) * 0.8)
+				draw_line(head2 + pp * 26.0 - dirn2 * 18.0, head2 + dirn2 * 14.0, sg, 5.0)
+				draw_line(head2 - pp * 26.0 - dirn2 * 18.0, head2 + dirn2 * 14.0, sg, 5.0)
+				for i in range(4):
+					draw_circle(head2 - dirn2 * (26.0 + 16.0 * float(i)) + pp * (float(i % 2) * 12.0 - 6.0),
+						3.5 - 0.6 * float(i), Color(0.75, 0.88, 0.95, (1.0 - k) * 0.5))
 			"bolt":
 				# the enemy reaching you, drawn as a strike travelling from
 				# the limb to the station it named. The telegraph promised

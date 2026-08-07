@@ -49,6 +49,11 @@ shoot "$(printf '%02d' $((n+1)))-fight1-midway" "Enter,Space,Space,Enter,Space,E
 # every limb unread and a reviewer concluded, reasonably, that the whole
 # mechanic was skippable and skipped
 shoot "$(printf '%02d' $((n+2)))-fight1-read" "Enter,Space,Space,Enter,KeyW,KeyA,Space,Enter,KeyR,KeyA,Space" "fight1"
+# the transition ITSELF, shot 1200ms into the descent overlay after the
+# crab falls: the win line, the sinking squad, the destination name.
+# Unverified transitions shipped invisible once (the log row lesson's
+# cousin); this line keeps them photographed.
+TRANSITION_MS=1200 shoot "$(printf '%02d' $((n+4)))-transition" "Enter,Space,Space,Enter,KeyW,KeyA,Space,Enter,KeyR,KeyA,Space,Space,Enter,KeyQ,Space,Space,Enter,Space,Space,Enter,Space,Space" "fight1"
 # and the same mid-fight state through a WIDE window: three playtests
 # reported off-centre UI that the 1280-wide capture could not see
 WIDE=1 shoot "$(printf '%02d' $((n+3)))-fight1-wide" "Enter,Space,Space,Enter,Space,Enter,KeyW,Space,Space,Enter,Space,Space,Enter" "fight1"
