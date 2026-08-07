@@ -115,6 +115,8 @@ func _teach(key: String, anchor: Vector2, text: String) -> void:
 	_taught[key] = {"t": _clock, "at": anchor, "text": text}
 
 func _draw_teach() -> void:
+	if ui_step != null and ui_step.get_parent().visible:
+		return
 	var df: Font = ThemeDB.fallback_font
 	for key in _taught.keys():
 		var tc: Dictionary = _taught[key]
@@ -771,7 +773,7 @@ func _next_step() -> String:
 				break
 		if safe_far >= 0 and combat.can_move_now(int(d.id)):
 			_hint_station = safe_far
-			return "Nothing to hit here. Move to the glowing plate (press %s), or click it.%s" % [
+			return "Nothing in reach from this station. Move to the glowing plate (press %s), or click it.%s" % [
 				["Q", "W", "E", "R", "T"][safe_far],
 				" Moving is free." if combat.move_cost(int(d.id)) == 0 else " A second move costs 1 air."]
 		return "Press ENTER to end the turn."
@@ -830,6 +832,21 @@ func _auto_select() -> void:
 # unthreatened, EMPTY and affordable, and an attack is only offered as an
 # alternative if it actually stops the hit.
 func _incoming(d) -> String:
+	var total := 0
+	var who: Array = []
+	for it in combat.locked:
+		if int(combat.limb_stun[int(it.limb)]) > 0 or combat.limb_broken[int(it.limb)]:
+			continue
+		if int(d.station) in it.stations:
+			total += int(it.dmg)
+			var nm := String(combat.LIMB_NAMES[int(it.limb)]).to_upper()
+			if not (nm in who):
+				who.append(nm)
+	if total > 0:
+		return "%d lands on %s this turn (%s)" % [total, d.dname, ", ".join(who)]
+	return _incoming_old(d)
+
+func _incoming_old(d) -> String:
 	for it in combat.intents():
 		if int(combat.limb_stun[int(it.limb)]) > 0 or combat.limb_broken[int(it.limb)]:
 			continue
@@ -944,9 +961,9 @@ func _refresh() -> void:
 		if run.puzzle.solved():
 			want = "the way out is open"
 		elif run.puzzle.stage == 2:
-			want = "The way out sits above chamber A. Fill A, keep B dry."
+			want = "The way out sits above chamber A. Fill A to the line; B must end dry."
 		else:
-			want = "The way out is above the waterline. Fill the chamber to the top."
+			want = "The way out is above the waterline. Fill the chamber to the line."
 		ui_scene.text = want
 		var vk := ["1", "2", "3", "4"]
 		var labels: Array = []
@@ -1097,7 +1114,7 @@ func _refresh() -> void:
 		var bgr: ColorRect = mk.get_node("bar_bg")
 		var flr: ColorRect = mk.get_node("bar_fill")
 		var lb0: int = combat.STATION_LIMB[i]
-		var show_bar: bool = lb0 >= 0 and not combat.limb_broken[lb0]
+		var show_bar := false
 		bgr.visible = show_bar
 		flr.visible = show_bar
 		if show_bar:
@@ -1128,31 +1145,12 @@ func _refresh() -> void:
 		# invisible.
 		var lb: int = combat.STATION_LIMB[i]
 		var lbl: Label = ui_stations[i].get_node("label")
-		if lb < 0:
-			lbl.text = "%s  [%s]" % [Combat.STATION_NAMES[i], String(keys2[i])]
-		elif combat.limb_broken[lb]:
-			lbl.text = "%s BROKEN" % String(combat.LIMB_NAMES[lb]).to_upper()
-		else:
-			var maxhp: int = int((combat.enc.limbs[lb] as Dictionary).hp)
-			# one suffix, not a pile: SHUT outranks the read hint while it
-			# lasts (a stunned limb is not the one you are deciding about),
-			# which is also what keeps the line inside the chip
-			var suffix := ""
-			if int(combat.limb_stun[lb]) > 0:
-				suffix = " SHUT %d" % int(combat.limb_stun[lb])
-			elif not combat.known(lb):
-				suffix = " unread"
-			else:
-				# the read's finding, at the limb it describes, in the
-				# compact form: the far corner panel it replaces made a
-				# reviewer hunt for which limb it meant
-				match combat.trait_of(lb):
-					"brittle": suffix = " x2"
-					"plated": suffix = " armor"
-					"leaking": suffix = " +2 air"
-					"pressurised": suffix = " bursts"
-			lbl.text = "%s %d/%d [%s]%s" % [String(combat.LIMB_NAMES[lb]).to_upper(),
-				int(combat.limb_hp[lb]), maxhp, String(keys2[i]), suffix]
+		# the plate is the STATION: where a diver can stand, and the key
+		# that walks there. The limb's name, health and trait draw on the
+		# creature at the limb itself (_draw_limb_bars): two rounds of
+		# cold reads proved a limb bar at a station reads as belonging to
+		# whoever stands there
+		lbl.text = "%s  [%s]" % [Combat.STATION_NAMES[i], String(keys2[i])]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -1547,7 +1545,7 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 	# the graduations, so "2 of 3" is countable and not just a bar
 	for m in range(1, cap):
 		var y: float = at.y + tall - tall * (float(m) / float(cap))
-		draw_line(Vector2(at.x, y), Vector2(at.x + 14, y), Color(0.55, 0.66, 0.74), 1.0)
+		draw_line(Vector2(at.x, y), Vector2(at.x + 14, y), Color(0.55, 0.66, 0.74, 0.35), 1.0)
 	var f: Font = ThemeDB.fallback_font
 	# above the tank, clear of the pipes that run below it
 	# under the tank, where nothing else is written
@@ -1569,8 +1567,8 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 		var x0: float = at.x + wide * float(i) / 16.0
 		draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
 			Color(0.86, 0.78, 0.42, 0.75), 2.0)
-	draw_string(f, at + Vector2(0, -74), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 18, OPEN_C if is_open else Color(0.86, 0.78, 0.42))
+	draw_string(f, at + Vector2(6, 44), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 16, OPEN_C if is_open else Color(0.90, 0.82, 0.48))
 
 func _valve_pos(i: int) -> Vector2:
 	var p = run.puzzle
@@ -1637,8 +1635,10 @@ func _draw_rig() -> void:
 			Color(0.92, 0.86, 0.60, 0.05 + 0.02 * sin(_clock * 1.7 + lp)))
 	# the squad at stage scale, spaced like a poster, not a chess row
 	for i in range(3):
-		_draw_baked(i, Vector2(dx + 152.0 + float(i) * 148.0, surf - 6.0) + fx.idle(i), 0.26)
+		_draw_baked(i, Vector2(dx + 152.0 + float(i) * 148.0, surf - 52.0) + fx.idle(i), 0.26)
 	var b: Dictionary = run.current()
+	if _dive > 0.0:
+		return
 	var title := String(b.get("title", "")).to_upper()
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 84.0), title,
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.88, 0.93, 0.96))
@@ -1892,7 +1892,7 @@ func _draw_windup() -> void:
 				# it bites where it stands: ring the station instead
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
-				var pip0: Vector2 = dst + Vector2(46.0, -34.0)
+				var pip0: Vector2 = dst + Vector2(0.0, -64.0)
 				if int(st) in drawn:
 					continue
 				drawn.append(int(st))
@@ -2185,6 +2185,59 @@ func _draw_traits() -> void:
 				draw_circle(at, 17.0 + 4.0 * th, Color(0.98, 0.70, 0.30, 0.18 + 0.20 * th))
 				draw_circle(at, 8.0, Color(0.98, 0.78, 0.40, 0.55 + 0.30 * th))
 
+# the limb readout lives ON the creature at the limb it describes: name,
+# bar, and the read's finding in compact form. Drawn, not a Control, so
+# it rides the z-order of the board it belongs to.
+func _draw_limb_bars() -> void:
+	var df: Font = ThemeDB.fallback_font
+	for lb in range(combat.limb_hp.size()):
+		var st := -1
+		for s2 in range(5):
+			if combat.STATION_LIMB[s2] == lb:
+				st = s2
+		if st < 0:
+			continue
+		var at: Vector2 = _limb_at(lb)
+		if combat.limb_broken[lb]:
+			draw_string(df, at + Vector2(-34, -14), "BROKEN", HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+				Color(0.60, 0.66, 0.70, 0.9))
+			continue
+		var mx: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
+		var fr: float = clampf(float(combat.limb_hp[lb]) / max(1.0, mx), 0.0, 1.0)
+		var suffix := ""
+		if int(combat.limb_stun[lb]) > 0:
+			suffix = "  SHUT %d" % int(combat.limb_stun[lb])
+		elif not combat.known(lb):
+			suffix = "  [A]?"
+		else:
+			match combat.trait_of(lb):
+				"brittle": suffix = "  x2"
+				"plated": suffix = "  armor"
+				"leaking": suffix = "  +2 air"
+				"pressurised": suffix = "  bursts"
+		var label := "%s %d%s" % [String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), suffix]
+		var tw: float = df.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		var tx: float = clampf(at.x - tw * 0.5, 8.0, 1280.0 - tw - 8.0)
+		for off in [Vector2(1, 1), Vector2(-1, -1)]:
+			draw_string(df, Vector2(tx, at.y - 16.0) + off, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+				Color(0.02, 0.05, 0.08, 0.9))
+		draw_string(df, Vector2(tx, at.y - 16.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+			Color(0.98, 0.88, 0.82))
+		var bw := 56.0
+		var bx: float = at.x - bw * 0.5
+		draw_rect(Rect2(Vector2(bx - 1, at.y - 11), Vector2(bw + 2, 7)), Color(0.03, 0.05, 0.07, 0.92))
+		var bcol := BAR_LIMB.lerp(Color(1, 1, 1), fx.limb_flash(lb))
+		draw_rect(Rect2(Vector2(bx, at.y - 10), Vector2(bw * fr, 5)), bcol)
+		# the preview chunk: what the selected diver's SPACE would remove
+		var ds = combat.divers[selected]
+		if not ds.down and combat.target_limb(ds) == lb and combat.outcome == "ongoing":
+			var ef: Dictionary = combat.effect_at(ds, 0, combat.tier_for(ds))
+			var would: int = combat._after_trait(lb, int(ef.dmg))
+			if would > 0:
+				var wf: float = clampf(float(would) / max(1.0, mx), 0.0, fr)
+				draw_rect(Rect2(Vector2(bx + bw * (fr - wf), at.y - 10), Vector2(bw * wf, 5)),
+					Color(0.99, 0.90, 0.55))
+
 func _draw_bars() -> void:
 	# The limb bars used to be painted on the board, and the station tags
 	# are UI nodes, so a tag drew straight over a neighbouring station's bar
@@ -2322,10 +2375,8 @@ func _draw() -> void:
 	for d in combat.divers:
 		var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 		if d.down:
-			# a downed diver stays on the board, held on the last frame of
-			# the damaged clip: "one of my characters is dead" should be
-			# visible as a body, not as an absence
-			_draw_baked(int(d.id), foot, RIG_SCALE, 0.45)
+			# down means surfaced: the roster row says where they went, and
+			# a ghost standing at a station contradicted it in one glance
 			continue
 		_draw_baked(int(d.id), foot, RIG_SCALE)
 	_draw_salvage()
@@ -2335,6 +2386,7 @@ func _draw() -> void:
 	_teach_triggers()
 	_draw_teach()
 	_draw_windup()
+	_draw_limb_bars()
 	_draw_bars()
 	_draw_fx()
 	_overlay_dive()
