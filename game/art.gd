@@ -100,10 +100,12 @@ static func _lurker_body(ci: CanvasItem, xf: Transform2D) -> void:
 		var a0: float = PI * 0.85 + float(k) * 0.09
 		_dot(ci, xf, Vector2(-0.14, -0.30) + Vector2(cos(a0), sin(a0)) * 0.17, 0.012,
 			Color(0.72, 0.84, 0.90, 0.35))
-	# a suggestion of bulk that fades into nothing
+	# a suggestion of bulk that fades into nothing, but VISIBLY: SHELL
+	# for the near segments, SHELL_DK only at the fading tail (round
+	# four still could not find the monster in the dark)
 	for i in range(5):
 		var t: float = 0.10 + float(i) * 0.085
-		_dot(ci, xf, Vector2(t, -0.28), 0.155 - float(i) * 0.028, SHELL_DK)
+		_dot(ci, xf, Vector2(t, -0.28), 0.155 - float(i) * 0.028, SHELL if i < 3 else SHELL_DK)
 	# eyes in the dark, which is all you actually get to see of it
 	_dot(ci, xf, Vector2(-0.055, -0.360), 0.030, GOLD)
 	_dot(ci, xf, Vector2(0.020, -0.375), 0.024, GOLD)

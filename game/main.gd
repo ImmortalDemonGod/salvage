@@ -890,6 +890,11 @@ func _escape_line(d) -> String:
 		var only: String = kill.trim_prefix("or ")
 		return "%s  ·  about to be hit, nowhere clear to stand. %s%s." % [
 			_incoming(d), only.substr(0, 1).to_upper(), only.substr(1)]
+	var d9 = combat.divers[selected]
+	if d9.kit.size() > 0 and String(d9.kit[0].kind) == "hit_shove" and combat.target_limb(d9) >= 0:
+		for it9 in combat.locked:
+			if int(it9.limb) == combat.target_limb(d9) and int(d9.station) in it9.stations:
+				return "%s  ·  about to be hit, nowhere clear. Take it, or kick its swing back home (SPACE)." % _incoming(d)
 	return "%s  ·  about to be hit, nowhere clear to stand. Take it, and break what you can." % _incoming(d)
 
 func _lock_step(p) -> String:
@@ -1150,7 +1155,11 @@ func _refresh() -> void:
 		# creature at the limb itself (_draw_limb_bars): two rounds of
 		# cold reads proved a limb bar at a station reads as belonging to
 		# whoever stands there
-		lbl.text = "%s  [%s]" % [Combat.STATION_NAMES[i], String(keys2[i])]
+		var occ_name := ""
+		for od in combat.divers:
+			if not od.down and int(od.station) == i:
+				occ_name = "  ·  %s" % String(od.dname)
+		lbl.text = "%s  [%s]%s" % [Combat.STATION_NAMES[i], String(keys2[i]), occ_name]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -1897,7 +1906,7 @@ func _draw_windup() -> void:
 				# it bites where it stands: ring the station instead
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
-				var pip0: Vector2 = dst + Vector2(0.0, -64.0)
+				var pip0: Vector2 = Vector2(dst.x, max(dst.y - 64.0, 306.0))
 				if int(st) in drawn:
 					continue
 				drawn.append(int(st))
@@ -2043,8 +2052,8 @@ func _draw_salvage() -> void:
 	draw_line(box.position + Vector2(w * 0.33, 0), box.position + Vector2(w * 0.33, h), Color(0.30, 0.24, 0.16), 3.0)
 	draw_line(box.position + Vector2(w * 0.66, 0), box.position + Vector2(w * 0.66, h), Color(0.30, 0.24, 0.16), 3.0)
 	var df2: Font = ThemeDB.fallback_font
-	draw_string(df2, box.position + Vector2(-8, h + 26.0), "the part", HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
-		Color(0.95, 0.85, 0.55, 0.9))
+	draw_string(df2, box.position + Vector2(-8, h + 26.0), "THE PART", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+		Color(0.98, 0.90, 0.60))
 	var mx := float(int((combat.enc.salvage as Dictionary).hp))
 	for k in range(int(mx)):
 		var lit: bool = k < combat.salvage_hp
@@ -2062,7 +2071,7 @@ func _draw_affordances() -> void:
 	var t: float = 0.5 + 0.5 * sin(_clock * 3.2)
 	# the chip the prompt is talking about glows; words and board agree
 	# by light rather than by both reciting station names
-	if _hint_station >= 0 and combat.station_open(_hint_station):
+	if _hint_station >= 0 and combat.station_open(_hint_station) and ui_step.get_parent().visible:
 		var hr: Rect2 = Rect2(ui_stations[_hint_station].position, ui_stations[_hint_station].size)
 		draw_rect(hr, Color(0.95, 0.85, 0.45, 0.10 + 0.05 * t))
 		draw_rect(hr.grow(3.0), Color(0.95, 0.85, 0.45, 0.75 + 0.2 * t), false, 3.0)
@@ -2140,6 +2149,10 @@ func _draw_actionbar() -> void:
 	if combat == null or combat.outcome != "ongoing":
 		return
 	var btns: Array = bar_buttons()
+	var dfm: Font = ThemeDB.fallback_font
+	var mv_y: float = BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 14.0
+	draw_string(dfm, Vector2(BAR_X + 4.0, mv_y), "move: click a station plate",
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.62, 0.70, 0.76))
 	var df: Font = ThemeDB.fallback_font
 	for i in range(btns.size()):
 		var b: Dictionary = btns[i]
@@ -2207,7 +2220,7 @@ func _draw_limb_bars() -> void:
 				st = s2
 		if st < 0:
 			continue
-		var at: Vector2 = _limb_at(lb)
+		var at: Vector2 = _limb_at(lb).lerp(_body_at(), 0.35) + Vector2(0, float(lb % 2) * -20.0)
 		if combat.limb_broken[lb]:
 			draw_string(df, at + Vector2(-34, -14), "BROKEN", HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 				Color(0.60, 0.66, 0.70, 0.9))
@@ -2218,7 +2231,7 @@ func _draw_limb_bars() -> void:
 		if int(combat.limb_stun[lb]) > 0:
 			suffix = "  SHUT %d" % int(combat.limb_stun[lb])
 		elif not combat.known(lb):
-			suffix = "  not read"
+			suffix = "  unknown"
 		else:
 			match combat.trait_of(lb):
 				"brittle": suffix = "  takes x2"
