@@ -923,6 +923,44 @@ final state: every instrument green on one commit, every screen
 carrying a fresh cold reader's yes, the served bytes proven at the
 URL, and the only open gate the one a machine cannot close.
 
+## The team's verdict, and what it opened (Aug 7)
+
+Primary document: docs/playtests/2026-08-07-team-review.txt. The
+artist's verdict on the closing build: "a great prototype... the
+mechanics are rewarding... I can see winning a game jam or becoming a
+real game." His brother, a fresh cold tester: "the user experience is
+horrible." Both are true and the second is where the work is.
+
+Verified line by line against source:
+
+| His words | What the instruments found |
+|---|---|
+| "I sometimes select another character when I want to move or vice versa... they conflict a lot" | CONFIRMED, worse than stated: two clicks 30px apart on ONE sprite do different verbs (chest = select at r30, legs = move via the ring's r44 underneath); clicking an occupied plate MOVES onto it even though the plate displays that diver's name; and the sim never enforced one-diver-per-station, so the mis-click could legally STACK divers under one swing while halos, hints and checks all assumed it could not. The occupancy rule is in the sim now, mirrored in the fuzz, bands unchanged |
+| "a portrait to choose which character will act" | The roster cards ARE click-to-select, but nothing marks them as buttons: no portrait (his own baked head frames are croppable today via manifest visible rects), no hover state, and the one line teaching "1-3 pick a diver" is computed into a dead variable and never shown. His ask is real; the fix is portraits on the existing cards |
+| "the keys are pure pollution... one key to select, one key to move" | The letters he sees ([Q]..[T] on plates) advertise a keyboard the mouse-first ruling already demoted. Scheme analysis: his full modal scheme is size L and points against the ruling; the size-S answer (drop the letters from plates, keep keys as silent shortcuts, TAB cycles divers, prompts speak click-first) serves both his ask and the ruling. His scheme goes to the meeting as the alternative |
+| "normal enemies with fewer limbs or none" | Already spec'd twice (SPEC 2.4 trash anatomies; limbless adds as first expansion) and precedented by the one-limb descent lurker. Slots in as pure content plus band measurement |
+| "what do you think of the animations?" | For the user to answer personally. The technical truth: all 15 clips baked, 12 wired (3 static poses unused), damaged doubles as the down pose because no death clip exists; swim and enemy clips remain the top art dependency |
+
+The honest cost of the occupancy fix: the masher gate's required loss
+had been riding on the stacking bug. Mash-and-move now clears the
+ladder (the shove gives slot-0 spam free defense), and making
+attack-only play lose HONESTLY is a design fork, not a tune: content
+probes (pinch 5, ramping tail) taxed the casual band more than the
+masher and were reverted measured. The requirement stands as a loud
+dated WARNING pending the meeting's ruling. Candidates: read-gated
+shove steering (the kick pushes blind; STEERING it requires knowing
+the joint, which ties defense to Marc's read mechanic), or a fight
+built to wall the masher.
+
+### For the meeting (Mhanna's ask)
+
+1. The masher ruling above. 2. Input: drop the plate letters now
+(size S, aligned with the standing ruling) versus the artist's full
+two-key modal scheme (size L, reverses it)? 3. Portraits on the
+roster cards (art derivable today). 4. Fewer-limb enemies: how many,
+which beat slots. 5. The animations conversation he asked for, plus
+what unblocks better use: swim, enemy, and death clips.
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
