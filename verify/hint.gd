@@ -69,26 +69,24 @@ func _audit(scene, c, enc_id: String) -> void:
 	# any hint that tells the player to move or to hit must do so in a form
 	# this check can verify. Vague direction is not allowed to hide.
 	var directive := text.find("Move to") >= 0 or text.find("press ") >= 0 or text.find("Press ") >= 0
-	var checkable := RegEx.create_from_string("Move to the glowing plate \\(press [A-Z]\\)").search(text) != null \
+	var checkable := text.find("Move to the glowing plate (click it)") >= 0 \
+		or text.find("Click the glowing plate, or arrows then ENTER") >= 0 \
 		or RegEx.create_from_string("[Pp]ress (SPACE|F|A|ENTER|[0-9]) ").search(text) != null \
 		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER|[0-9])\\.").search(text) != null \
 		or RegEx.create_from_string("[Pp]ress (SPACE|F|ENTER)$").search(text) != null
 	if directive and not checkable:
 		fail("%s: hint gives direction this check cannot verify, so nothing defends it: \"%s\"" % [enc_id, text])
 
-	# "Move to the glowing plate (press W)" -- the glow IS the name now;
-	# the audited claim is that the glowing station and the key agree,
-	# and everything else that was checked before still is.
-	var m := RegEx.create_from_string("Move to the glowing plate \\(press ([A-Z])\\)").search(text)
-	if m != null:
+	# "the glowing plate" -- the glow IS the name; the audited claims are
+	# that a plate is genuinely glowing, open, empty, affordable, and
+	# safe when the prompt is an escape.
+	if text.find("glowing plate") >= 0:
 		var st: int = int(scene._hint_station)
 		if st < 0:
 			fail("%s: prompt says move to the glowing plate and no plate is glowing" % enc_id)
 			return
 		var name := String(Combat.STATION_NAMES[st])
-		if KEYS[st] != m.get_string(1):
-			fail("%s: prompt tells the player to press %s for %s, whose key is %s" % [
-				enc_id, m.get_string(1), name, KEYS[st]])
+
 		if not c.station_open(st):
 			fail("%s: prompt sends %s to %s, which is not open here" % [enc_id, d.dname, name])
 		var escaping := text.find("about to be hit") >= 0

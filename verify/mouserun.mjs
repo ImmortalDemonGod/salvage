@@ -178,19 +178,21 @@ async function driveFight(b) {
       // this loop is driving before it reads and swings
       await click(...CARD(d)); await sleep(90);
       if (await beatNow() !== b) return true;
-      const p = f.places[(turn + d * 2) % f.places.length];
-      // the plate is the movement handle. It sits +52 under its ring,
-      // except belly rings (at or below the body line), whose plates sit
-      // BESIDE the ring, outward from the body
-      const belly = p[1] >= f.body[1] - 20;
-      const side = p[0] >= f.body[0] ? 1 : -1;
-      // the ring itself first (legal whenever the creature does not own
-      // those pixels), then both plate positions an escaped plate can
-      // occupy: under the ring, above it, or beside it for belly rings
-      await click(p[0], p[1]); await sleep(90);
-      if (belly) { await click(p[0] + side * 166, p[1] + 22); }
-      else { await click(p[0], p[1] + 52); await sleep(80); await click(p[0], p[1] - 52); }
-      await sleep(110);
+      // ONE-RULE GRAMMAR (Aug 7): a plate click moves when the plate is
+      // empty and selects its occupant when it is not, so clicking EVERY
+      // plate each diver-turn is safe and maximizes legal repositioning;
+      // the card re-select below restores the diver this loop drives
+      // rotate the sweep so each diver-turn ENDS at a different plate:
+      // the last successful move decides the attack station, and a fixed
+      // order parked everyone at the limbless belly
+      for (let j = 0; j < f.places.length; j++) {
+        const q = f.places[(turn + d + j) % f.places.length];
+        const belly = q[1] >= f.body[1] - 20;
+        const side = q[0] >= f.body[0] ? 1 : -1;
+        if (belly) { await click(q[0] + side * 166, q[1] + 22); }
+        else { await click(q[0], q[1] + 52); }
+        await sleep(70);
+      }
       await click(...CARD(d)); await sleep(90);
       if (await beatNow() !== b) return true;
       // read the limb in front of you when the tank allows: the analyze

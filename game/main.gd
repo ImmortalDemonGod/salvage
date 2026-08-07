@@ -773,8 +773,7 @@ func _next_step() -> String:
 				break
 		if safe_far >= 0 and combat.can_move_now(int(d.id)):
 			_hint_station = safe_far
-			return "Nothing in reach from this station. Move to the glowing plate (press %s), or click it.%s" % [
-				["Q", "W", "E", "R", "T"][safe_far],
+			return "Nothing in reach from this station. Click the glowing plate, or arrows then ENTER.%s" % [
 				" Moving is free." if combat.move_cost(int(d.id)) == 0 else " A second move costs 1 air."]
 		return "Press ENTER to end the turn."
 	# standing somewhere an attack is about to land
@@ -883,8 +882,7 @@ func _escape_line(d) -> String:
 				break
 	if refuge >= 0 and combat.can_move_now(int(d.id)):
 		_hint_station = refuge
-		var t := "%s  ·  about to be hit: Move to the glowing plate (press %s)" % [
-			_incoming(d), ["Q", "W", "E", "R", "T"][refuge]]
+		var t := "%s  ·  about to be hit: Move to the glowing plate (click it)" % _incoming(d)
 		return t + ("   " + kill + "." if kill != "" else ".")
 	if kill != "":
 		var only: String = kill.trim_prefix("or ")
@@ -1166,7 +1164,7 @@ func _refresh() -> void:
 		for od in combat.divers:
 			if not od.down and int(od.station) == i:
 				occ_name = "  ·  %s" % String(od.dname)
-		lbl.text = "%s  [%s]%s" % [Combat.STATION_NAMES[i], String(keys2[i]), occ_name]
+		lbl.text = "%s%s" % [Combat.STATION_NAMES[i], occ_name]
 	# A cut line must READ as a cut line. This showed "AIR 3 / 3" after the
 	# umbilical rule fired, so the pool and its ceiling shrank together and
 	# the player could not tell anything had been taken from them.
@@ -1367,6 +1365,27 @@ func _dead_player_overdraft() -> bool:
 # Every sim-legal action has a button; the keyboard is a shortcut for the
 # same dispatcher. Legality is answered by trying the action on a CLONE,
 # so the greyed state can never disagree with what a press would do.
+func _keys_rect() -> Rect2:
+	return Rect2(Vector2(BAR_X, BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 16.0), Vector2(52.0, 20.0))
+
+func _lit_stations() -> Array:
+	var out: Array = []
+	if combat == null or combat.outcome != "ongoing":
+		return out
+	var d = combat.divers[selected]
+	if d.down or not combat.can_move_now(selected):
+		return out
+	for st in combat.OPEN_STATIONS:
+		if int(st) == int(d.station):
+			continue
+		var busy := false
+		for o in combat.divers:
+			if not o.down and int(o.station) == int(st):
+				busy = true
+		if not busy:
+			out.append(int(st))
+	return out
+
 func action_legal(id: String) -> bool:
 	if combat == null or combat.outcome != "ongoing":
 		return false
@@ -1443,6 +1462,9 @@ var _hold := 0.0
 var _dive := 0.0        # seconds left of the descent between beats
 var _won := ""
 var _hint_station := -1
+# the arrow-highlight: which lit destination the arrows are pointing at
+var _arrow_pick := -1
+var _keys_menu := false
 
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
@@ -1491,21 +1513,33 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_SPACE: player_ability(0)
 		KEY_F: player_ability(1)
 		KEY_LEFT, KEY_RIGHT:
-			# step along the open stations, because a player who does not
-			# know the letters yet still knows the arrows
+			# arrows point, ENTER goes: stepping used to MOVE instantly,
+			# which made browsing destinations spend the free move. The
+			# arrows now walk a highlight along the legal (lit) plates.
 			if combat != null:
-				var open: Array = combat.OPEN_STATIONS
-				var at: int = open.find(int(combat.divers[selected].station))
+				var legal2: Array = _lit_stations()
+				if legal2.is_empty():
+					return
+				var cur: int = legal2.find(_arrow_pick)
 				var step: int = -1 if k == KEY_LEFT else 1
-				if at >= 0:
-					player_move(int(open[posmod(at + step, open.size())]))
+				_arrow_pick = int(legal2[posmod(cur + step, legal2.size())]) if cur >= 0 else int(legal2[0])
+				queue_redraw()
+		KEY_TAB:
+			if combat != null and combat.divers.size() > 0:
+				_select(posmod(selected + 1, combat.divers.size()))
+				_arrow_pick = -1
+				_refresh()
 		KEY_UP, KEY_DOWN:
 			if combat != null and combat.divers.size() > 1:
 				_select(posmod(selected + (1 if k == KEY_DOWN else -1), combat.divers.size()))
+				_arrow_pick = -1
 				_refresh()
 		KEY_ENTER:
 			if combat == null:
 				run.advance(); combat = run.combat; selected = 0; _refresh()
+			elif _arrow_pick >= 0:
+				player_move(_arrow_pick)
+				_arrow_pick = -1
 			else:
 				player_end_turn()
 
@@ -1975,6 +2009,10 @@ func _click(at: Vector2) -> void:
 	if combat == null:
 		run.advance(); combat = run.combat; selected = 0; _refresh()
 		return
+	if _keys_rect().has_point(at):
+		_keys_menu = not _keys_menu
+		queue_redraw()
+		return
 	# the action bar first: it sits over nothing else clickable
 	var btns: Array = bar_buttons()
 	for i in range(btns.size()):
@@ -1987,49 +2025,48 @@ func _click(at: Vector2) -> void:
 			_select(i)
 			_refresh()
 			return
-	# a diver's body selects the diver; the third playtest clicked bodies
-	# expecting exactly that and moved someone instead. The SELECTED
-	# diver's body falls through to the attack path: with UNDER below the
-	# belly, its occupant's select radius shadowed the whole creature and
-	# mouse attacks silently died (the mouserun gate caught it as fifteen
-	# turns of clicks that never landed)
+	# THE ONE-RULE GRAMMAR (team ruling, Aug 7): occupied = WHO,
+	# empty-lit = WHERE, creature = WHAT. A diver's body SELECTS, always
+	# and only: two clicks 30px apart on one sprite doing different verbs
+	# is what the artist and his brother both hit. Whole-sprite zone, not
+	# a chest circle.
 	for i in range(combat.divers.size()):
 		var dd = combat.divers[i]
-		if i != selected and not dd.down and at.distance_to(diver_foot(dd) + Vector2(0, -40)) < 30.0:
+		if dd.down or i == selected:
+			# your own sprite is transparent: re-selecting yourself is a
+			# no-op, and over the belly it shadowed the creature (the
+			# mouserun gate caught that once already)
+			continue
+		var foot: Vector2 = diver_foot(dd)
+		if Rect2(foot + Vector2(-34.0, -104.0), Vector2(68.0, 116.0)).has_point(at):
 			_select(i)
 			_refresh()
 			return
-	# the ground plates are the movement handles: labeled, keyed, and
-	# glowing when the prompt points at one. They exist because UNDER now
-	# sits beneath the belly, where a bare click radius and the creature's
-	# own body fought over the same pixels (clicking the crab MOVED you
-	# under it; the mouserun gate caught fifteen turns of that)
+	# a plate wearing a diver's name selects that diver, which is what a
+	# plate wearing a name promises. An empty open plate is a move
+	# destination for the selected diver; your own plate swings.
 	for st in range(5):
 		if not combat.station_open(st):
 			continue
 		var chip: Control = ui_stations[st]
 		if chip.visible and Rect2(chip.position, chip.size).has_point(at):
-			var d0 = combat.divers[selected]
-			if int(d0.station) == st:
+			var occ := -1
+			for i2 in range(combat.divers.size()):
+				if not combat.divers[i2].down and int(combat.divers[i2].station) == st:
+					occ = i2
+			if occ == selected and occ >= 0:
 				player_ability(0)
+			elif occ >= 0:
+				_select(occ)
+				_refresh()
 			else:
 				player_move(st)
 			return
-	# the creature before bare station rings: a click on the body is the
-	# attack, from wherever the selected diver stands
+	# the creature is the attack, from wherever the selected diver stands.
+	# Station rings are not click targets any more: one target per verb.
 	if at.distance_to(_body_at()) < 130.0:
 		player_ability(0)
 		return
-	for st in range(5):
-		if not combat.station_open(st):
-			continue
-		if at.distance_to(place(st)) < 44.0:
-			var d = combat.divers[selected]
-			if int(d.station) == st:
-				player_ability(0)
-			else:
-				player_move(st)
-			return
 
 func here_free(_st: int) -> String:
 	return ""
@@ -2090,19 +2127,13 @@ func _draw_affordances() -> void:
 	var foot: Vector2 = diver_foot(d) + fx.diver_offset(int(d.id)) + fx.idle(int(d.id))
 	draw_arc(foot + Vector2(0, 4), 26.0 + 3.0 * t, 0, TAU, 30, Color(0.95, 0.85, 0.45, 0.65 + 0.3 * t), 3.0)
 	# 2. where they can go: a breathing dashed halo on every legal move
-	if combat.can_move_now(selected):
-		for st in combat.OPEN_STATIONS:
-			if int(st) == int(d.station):
-				continue
-			var busy := false
-			for o in combat.divers:
-				if not o.down and int(o.station) == int(st):
-					busy = true
-			if busy:
-				continue
-			var c0: Vector2 = place(int(st)) + Vector2(0, 22)
-			draw_circle(c0, 34.0 + 3.0 * t, Color(0.45, 0.85, 0.72, 0.13 + 0.06 * t))
-			draw_circle(c0, 5.0, Color(0.55, 0.90, 0.78, 0.8))
+	for st in _lit_stations():
+		var c0: Vector2 = place(int(st)) + Vector2(0, 22)
+		draw_circle(c0, 34.0 + 3.0 * t, Color(0.45, 0.85, 0.72, 0.13 + 0.06 * t))
+		draw_circle(c0, 5.0, Color(0.55, 0.90, 0.78, 0.8))
+		if int(st) == _arrow_pick:
+			# the arrows' pointer: ENTER moves here
+			draw_arc(c0, 42.0 + 3.0 * t, 0, TAU, 32, Color(0.95, 0.85, 0.45, 0.9), 3.0)
 	# 3. what SPACE would do: a reticle on the target and a preview chunk
 	var lb: int = combat.target_limb(d)
 	if lb >= 0 and not combat.limb_broken[lb]:
@@ -2162,8 +2193,30 @@ func _draw_actionbar() -> void:
 	var btns: Array = bar_buttons()
 	var dfm: Font = ThemeDB.fallback_font
 	var mv_y: float = BAR_TOP + float(bar_buttons().size()) * (BAR_H + BAR_GAP) + 8.0
-	draw_string(dfm, Vector2(BAR_X + 4.0, mv_y), "move: click a station plate",
+	draw_string(dfm, Vector2(BAR_X + 4.0, mv_y), "move: click a lit plate",
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.62, 0.70, 0.76))
+	var kb := _keys_rect()
+	draw_rect(kb, Color(0.09, 0.11, 0.12, 0.9))
+	draw_rect(kb, Color(0.38, 0.42, 0.44, 0.7), false, 1.0)
+	draw_string(dfm, kb.position + Vector2(10, 15), "keys", HORIZONTAL_ALIGNMENT_LEFT, -1, 12,
+		Color(0.62, 0.70, 0.76))
+	if _keys_menu:
+		var mkb := Rect2(Vector2(BAR_X, 116.0), Vector2(300.0, 196.0))
+		draw_rect(mkb, Color(0.05, 0.07, 0.09, 0.96))
+		draw_rect(mkb, Color(0.55, 0.62, 0.68, 0.9), false, 2.0)
+		var lines := [
+			"TAB      next diver",
+			"arrows   point at a lit plate",
+			"ENTER    go there / end turn",
+			"SPACE    first ability",
+			"F        second ability",
+			"A        read the limb",
+			"U        rewind, once a dive",
+			"1-3, QWERT   old shortcuts",
+		]
+		for li in range(lines.size()):
+			draw_string(dfm, mkb.position + Vector2(12, 24 + li * 21), String(lines[li]),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.80, 0.86, 0.90))
 	var df: Font = ThemeDB.fallback_font
 	for i in range(btns.size()):
 		var b: Dictionary = btns[i]
