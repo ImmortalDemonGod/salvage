@@ -135,7 +135,7 @@ func _draw_teach() -> void:
 			if _clock - float((_taught[k2] as Dictionary).t) <= TEACH_SECS:
 				row += 1
 		var tp := Vector2(clampf(at.x - tw * 0.5, 12.0, 1280.0 - tw - 12.0),
-			clampf(at.y - 46.0, 148.0, 206.0) + float(row) * 21.0)
+			minf(clampf(at.y - 46.0, 148.0, 206.0) + float(row) * 21.0, 224.0))
 		draw_line(at + Vector2(0, -8), Vector2(tp.x + tw * 0.5, tp.y + 6.0), Color(0.95, 0.85, 0.45, 0.5 * a), 1.5)
 		for off in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
 			draw_string(df, tp + off, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.02, 0.05, 0.08, a))
@@ -918,8 +918,9 @@ func _refresh() -> void:
 		hp0.add_theme_stylebox_override("panel", skin_quiet())
 	var scene_p: Control = ui_scene.get_parent()
 	if run.puzzle != null:
-		scene_p.position = Vector2(190, 596)
-		scene_p.size = Vector2(900, 108)
+		# below the valve wheels, whose lowest rim reaches y~649
+		scene_p.position = Vector2(190, 654)
+		scene_p.size = Vector2(900, 62)
 	else:
 		scene_p.position = SCENE_PANEL_AT
 		scene_p.size = SCENE_PANEL_SIZE
@@ -1789,12 +1790,27 @@ func _draw_water() -> void:
 	var far: Color = Color(0.10, 0.19, 0.24).lerp(Color(0.045, 0.085, 0.13), d)
 	var near: Color = Color(0.075, 0.145, 0.19).lerp(Color(0.03, 0.06, 0.10), d)
 	var sky: float = w.y * (0.50 + 0.10 * d)
-	# a far skyline of towers
+	# a far skyline of towers: broken rooflines and antenna spikes, so the
+	# city reads as a drowned city rather than placeholder blocks (the
+	# cold reads called the flat rectangles greybox, and they were)
 	for i in range(11):
 		var bx0: float = w.x * (float(i) / 11.0) - 40.0 + sin(float(i) * 2.3) * 30.0
 		var bw: float = 52.0 + float((i * 37) % 60)
 		var bh: float = 60.0 + float((i * 53) % 150)
 		draw_rect(Rect2(Vector2(bx0, sky - bh), Vector2(bw, bh + 40.0)), far)
+		match i % 3:
+			0:
+				# a collapsed corner
+				draw_colored_polygon(PackedVector2Array([
+					Vector2(bx0, sky - bh), Vector2(bx0 + bw * 0.45, sky - bh),
+					Vector2(bx0, sky - bh + 26.0)]), top.lerp(bot, 0.5))
+			1:
+				# an antenna mast, snapped partway
+				var mx2: float = bx0 + bw * 0.6
+				draw_line(Vector2(mx2, sky - bh), Vector2(mx2 + 5.0, sky - bh - 34.0), far, 3.0)
+			2:
+				# a water tank silhouette on the roof
+				draw_rect(Rect2(Vector2(bx0 + bw * 0.2, sky - bh - 14.0), Vector2(18.0, 14.0)), far)
 	# a middle skyline between them: the missing value step that made
 	# depth read as binary (visual assessment F-004)
 	var mid: Color = far.lerp(near, 0.5).lightened(0.05)
@@ -1802,7 +1818,16 @@ func _draw_water() -> void:
 		var mx0: float = w.x * (float(i) / 9.0) - 55.0 + sin(float(i) * 3.1) * 38.0
 		var mw: float = 70.0 + float((i * 43) % 70)
 		var mh: float = 50.0 + float((i * 61) % 110)
-		draw_rect(Rect2(Vector2(mx0, sky - mh * 0.6 + 60.0), Vector2(mw, mh + 60.0)), mid)
+		var mtop: float = sky - mh * 0.6 + 60.0
+		draw_rect(Rect2(Vector2(mx0, mtop), Vector2(mw, mh + 60.0)), mid)
+		# dead windows: dark pits in a grid, a few of them faintly lit as
+		# if something down there still has power
+		for wy in range(2):
+			for wx in range(int(mw / 26.0)):
+				var wat := Vector2(mx0 + 8.0 + float(wx) * 26.0, mtop + 12.0 + float(wy) * 22.0)
+				var lit2: bool = ((i * 7 + wx * 3 + wy) % 11) == 0
+				draw_rect(Rect2(wat, Vector2(9.0, 12.0)),
+					Color(0.55, 0.75, 0.55, 0.10) if lit2 else Color(0.0, 0.0, 0.0, 0.22))
 	# and a nearer one, lower and darker, which gives the floor its edge
 	for i in range(8):
 		var cx0: float = w.x * (float(i) / 8.0) - 70.0 + cos(float(i) * 1.7) * 44.0
@@ -1810,6 +1835,18 @@ func _draw_water() -> void:
 		var ch: float = 40.0 + float((i * 29) % 90)
 		draw_rect(Rect2(Vector2(cx0, w.y - ch - 60.0), Vector2(cw, ch + 90.0)), near)
 	draw_rect(Rect2(Vector2(0, w.y - 60.0), Vector2(w.x, 60.0)), near)
+	# kelp on the near band, swaying: the one living thing in the frame
+	# beside the fight
+	for i in range(7):
+		var kx: float = w.x * (float(i) + 0.5) / 7.0 + float((i * 29) % 40)
+		var kh: float = 60.0 + float((i * 47) % 80)
+		var prev2 := Vector2(kx, w.y - 40.0)
+		for sgm in range(4):
+			var t3: float = float(sgm + 1) / 4.0
+			var sway2: float = sin(_clock * 0.8 + float(i) * 1.7 + t3 * 2.0) * 10.0 * t3
+			var nxt := Vector2(kx + sway2, w.y - 40.0 - kh * t3)
+			draw_line(prev2, nxt, Color(0.10, 0.22, 0.16, 0.55), 4.0 - t3 * 2.0)
+			prev2 = nxt
 
 	# silt drifting up, so the frame is never completely still
 	for i in range(34):
