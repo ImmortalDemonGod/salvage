@@ -871,6 +871,27 @@ reading as broken sprites at deck scale) are the rig's own geometry,
 not presentation; enemy clips remain the top art dependency
 (procedural strike signatures stand in).
 
+### Round two, and the semantic split
+
+The second thirteen-reader round returned 19 blockers, and their
+convergence taught the real lesson: a limb bar placed at a station
+reads as belonging to whoever stands there, no matter how carefully
+it is positioned. The split that ended the class: ground plates say
+only WHERE TO STAND (station name and key), and every limb's name,
+bar, preview chunk and discovered trait draw ON the creature at the
+limb itself. The same round killed the contradiction cluster: banner
+and badge speak one summed number with attackers named, teach lines
+yield to the urgent banner, a downed diver leaves the board (down
+means surfaced), the way-out label stopped ghosting through the
+banner, both locks speak the banner's words, the transition stopped
+double-exposing the deck title, and the crew stands ON the deck.
+Mouserun and masher re-proven green after the rework. The minors
+round followed (honest air gauge, squad-only numbering, steady hint
+glow, typography); its first banner rewording broke the phrase the
+urgency check and hint gate key on, and the gate caught it within
+the minute. A targeted third round confirms the fight screens before
+the block hands over.
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
