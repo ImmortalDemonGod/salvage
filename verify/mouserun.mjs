@@ -184,8 +184,12 @@ async function driveFight(b) {
       // BESIDE the ring, outward from the body
       const belly = p[1] >= f.body[1] - 20;
       const side = p[0] >= f.body[0] ? 1 : -1;
+      // the ring itself first (legal whenever the creature does not own
+      // those pixels), then both plate positions an escaped plate can
+      // occupy: under the ring, above it, or beside it for belly rings
+      await click(p[0], p[1]); await sleep(90);
       if (belly) { await click(p[0] + side * 166, p[1] + 22); }
-      else { await click(p[0], p[1] + 52); }
+      else { await click(p[0], p[1] + 52); await sleep(80); await click(p[0], p[1] - 52); }
       await sleep(110);
       await click(...CARD(d)); await sleep(90);
       if (await beatNow() !== b) return true;
