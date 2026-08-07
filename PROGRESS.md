@@ -766,8 +766,40 @@ struck limb's announced swing re-aims to its home station, hunts
 included, the telegraph updates in front of you. Judge prices steered
 damage like prevention; bands re-measured in band (65.0/71.8/67.1).
 
-Remaining: salvage on the board (P2, optional by rulings), two more
-dry deep passes, and G5-HUMAN, which only a person can close.
+**P2 salvage on the board: LANDED** (ad158bd). The pump part sits at
+the winch's station in the last fight; unblocked swings chip it, a
+diver's body shields it, surfacing with it crushed is counted.
+
+**The visual assessment's allocation fixes: LANDED** (ce6279d). His
+agent scored the build 243/400 with cohesion 4/4 ("not a game with an
+art problem... allocation problems are the cheap kind"). Applied:
+chrome demoted to steel so gold belongs to affordances alone (F-002),
+action-bar contrast floors cleared including disabled states (F-005,
+F-007), fixed roster slots that never re-centre (F-006), the maw
+lifted from the murk (F-001), a midground skyline staging depth
+(F-004). Deferred with reasons: iconography (F-008, a team look
+decision), ally rim treatment (F-003, wants Glass_Goat's eye).
+Archived at docs/playtests/2026-08-06-visual-assessment.md.
+
+**Docs truth pass: LANDED** (589602c). README and PLAYTEST describe
+tonight's game; the mash question inverted (mashing through is now the
+bug we ask playtesters to report).
+
+### Where the night stopped
+
+    stop-gate: 3 consecutive dry deep passes (53, 54, 55) over 55
+    total, on three distinct work-carrying commits (8746e17 crate,
+    9ba7067 visual fixes, 8de6641 docs), each launched fast-green on a
+    clean tree and untouched while running. Run may stop.
+
+Pass 52 found nothing and was REFUSED (ran on a tree being edited);
+its refusal is the ledger working. Final bands: crab 65.0, spitter
+71.8, dredge 68.0, all in 55-90; greedy floors held. Masher: pure
+mash wins nothing and loses the spitter outright; mash-and-move loses
+the crab at turn 7. The taught line sits 1.62 from optimal against a
+2.0 tolerance. Every gate green: fast set, masher, mousedoor,
+hudbudget, teach, pillar, hint, door, audio, layout, fuzz,
+differential. G5-HUMAN remains the only open gate, as it must.
 
 ## The presentation pass
 
