@@ -186,9 +186,9 @@ static var ALL := {
 			# smaller limbs after the no-reshut rule and the ramp landed:
 			# the fight gained two kinds of pressure the same evening, so
 			# it gives back duration. Bands never move; the creature does.
-			{"name": "arm", "hp": 11, "station": FRONT, "trait": "plated"},
-			{"name": "boiler", "hp": 10, "station": FLANK, "trait": "pressurised"},
-			{"name": "winch", "hp": 10, "station": REAR, "trait": "leaking"},
+			{"name": "arm", "hp": 12, "station": FRONT, "trait": "plated"},
+			{"name": "boiler", "hp": 12, "station": FLANK, "trait": "pressurised"},
+			{"name": "winch", "hp": 11, "station": REAR, "trait": "leaking"},
 		],
 		"attacks": [
 			{"limb": 0, "stations": [FRONT, FLANK], "dmg": 4, "name": "sweeps"},
@@ -202,9 +202,9 @@ static var ALL := {
 			# it or break it and the climb stops. This is what finally
 			# makes attack-only play lose the last fight: the masher races
 			# a clock, the judge answers it.
-			{"limb": 1, "stations": [FLANK, REAR], "dmg": 3, "name": "vents over", "ramp": true},
+			{"limb": 1, "stations": [FLANK], "dmg": 3, "name": "vents over", "ramp": true},
 			{"limb": 1, "stations": [FLANK], "dmg": 3, "name": "hisses at", "ramp": true},
-			{"limb": 2, "stations": [REAR], "dmg": 4, "name": "lashes"},
+			{"limb": 2, "stations": [REAR], "dmg": 3, "name": "lashes"},
 		],
 	},
 }

@@ -467,17 +467,20 @@ func act_ability(i: int, slot: int) -> bool:
 # a trait only bites once it is KNOWN, so reading a limb is what turns it
 # into an opportunity rather than a hidden dice roll
 func _after_trait(limb: int, dmg: int) -> int:
-	# Traits are physical, not epistemic. Gated on known() they produced an
-	# absurdity the masher gate surfaced: reading a plated limb made your
-	# own hits WEAKER, so the optimal line was ignorance, and the masher
-	# was rewarded for never reading. The plate is there whether or not
-	# anyone looked at it. Reading is pure information: it tells you which
-	# limb to choose, which is Marc's Analyze as written.
+	# The trait ontology, settled by two instruments pulling opposite ways.
+	# Gating everything on known() made reading a plated limb WEAKEN your
+	# own hits, so ignorance was optimal (masher gate, Aug 6). Making
+	# everything physical made reading buy nothing a clairvoyant searcher
+	# could price, and the deep pass reported analyze dominated in every
+	# encounter the same night. The split that satisfies both: armor is
+	# physical (the plate blocks whether or not anyone looked), and the
+	# brittle bonus is AIMED (doubling requires knowing where the crack
+	# is). Reading buys exactly the upside, never the downside.
 	if dmg <= 0:
 		return dmg
 	match trait_of(limb):
 		"brittle":
-			return dmg * 2
+			return dmg * 2 if known(limb) else dmg
 		"plated":
 			return max(1, dmg - 1)
 	return dmg

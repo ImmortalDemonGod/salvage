@@ -165,7 +165,19 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 						score = 0.9 if here < 0 else 0.05
 						break
 			if d.station in threatened and not (a.s in threatened):
-				score += 0.35
+				# a dodge is worth what the announced swing would have
+				# taken, discounted; free moves made this the judge's
+				# largest mispricing (G11 drift 2.23 the night the economy
+				# changed: flat bonuses priced a 6-damage dodge at 0.95)
+				var would2 := 0
+				for it in all_intents:
+					if int(d.station) in it.stations and int(c.limb_stun[int(it.limb)]) <= 0 and not c.limb_broken[int(it.limb)]:
+						would2 += int(it.dmg)
+				# capped below an attack's typical score: uncapped, the
+				# judge dodge-thrashed (41-turn crab, G2 0/40). A dodge is
+				# the best action when attacking is weak, never instead of
+				# every attack forever.
+				score += minf(float(would2) * 0.45, 1.2)
 				if float(d.hp) / float(d.max_hp) < 0.5:
 					score += 0.6
 		if score > best_score:
