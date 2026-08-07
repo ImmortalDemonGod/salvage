@@ -2214,7 +2214,7 @@ func _draw_limb_bars() -> void:
 		if int(combat.limb_stun[lb]) > 0:
 			suffix = "  SHUT %d" % int(combat.limb_stun[lb])
 		elif not combat.known(lb):
-			suffix = "  [A]?"
+			suffix = "  unread"
 		else:
 			match combat.trait_of(lb):
 				"brittle": suffix = "  x2"
