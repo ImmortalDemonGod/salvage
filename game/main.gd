@@ -102,6 +102,34 @@ var _danim: Dictionary = {}   # diver id -> {"clip": String, "t0": float}
 # and the snapshot is taken at each turn start.
 var _turn_start: Combat = null
 var _rewound := false
+# Teach-by-play, the third playtest's own design: "the red ring pops up,
+# boom. I don't need to show that ever again." Each lesson fires ONCE per
+# session, at the moment it becomes relevant, anchored to the thing it is
+# about, and fades. Not a Control, so the HUD budget is untouched.
+var _taught: Dictionary = {}     # key -> clock time it fired
+const TEACH_SECS := 6.0
+
+func _teach(key: String, anchor: Vector2, text: String) -> void:
+	if _taught.has(key):
+		return
+	_taught[key] = {"t": _clock, "at": anchor, "text": text}
+
+func _draw_teach() -> void:
+	var df: Font = ThemeDB.fallback_font
+	for key in _taught.keys():
+		var tc: Dictionary = _taught[key]
+		var age: float = _clock - float(tc.t)
+		if age > TEACH_SECS:
+			continue
+		var a: float = clampf(minf(age * 3.0, (TEACH_SECS - age) * 1.5), 0.0, 1.0)
+		var at: Vector2 = tc.at
+		var txt := String(tc.text)
+		var tw: float = df.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		var tp := Vector2(clampf(at.x - tw * 0.5, 12.0, 1280.0 - tw - 12.0), at.y - 46.0)
+		draw_line(at + Vector2(0, -8), Vector2(tp.x + tw * 0.5, tp.y + 6.0), Color(0.95, 0.85, 0.45, 0.5 * a), 1.5)
+		for off in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+			draw_string(df, tp + off, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.02, 0.05, 0.08, a))
+		draw_string(df, tp, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.98, 0.92, 0.70, a))
 const DIVER_SEAT := 20.0          # how far below the ring centre the feet sit
 const CARD_TOP := 584.0
 # The action bar: the third playtest's ruling made buttons a hard
@@ -558,6 +586,10 @@ func _motion(lines: Array, from: int) -> void:
 		var who := _diver_named(line)
 		var lb := _limb_named(line)
 		_rig_react(ev, line, who)
+		if ev == SfxEvents.Kind.BREAK and lb >= 0:
+			_teach("break", _limb_at(lb), "broken limbs never swing again. Break every limb and the dive is won")
+		elif ev == SfxEvents.Kind.HIT and lb >= 0:
+			_teach("hit", _limb_at(lb) + Vector2(0, 24), "its health is the bar under its name. The bright chunk is your next hit")
 		var n := _amount(line)
 		match ev:
 			SfxEvents.Kind.HIT:
@@ -1360,10 +1392,10 @@ var _won := ""
 
 func _after() -> void:
 	if combat != null and combat.outcome != "ongoing":
-		_dive = 1.7
+		_dive = 3.2
 		_hud(false)
 		_won = ("%s IS DISABLED" % String(combat.enc.get("title", "the enemy")).to_upper()) if combat.outcome == "victory" else "THE SQUAD IS LOST"
-		_hold = 1.7
+		_hold = 3.2
 		run.advance()
 		combat = run.combat
 		selected = 0
@@ -1857,6 +1889,36 @@ func _draw_affordances() -> void:
 			var dv := Vector2(cos(ang), sin(ang))
 			draw_line(at + dv * (rr - 5.0), at + dv * (rr + 7.0), Color(0.95, 0.85, 0.45, 0.95), 3.0)
 
+func _teach_triggers() -> void:
+	if combat == null or combat.outcome != "ongoing":
+		return
+	# lesson 1, first telegraph of the run: the arc means a place and a number
+	for it in combat.locked:
+		for st in it.stations:
+			_teach("telegraph", place(int(st)) + Vector2(0, -30),
+				"the ring is a promise: %d lands HERE next enemy turn" % int(it.dmg))
+			break
+		break
+	# lesson 2, the first time the SELECTED diver is standing in one
+	var d = combat.divers[selected]
+	if not d.down and int(d.station) in combat.threatened_stations():
+		# only where the lesson is actable: a clear, empty station exists.
+		# On the descent there is nowhere to go and the prompt says take
+		# the hit, so teaching "just move" there would be a lie.
+		var can_flee := false
+		for st in combat.OPEN_STATIONS:
+			if int(st) == int(d.station) or int(st) in combat.threatened_stations():
+				continue
+			var busy := false
+			for o in combat.divers:
+				if not o.down and int(o.station) == int(st):
+					busy = true
+			if not busy:
+				can_flee = true
+		if can_flee and combat.can_move_now(selected):
+			_teach("dodge", diver_foot(d) + Vector2(0, -70),
+				"standing in a red ring costs %s the hit. Moving is free" % String(d.dname))
+
 func _draw_actionbar() -> void:
 	if combat == null or combat.outcome != "ongoing":
 		return
@@ -2054,6 +2116,8 @@ func _draw() -> void:
 	_draw_affordances()
 	_draw_traits()
 	_draw_actionbar()
+	_teach_triggers()
+	_draw_teach()
 	_draw_windup()
 	_draw_bars()
 	_draw_fx()
