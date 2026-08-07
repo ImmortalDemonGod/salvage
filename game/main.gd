@@ -1081,7 +1081,7 @@ func _refresh() -> void:
 			if nearest.distance_to(body0) >= 112.0:
 				break
 			if place(i).y < body0.y - 20.0:
-				tag_at.y -= 36.0
+				tag_at.y -= 34.0
 				if tag_at.y <= 258.0:
 					tag_at.x += slide_x
 			elif tag_at.y < 566.0 - mk.size.y - 1.0:
@@ -1385,7 +1385,7 @@ func bar_buttons() -> Array:
 		var what := ""
 		match String(ab.kind):
 			"hit": what = "%d dmg" % int(eff.dmg)
-			"hit_shove": what = "%d dmg, re-aims its swing home" % int(eff.dmg)
+			"hit_shove": what = "%d dmg, pushes its swing off you" % int(eff.dmg)
 			"hit_and_step": what = "%d dmg, then step free" % int(eff.dmg)
 			"hit_wide": what = "%d dmg, spills to both sides" % int(eff.dmg)
 			"shut": what = "shuts the limb %d turn%s" % [int(eff.turns), "" if int(eff.turns) == 1 else "s"]
@@ -2042,6 +2042,9 @@ func _draw_salvage() -> void:
 	draw_rect(box, Color(0.80, 0.70, 0.45), false, 2.0)
 	draw_line(box.position + Vector2(w * 0.33, 0), box.position + Vector2(w * 0.33, h), Color(0.30, 0.24, 0.16), 3.0)
 	draw_line(box.position + Vector2(w * 0.66, 0), box.position + Vector2(w * 0.66, h), Color(0.30, 0.24, 0.16), 3.0)
+	var df2: Font = ThemeDB.fallback_font
+	draw_string(df2, box.position + Vector2(-8, h + 26.0), "the part", HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
+		Color(0.95, 0.85, 0.55, 0.9))
 	var mx := float(int((combat.enc.salvage as Dictionary).hp))
 	for k in range(int(mx)):
 		var lit: bool = k < combat.salvage_hp
@@ -2214,14 +2217,14 @@ func _draw_limb_bars() -> void:
 		if int(combat.limb_stun[lb]) > 0:
 			suffix = "  SHUT %d" % int(combat.limb_stun[lb])
 		elif not combat.known(lb):
-			suffix = "  unread"
+			suffix = "  not read"
 		else:
 			match combat.trait_of(lb):
-				"brittle": suffix = "  x2"
-				"plated": suffix = "  armor"
+				"brittle": suffix = "  takes x2"
+				"plated": suffix = "  -1 dmg"
 				"leaking": suffix = "  +2 air"
 				"pressurised": suffix = "  bursts"
-		var label := "%s %d%s" % [String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), suffix]
+		var label := "%s %d/%d%s" % [String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), int(mx), suffix]
 		var tw: float = df.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 		var tx: float = clampf(at.x - tw * 0.5, 8.0, 1280.0 - tw - 8.0)
 		for off in [Vector2(1, 1), Vector2(-1, -1)]:
@@ -2257,7 +2260,12 @@ func _draw_bars() -> void:
 		var frac: float = float(d.hp) / max(1.0, float(d.max_hp))
 		# clamped under the prompt band, which is new and lower than the old
 		# control strip: Proto5's bar was being cut in half by it
-		var by: float = max(f.y - DIVER_SCALE - 8.0, PANEL_FLOOR)
+		# ABOVE the head at ordinary stations; BELOW the feet at belly
+		# stations, where above-the-head is the creature's body and the
+		# plate reads as a fourth limb (round three, twice). Belly plates
+		# sit BESIDE their ring, so below-feet ground there is clear.
+		var belly_here: bool = combat != null and place(int(d.station)).y >= _body_at().y - 20.0
+		var by: float = (min(f.y + 30.0, 560.0)) if belly_here else max(f.y - DIVER_SCALE - 8.0, PANEL_FLOOR)
 		var df: Font = ThemeDB.fallback_font
 		var plate := "%s %d/%d" % [String(d.dname), int(d.hp), int(d.max_hp)]
 		var pw: float = df.get_string_size(plate, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 10.0
