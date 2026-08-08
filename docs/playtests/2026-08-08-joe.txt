@@ -1,5 +1,10 @@
 Independent playtester "JOE" - relayed verbatim by Miguel, Aug 8 2026.
-Fourth independent source. Played the live Vercel build (d936801 era).
+Fourth independent source. Build UNKNOWN: the advertised Vercel URL was
+serving d936801, but a stale Aug-6-morning build was also live at the
+old team link (immortaldemongod.github.io/salvage/) with no build stamp,
+and which URL JOE used has not been established. Their claims were
+re-verified against the CURRENT build's gallery shots and hold there
+(see PROGRESS.md, Aug 8).
 
 ---
 
