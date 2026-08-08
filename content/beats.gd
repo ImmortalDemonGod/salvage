@@ -41,7 +41,7 @@ static var LADDER := [
 			# which is the beat that teaches the combat frame: telling a player
 			# how to end a turn before turns exist is the teach ladder broken
 			# in the UI instead of the data.
-			{"role": "controls", "text": "ENTER to descend"},
+			{"role": "controls", "text": "Descend  ·  click here or ENTER"},
 		],
 	},
 	{
@@ -82,7 +82,7 @@ static var LADDER := [
 			{"role": "who", "text": "(placeholder) The crab is dealt with and everyone came back up. That bought us a night on deck, and we spent it fitting the drum to the middle suit. Its diver answers to Drum now."},
 			{"role": "want", "text": "(placeholder) Point the drum at whatever is winding up and it stops. It reaches from the back line, so you do not have to be in front of the thing to shut it."},
 			{"role": "want", "text": "(placeholder) There was time to drill, too. Every diver now has a second use for what they already carry. The part is deeper than we got today, and the pump is not waiting. We go back down."},
-			{"role": "controls", "text": "ENTER to descend"},
+			{"role": "controls", "text": "Descend  ·  click here or ENTER"},
 		],
 	},
 	{
@@ -135,7 +135,7 @@ static var LADDER := [
 		"lines": [
 			{"role": "who", "text": "(placeholder) The way to the part is open now, and it runs deep. What waits at the bottom is too big for the light gear alone. So today, for the first time, the big suit goes in the water."},
 			{"role": "want", "text": "(placeholder) Every diver moves once a turn for free. Swinging is what costs air, and one swing of the big suit takes three of the four lines the pump sends down. Bring it and most of the turn belongs to one diver."},
-			{"role": "controls", "text": "ENTER to descend"},
+			{"role": "controls", "text": "Descend  ·  click here or ENTER"},
 		],
 	},
 	{

@@ -62,6 +62,18 @@ func _ready() -> void:
 	_pass_clicks_through(self)
 	_refresh()
 
+# Dive again, from the ending, without touching the browser. The old exit
+# was "refresh the page": a button-shaped bar whose only instruction was
+# to go find a browser control -- unfindable on mobile, and the one screen
+# that broke the everything-is-clickable rule (cold read, Aug 8).
+func _restart() -> void:
+	run = Run.new()
+	combat = run.combat
+	selected = 0
+	_arrow_pick = -1
+	_snap_of = null
+	_refresh()
+
 # where this encounter puts a station, falling back to the default ring
 # The board sits under the HUD, and a sprite is not a Control, so nothing
 # was stopping one being drawn through the help line. A reviewer looking at
@@ -780,7 +792,9 @@ func _draw_ending() -> void:
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 36, Color(0.88, 0.94, 0.97))
 	var rows: Array = [
 		"dives cleared  %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
-		"cargo crushed  %d" % lost,
+		# "cargo crushed 0" made a cold reader ask whether 0 was the good
+		# number; say the good outcome as a sentence instead
+		("the cargo came up whole" if lost == 0 else "cargo crushed  %d" % lost),
 		"the squad came back %s" % ("whole" if lost == 0 else "lighter than it went down"),
 	]
 	for i in range(rows.size()):
@@ -1031,7 +1045,7 @@ func _refresh() -> void:
 		var b: Dictionary = run.current()
 		var lines: Array = b.get("lines", [])
 		var body: Array = []
-		var controls := "that is the whole prototype  ·  refresh the page to dive again" if run.finished else "ENTER to continue"
+		var controls := "Dive again  ·  click here or ENTER" if run.finished else "Continue  ·  click here or ENTER"
 		for l in lines:
 			if String(l.role) == "controls":
 				controls = String(l.text)
@@ -1588,7 +1602,9 @@ func _unhandled_input(e: InputEvent) -> void:
 				_arrow_pick = -1
 				_refresh()
 		KEY_ENTER:
-			if combat == null:
+			if run.finished:
+				_restart()
+			elif combat == null:
 				run.advance(); combat = run.combat; selected = 0; _refresh()
 			elif _arrow_pick >= 0:
 				player_move(_arrow_pick)
@@ -1668,14 +1684,18 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 	for k in range(int(wide / 46.0)):
 		draw_rect(Rect2(at + Vector2(14.0 + float(k) * 46.0, 8), Vector2(5, 5)), RIVET)
 	# a dashed line across the chamber marking the height the water has to
-	# reach, so "fill it to the top" is a picture
+	# reach, so "fill it to the top" is a picture. Brighter and thicker
+	# after a cold reader could not find "this line" at all (Aug 8).
 	for i in range(16):
 		if i % 2 == 1:
 			continue
 		var x0: float = at.x + wide * float(i) / 16.0
 		draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
-			Color(0.86, 0.78, 0.42, 0.75), 2.0)
-	draw_string(f, at + Vector2(6, 44), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
+			Color(0.92, 0.82, 0.44, 0.95), 3.0)
+	# the label sits ABOVE the door in open sky: below it, it landed on
+	# the chamber's own "0 of 3" label and the two ran together into one
+	# garbled phrase (cold read, Aug 8)
+	draw_string(f, at + Vector2(6, -8), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 16, OPEN_C if is_open else Color(0.90, 0.82, 0.48))
 
 func _valve_pos(i: int) -> Vector2:
@@ -1771,6 +1791,11 @@ func _draw_rig() -> void:
 	if _dive > 0.0:
 		return
 	var title := String(b.get("title", "")).to_upper()
+	# the game's own name on its first screen: a cold reader pointed out
+	# the title of the GAME appeared nowhere before the credits
+	if String(b.get("id", "")) == "opening":
+		draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 52.0), "S A L V A G E",
+			HORIZONTAL_ALIGNMENT_CENTER, 600.0, 17, Color(0.55, 0.68, 0.75))
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 84.0), title,
 		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 34, Color(0.88, 0.93, 0.96))
 	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 112.0), "dive %d of %d" % [run.beat + 1, Beats.LADDER.size()],
@@ -2071,6 +2096,11 @@ func _draw_windup() -> void:
 # the selected diver there, a diver card selects that diver, and the enemy
 # means attack. Nothing here is a new rule; it is the same three verbs.
 func _click(at: Vector2) -> void:
+	# the ending first: combat still holds the LAST fight's finished sim
+	# there, so the scene branch below never sees the ending at all
+	if run != null and run.finished:
+		_restart()
+		return
 	if run.puzzle != null:
 		for i in range(run.puzzle.valves()):
 			if at.distance_to(_valve_pos(i)) < 30.0:
@@ -2083,7 +2113,10 @@ func _click(at: Vector2) -> void:
 			run.advance(); combat = run.combat; selected = 0; _refresh()
 		return
 	if combat == null:
-		run.advance(); combat = run.combat; selected = 0; _refresh()
+		if run.finished:
+			_restart()
+		else:
+			run.advance(); combat = run.combat; selected = 0; _refresh()
 		return
 	if _keys_rect().has_point(at):
 		_keys_menu = not _keys_menu

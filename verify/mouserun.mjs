@@ -296,6 +296,18 @@ while (beat !== "ending") {
 }
 
 console.log("MOUSERUN beat=ending");
+// the ending's "Dive again" bar must be a real door: one click restarts
+// the run without touching the browser. The old exit said "refresh the
+// page", which a cold reader called a button-shaped bar that is not a
+// button (Aug 8) -- and on mobile there is nothing to refresh with.
+await click(640, 700);
+await sleep(1500);
+const againBeat = (await page.title()).match(/beat=(\w+)/)?.[1];
+if (againBeat !== "opening") {
+  console.log(`MOUSERUN: RESTART IS NOT A DOOR -- clicking the ending bar left beat=${againBeat}, expected opening`);
+  await browser.close(); stop(); process.exit(1);
+}
+console.log("MOUSERUN restart: the ending bar restarts the run by mouse");
 const secs = ((Date.now() - T0) / 1000).toFixed(0);
 for (const e of errors.slice(0, 5)) console.log("PAGE ERROR  " + e);
 if (firstStuck) {
