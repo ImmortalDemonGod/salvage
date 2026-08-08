@@ -1384,7 +1384,7 @@ claims, checked against fresh gallery shots of the current build:
 | read literally no text | CONFIRMED by convergence | playtest 1, Glass_Goat's brother, JOE |
 | puzzles are brain dead | CONFIRMED as received | stage 1 is 3 valves + 1 ordering trap; the puzzle SCREEN says "fill the chamber to the line" three times in three boxes |
 | no reward at the end | CONFIRMED | `_draw_ending` is a text-only stat card on a dark field; the OPENING has a staged tableau, the ending has none; only exit is "refresh the page" |
-| show damage per area, movement as the language | already the direction (One-Rule grammar); the clutter half is claim 1 | — |
+| show damage per area, movement as the language | already the direction (One-Rule grammar); the clutter half is claim 1 | n/a |
 | bookend: start and end on the same screen | design idea, cheap, good | opening rig tableau already exists to reuse |
 
 **Which build did JOE play?** Unknown, and it matters: the audit below
@@ -1399,8 +1399,8 @@ given to a skeptic instructed to refute. All five survived:
 
 | Finding | Severity | Instrument |
 |---|---|---|
-| `hit_and_step` (Double Knee, `sim/combat.gd:511`) sets `d.station` directly, bypassing act_move's occupancy AND blocks checks. One keypress stacks divers (dredge t1) or steps onto the barnacle's unbroken shell. Fuzz never catches it: its check() validates station RANGE, not occupancy. | major, player-visible | `scratchpad/repro_hit_and_step.gd`: stacked divers both eat one swing — the exact bug the occupancy fix removed |
-| `clone()` shallow-copies `locked` (`combat.gd:759`); `hit_shove` mutates the shared intent dicts. So `action_legal()` in main.gd — called per button on every actionbar DRAW — steers the live telegraph for free, no input. Also taints deep.gd dominance/memo verdicts and Rewind snapshots. | major, player-visible | `scratchpad/repro_clone_shove.gd`: rendering the bar re-aimed the shell's announced swing; "hits empty water" vs control "snaps toward Scuba for 5" |
+| `hit_and_step` (Double Knee, `sim/combat.gd:511`) sets `d.station` directly, bypassing act_move's occupancy AND blocks checks. One keypress stacks divers (dredge t1) or steps onto the barnacle's unbroken shell. Fuzz never catches it: its check() validates station RANGE, not occupancy. | major, player-visible | `scratchpad/repro_hit_and_step.gd`: stacked divers both eat one swing - the exact bug the occupancy fix removed |
+| `clone()` shallow-copies `locked` (`combat.gd:759`); `hit_shove` mutates the shared intent dicts. So `action_legal()` in main.gd - called per button on every actionbar DRAW - steers the live telegraph for free, no input. Also taints deep.gd dominance/memo verdicts and Rewind snapshots. | major, player-visible | `scratchpad/repro_clone_shove.gd`: rendering the bar re-aimed the shell's announced swing; "hits empty water" vs control "snaps toward Scuba for 5" |
 | masher.gd:13 and hudbudget.gd:41 hand-list crab/spitter/dredge; the barnacle (added later) escapes both gates. Every other gate iterates the roster. | minor (gate blindness) | git: both lists predate the barnacle commit 16d4458 |
 | Wide Sweep's spill line and the desperation line fall through the sfx classifier to Kind.TAKE: attacking sounds like being hit; a desperate swing shows a red bolt from the MONSTER's side and a "-0" float for a self-paid cost. | minor, player-visible | `scratchpad/claim_sfx_take_fallback.gd` runtime trace |
 | A playable Aug-6-morning build is live RIGHT NOW at https://immortaldemongod.github.io/salvage/ (the formerly advertised team link, `docs/KIT.md`), no build.txt, indistinguishable from fresh. The pages.yml workflow is armed and only dormant because the account is billing-locked; when that clears, every deploy.sh push resumes publishing unverified copies. | major (rule 32 class) | gh api + curl: index.pck 114224 bytes, last-modified Aug 6 15:29 GMT, matches NO version in main history |

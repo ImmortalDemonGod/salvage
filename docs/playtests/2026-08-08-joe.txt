@@ -1,4 +1,4 @@
-Independent playtester "JOE" — relayed verbatim by Miguel, Aug 8 2026.
+Independent playtester "JOE" - relayed verbatim by Miguel, Aug 8 2026.
 Fourth independent source. Played the live Vercel build (d936801 era).
 
 ---
@@ -29,6 +29,6 @@ Beats (parsed):
    clutter, show damage-you're-doing per area instead.
 6. Bookend idea: start the game on the same screen you end on (home),
    but with an enemy/threat present at the start.
-7. Icons over words — or remove literally all text, then add visual
+7. Icons over words - or remove literally all text, then add visual
    features back one at a time driven by observed frustration (classic
    strip-to-zero UX methodology).
