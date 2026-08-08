@@ -1,0 +1,34 @@
+Independent playtester "JOE" — relayed verbatim by Miguel, Aug 8 2026.
+Fourth independent source. Played the live Vercel build (d936801 era).
+
+---
+
+they said way too much text the combat is barely visible; the puzzles
+are brain dead just use pipemania put them after each level; no reward at the end they
+never have a satifying ending like an endscreen of making it home ; right now you have move
+around the enemies to go to new locations you dont have to show them you can you move
+around the enemy then you remove alot of visual clutter then you can just show how much
+damage you're doing in an area ; in the beginning you could start at the same end screen
+but have something like an enemy (they said this because they litterally read no text
+because there was too much ) maybe have icons or maybe just remove litterally all the text
+everywhere then add visual features based on frustration to design a proper ui/ux
+experience
+
+---
+
+Beats (parsed):
+1. Way too much text; the combat is barely visible under it.
+2. Read literally NO text because there was too much. (Third independent
+   source converging on text overload: Miguel's playtest 1, Glass_Goat's
+   brother, now JOE.)
+3. Puzzles are brain-dead; suggests pipe-mania-style puzzles placed after
+   each level instead.
+4. No reward at the end; no satisfying ending (e.g. an endscreen of
+   making it home).
+5. Movement around the enemy could BE the visible language: strip the
+   clutter, show damage-you're-doing per area instead.
+6. Bookend idea: start the game on the same screen you end on (home),
+   but with an enemy/threat present at the start.
+7. Icons over words — or remove literally all text, then add visual
+   features back one at a time driven by observed frustration (classic
+   strip-to-zero UX methodology).
