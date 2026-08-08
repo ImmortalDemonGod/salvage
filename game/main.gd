@@ -979,7 +979,7 @@ func _draw_pipes(p) -> void:
 	# the source: water waiting at the inlet, always
 	var src: Vector2 = _pipe_pos(Pipes.SOURCE_CELL) + Vector2(-PIPE_CELL * 0.5, 0)
 	draw_line(src + Vector2(-46, 0), src, WATER, 14.0)
-	draw_string(f, src + Vector2(-52, 34), "the feed", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.62, 0.80, 0.88))
+	draw_string(f, src + Vector2(-64, -14), "the feed", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.62, 0.80, 0.88))
 	# the drain: from the top-right cell's east edge up into the door
 	var dr: Vector2 = _pipe_pos(Pipes.DRAIN_CELL) + Vector2(PIPE_CELL * 0.5, 0)
 	var dcol: Color = WATER if p.solved() else Color(0.42, 0.48, 0.55)
@@ -1542,12 +1542,12 @@ func bar_buttons() -> Array:
 		var able := action_legal("ability%d" % slot)
 		if not able:
 			what = "no target from here" if combat.target_limb(d) < 0 else "not enough air"
-		out.append({"id": "ability%d" % slot,
+		out.append({"id": "ability%d" % slot, "kind": String(ab.kind),
 			"label": "%s  %d air  [%s]" % [String(ab.name), int(d.cost), "SPACE" if slot == 0 else "F"],
 			"sub": what})
-	out.append({"id": "analyze", "label": "Read limb  1 air  [A]", "sub": "what is it weak to?"})
-	out.append({"id": "rewind", "label": "Rewind turn  [U]", "sub": "take the turn back, once a dive"})
-	out.append({"id": "end", "label": "End turn  [ENTER]", "sub": ""})
+	out.append({"id": "analyze", "kind": "read", "label": "Read limb  1 air  [A]", "sub": "what is it weak to?"})
+	out.append({"id": "rewind", "kind": "rewind", "label": "Rewind turn  [U]", "sub": "take the turn back, once a dive"})
+	out.append({"id": "end", "kind": "end", "label": "End turn  [ENTER]", "sub": ""})
 	return out
 
 func btn_rect(i: int, _n: int) -> Rect2:
@@ -2363,6 +2363,83 @@ func _teach_triggers() -> void:
 			_teach("dodge", diver_foot(d) + Vector2(0, -70),
 				"standing in a red ring costs %s the hit. Moving is free" % String(d.dname))
 
+# A small drawn glyph per action, JOE's icons ask (Aug 8): the eye can
+# find "the kick" or "the eye" without reading a line. Geometry only --
+# the same primitives as the rest of the board, no assets to rot.
+func _draw_glyph(kind: String, at: Vector2, col: Color) -> void:
+	match kind:
+		"hit":
+			# an impact: a heavy dot with radiating ticks
+			draw_circle(at, 3.5, col)
+			for k in range(4):
+				var a0: float = float(k) * PI * 0.5 + PI * 0.25
+				var dv := Vector2(cos(a0), sin(a0))
+				draw_line(at + dv * 5.0, at + dv * 9.0, col, 2.0)
+		"hit_shove":
+			# a bent arrow: the hit that redirects
+			draw_line(at + Vector2(-8, 4), Vector2(at.x, at.y + 4), col, 2.0)
+			draw_line(Vector2(at.x, at.y + 4), Vector2(at.x, at.y - 6), col, 2.0)
+			draw_line(Vector2(at.x, at.y - 6), at + Vector2(-3, -3), col, 2.0)
+			draw_line(Vector2(at.x, at.y - 6), at + Vector2(3, -3), col, 2.0)
+		"hit_and_step":
+			# an arrow passing through: hit, then move
+			draw_line(at + Vector2(-9, 0), at + Vector2(7, 0), col, 2.0)
+			draw_line(at + Vector2(7, 0), at + Vector2(2, -4), col, 2.0)
+			draw_line(at + Vector2(7, 0), at + Vector2(2, 4), col, 2.0)
+			draw_circle(at + Vector2(-6, 0), 2.5, col)
+		"hit_wide":
+			# a fan: the swing that spills both ways
+			for k in range(3):
+				var a1: float = -PI * 0.5 + (float(k) - 1.0) * 0.6
+				var dv1 := Vector2(cos(a1), sin(a1))
+				draw_line(at + Vector2(0, 6), at + Vector2(0, 6) + dv1 * 12.0, col, 2.0)
+		"shut":
+			# a clamp closing on a dot
+			draw_circle(at, 2.5, col)
+			draw_arc(at, 7.5, PI * 0.75, PI * 1.25, 8, col, 2.0)
+			draw_arc(at, 7.5, -PI * 0.25, PI * 0.25, 8, col, 2.0)
+		"read":
+			# an eye
+			draw_arc(at, 8.0, PI * 0.2, PI * 0.8, 10, col, 1.8)
+			draw_arc(at + Vector2(0, 9), 8.0, PI * 1.2, PI * 1.8, 10, col, 1.8)
+			draw_circle(at + Vector2(0, 4.5), 2.6, col)
+		"rewind":
+			# the turn coming back
+			draw_arc(at, 7.0, PI * 0.3, PI * 1.7, 12, col, 2.0)
+			var tip: Vector2 = at + Vector2(cos(PI * 0.3), sin(PI * 0.3)) * 7.0
+			draw_line(tip, tip + Vector2(-5, -1), col, 2.0)
+			draw_line(tip, tip + Vector2(0, -5), col, 2.0)
+		"end":
+			# the turn passing on
+			for k in range(2):
+				var x0: float = at.x - 6.0 + float(k) * 7.0
+				draw_line(Vector2(x0, at.y - 6), Vector2(x0 + 5, at.y), col, 2.0)
+				draw_line(Vector2(x0 + 5, at.y), Vector2(x0, at.y + 6), col, 2.0)
+
+# the read result as a picture: what breaking this limb DOES
+func _draw_trait_glyph(t: String, at: Vector2, col: Color) -> void:
+	match t:
+		"brittle":
+			# a shatter: crossing cracks
+			for k in range(3):
+				var a2: float = float(k) * PI / 3.0 + 0.3
+				var dv2 := Vector2(cos(a2), sin(a2))
+				draw_line(at - dv2 * 6.0, at + dv2 * 6.0, col, 1.6)
+		"plated":
+			# a shield outline: hits arrive dulled
+			draw_arc(at + Vector2(0, -1), 6.0, PI * 0.05, PI * 0.95, 10, col, 1.6)
+			draw_line(at + Vector2(-6, 0), at + Vector2(0, 7), col, 1.6)
+			draw_line(at + Vector2(6, 0), at + Vector2(0, 7), col, 1.6)
+		"leaking":
+			# bubbles: the break pays air back
+			draw_arc(at + Vector2(-2, 2), 3.0, 0, TAU, 10, col, 1.4)
+			draw_arc(at + Vector2(4, -3), 2.0, 0, TAU, 8, col, 1.4)
+		"pressurised":
+			# the burst that stuns everything else
+			draw_circle(at, 2.0, col)
+			draw_arc(at, 5.0, 0, TAU, 12, col, 1.2)
+			draw_arc(at, 8.0, -0.5, 2.2, 8, col, 1.2)
+
 func _draw_actionbar() -> void:
 	if combat == null or combat.outcome != "ongoing":
 		return
@@ -2404,15 +2481,16 @@ func _draw_actionbar() -> void:
 		draw_rect(r, edge, false, 2.0)
 		var txt := String(b.label)
 		var sub := String(b.get("sub", ""))
+		_draw_glyph(String(b.get("kind", "")), r.position + Vector2(15.0, r.size.y * 0.5), ink)
 		if sub == "":
 			var tw: float = df.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-			draw_string(df, r.position + Vector2((r.size.x - tw) * 0.5, 26.0), txt,
+			draw_string(df, r.position + Vector2(28.0 + (r.size.x - 28.0 - tw) * 0.5, 26.0), txt,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 15, ink)
 		else:
-			draw_string(df, r.position + Vector2(10.0, 18.0), txt,
+			draw_string(df, r.position + Vector2(30.0, 18.0), txt,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 14, ink)
 			var sink := Color(ink.r, ink.g, ink.b, ink.a * 0.92)
-			draw_string(df, r.position + Vector2(10.0, 34.0), sub,
+			draw_string(df, r.position + Vector2(30.0, 34.0), sub,
 				HORIZONTAL_ALIGNMENT_LEFT, -1, 12, sink)
 
 func _draw_traits() -> void:
@@ -2472,19 +2550,33 @@ func _draw_limb_bars() -> void:
 			continue
 		var mx: float = float(int((combat.enc.limbs[lb] as Dictionary).hp))
 		var fr: float = clampf(float(combat.limb_hp[lb]) / max(1.0, mx), 0.0, 1.0)
+		# read traits show a GLYPH and a number, not a phrase: the pill
+		# said "weak: x2 dmg" in words and JOE's readers skip words
+		# (Aug 8). Unread stays "?", the honest amount of information.
 		var suffix := ""
+		var tglyph := ""
 		if int(combat.limb_stun[lb]) > 0:
 			suffix = "  SHUT %d" % int(combat.limb_stun[lb])
 		elif not combat.known(lb):
-			suffix = "  weak: ?"
+			suffix = "  ?"
 		else:
 			match combat.trait_of(lb):
-				"brittle": suffix = "  weak: x2 dmg"
-				"plated": suffix = "  weak: armor"
-				"leaking": suffix = "  weak: +2 air"
-				"pressurised": suffix = "  weak: bursts"
+				"brittle":
+					suffix = "  x2"
+					tglyph = "brittle"
+				"plated":
+					suffix = "  -1"
+					tglyph = "plated"
+				"leaking":
+					suffix = "  +2"
+					tglyph = "leaking"
+				"pressurised":
+					suffix = "  all"
+					tglyph = "pressurised"
 		var label := "%s %d/%d%s" % [String(combat.LIMB_NAMES[lb]).to_upper(), int(combat.limb_hp[lb]), int(mx), suffix]
 		var tw: float = df.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		if tglyph != "":
+			tw += 18.0
 		var tx: float = clampf(at.x - tw * 0.5, 8.0, 1280.0 - tw - 8.0)
 		# the backing pill and the leader line: cold readers could not bind
 		# a floating label to a limb, and bars printed through neighbour
@@ -2508,6 +2600,9 @@ func _draw_limb_bars() -> void:
 		draw_rect(pill, Color(0.55, 0.48, 0.38, 0.7), false, 1.0)
 		draw_string(df, Vector2(tx, at.y - 34.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13,
 			Color(0.98, 0.90, 0.84))
+		if tglyph != "":
+			_draw_trait_glyph(tglyph, Vector2(pill.end.x - 13.0, pill.position.y + 15.0),
+				Color(0.98, 0.90, 0.84))
 		var bw := 56.0
 		var bx: float = at.x - bw * 0.5
 		draw_rect(Rect2(Vector2(bx - 1, at.y - 29), Vector2(bw + 2, 7)), Color(0.03, 0.05, 0.07, 0.92))
