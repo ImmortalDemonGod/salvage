@@ -971,8 +971,10 @@ func _draw_pipes(p) -> void:
 	var wet: Dictionary = p.flooded()
 	var gw: float = float(Pipes.COLS) * PIPE_CELL
 	var gh: float = float(Pipes.ROWS) * PIPE_CELL
-	# the way out, above the grid like every lock's
-	_door(PIPE_AT + Vector2(0, -60), gw, p.solved(), "send the water here")
+	# the way out, above the grid like every lock's -- wide enough to
+	# CONTAIN the drain riser: a cold reader saw the pipe climb past the
+	# door's right edge and read the exit as disconnected (Aug 8)
+	_door(PIPE_AT + Vector2(0, -60), gw + 48.0, p.solved(), "send the water here")
 	# steel housing behind the cells
 	draw_rect(Rect2(PIPE_AT - Vector2(9, 9), Vector2(gw + 18, gh + 18)), Color(0.115, 0.130, 0.145))
 	draw_rect(Rect2(PIPE_AT, Vector2(gw, gh)), STEEL)
@@ -2445,8 +2447,11 @@ func _draw_actionbar() -> void:
 		return
 	var btns: Array = bar_buttons()
 	var dfm: Font = ThemeDB.fallback_font
-	draw_string(dfm, Vector2(BAR_X + 4.0, BAR_TOP - 10.0), "move: click a lit plate",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.62, 0.70, 0.76))
+	# only when a plate IS lit: a cold reader held this caption against a
+	# board with nothing lit and read the lighting as broken (Aug 8)
+	if not _lit_stations().is_empty():
+		draw_string(dfm, Vector2(BAR_X + 4.0, BAR_TOP - 10.0), "move: click a lit plate",
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.62, 0.70, 0.76))
 	var kb := _keys_rect()
 	draw_rect(kb, Color(0.09, 0.11, 0.12, 0.9))
 	draw_rect(kb, Color(0.38, 0.42, 0.44, 0.7), false, 1.0)
