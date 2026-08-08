@@ -2022,7 +2022,7 @@ func _draw_windup() -> void:
 				Color(0.98, 0.46, 0.34, 0.55 + 0.45 * pulse))
 			# anchored to the RING it lands on, never to the middle of the
 			# line, so it can never read as belonging to another station
-			var pip: Vector2 = dst + Vector2(46.0, -34.0)
+			var pip: Vector2 = dst + Vector2(58.0 if dst.x >= _body_at().x else -58.0, -50.0)
 			if int(st) in drawn:
 				continue
 			drawn.append(int(st))
