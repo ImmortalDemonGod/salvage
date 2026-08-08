@@ -1987,7 +1987,7 @@ func _draw_windup() -> void:
 				# it bites where it stands: ring the station instead
 				var rr: float = 56.0 + 5.0 * pulse
 				draw_arc(dst, rr, 0, TAU, 40, Color(0.98, 0.46, 0.34, 0.45 + 0.45 * pulse), 5.0)
-				var pip0: Vector2 = Vector2(dst.x + 58.0, max(dst.y - 64.0, 306.0))
+				var pip0: Vector2 = Vector2(dst.x + (58.0 if dst.x >= _body_at().x else -58.0), max(dst.y - 64.0, 306.0))
 				if int(st) in drawn:
 					continue
 				drawn.append(int(st))
