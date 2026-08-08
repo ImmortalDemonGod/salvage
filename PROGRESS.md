@@ -1440,3 +1440,31 @@ verdict computed on clone-corruption-free states.
 Open as before: G5-HUMAN, the masher doctrine ruling, Glass_Goat's
 clips, Marc's copy, icons (F-008). Post-jam directions from JOE on the
 record: pipe-mania-class puzzles, the strip-to-zero text methodology.
+
+### The evening ruling: nothing parks (Aug 8, second block)
+
+Asked directly why the pipe lock and the icon pass were parked, the
+answer was the Aug 7 ruling read back: features must exist to be judged.
+Both were built the same evening.
+
+- **The pipe lock** (sim/pipes.gd, beat pipes1 after fight2): a second
+  puzzle grammar beside the valves - turn cells, flood the route - so
+  the team judges JOE's puzzle-after-each-level rhythm inside one run.
+  Its solvability is an instrument, not a claim: verify/checks.gd floods
+  the declared solution (8 naive turns), proves the start unsolved, and
+  bounds the grid to the digit row (tools/keypath.gd drives locks by
+  keyboard for the gallery). pillar censuses it as its own grammar.
+- **The icon pass**: drawn glyphs on every action button (impact, bent
+  arrow, pass-through, fan, clamp, eye, rewind, chevrons) and on every
+  read trait (shatter, shield, bubbles, burst ring); the pills drop
+  their phrases for "x2 / -1 / +2 / all". Geometry, no assets.
+- Cold read, three fresh readers, ZERO blockers on the pipe lock and
+  both fight screens. Their majors are logged: two were fixed on the
+  spot (the door now contains its drain riser; the "click a lit plate"
+  caption waits for a lit plate), the rest are team-meeting fodder
+  (selection ring vs telegraph both being yellow, windup badges without
+  a legend, "no safe plate" phrasing beside an occupied refuge).
+- The run is now TWELVE beats, completes by mouse alone in 115s
+  including the Dive again restart, and every band is unmoved.
+
+    live: https://salvage-chi.vercel.app serves e1eb1c9, hash-verified
