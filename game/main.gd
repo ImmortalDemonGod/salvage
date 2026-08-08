@@ -765,26 +765,31 @@ func _stamp_title() -> void:
 	DisplayServer.window_set_title("SALVAGE beat=%s%s" % [("ending" if run.finished else String(b.get("id", "?"))), tstate])
 
 func _draw_ending() -> void:
+	# The ending IS the opening screen, made good: the same rig, the same
+	# squad back on the same deck, and the pump light holding steady where
+	# it blinked. Four playtests said the finish had no reward; a stat
+	# card on a dark field was the proof. Making it home has to LOOK like
+	# making it home (JOE, Aug 8).
 	var f: Font = ThemeDB.fallback_font
 	var w: Vector2 = size.max(DESIGN)
-	draw_rect(Rect2(Vector2.ZERO, w), Color(0.02, 0.05, 0.09, 0.86))
-	var cx: float = w.x * 0.5 - 250.0
-	var y: float = w.y * 0.30
+	var surf: float = 232.0
+	_draw_tableau(true)
 	var lost := int(run.salvage_lost)
 	var head := "THE PUMP TURNS OVER" if lost == 0 else "THE PUMP TURNS OVER, BARELY"
-	draw_string(f, Vector2(cx, y), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.86, 0.93, 0.96))
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 96.0), head,
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 36, Color(0.88, 0.94, 0.97))
 	var rows: Array = [
-		"dives cleared        %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
-		"cargo crushed         %d" % lost,
-		"the squad came back  %s" % ("whole" if lost == 0 else "lighter than it went down"),
+		"dives cleared  %d of %d" % [Beats.LADDER.size(), Beats.LADDER.size()],
+		"cargo crushed  %d" % lost,
+		"the squad came back %s" % ("whole" if lost == 0 else "lighter than it went down"),
 	]
 	for i in range(rows.size()):
-		draw_string(f, Vector2(cx, y + 108 + 34 * float(i)), String(rows[i]),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, 23, Color(0.78, 0.86, 0.90))
-	draw_string(f, Vector2(cx, y + 232), "SALVAGE   a Team Ratateam prototype",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(0.66, 0.78, 0.84))
-	draw_string(f, Vector2(cx, y + 262), "art Glass_Goat   ·   words Marc",
-		HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.66, 0.74, 0.80))
+		draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 152.0 + 32.0 * float(i)), String(rows[i]),
+			HORIZONTAL_ALIGNMENT_CENTER, 600.0, 21, Color(0.76, 0.86, 0.90))
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 276.0), "SALVAGE   a Team Ratateam prototype",
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 19, Color(0.64, 0.77, 0.83))
+	draw_string(f, Vector2(w.x * 0.5 - 300.0, surf + 304.0), "art Glass_Goat   ·   words Marc",
+		HORIZONTAL_ALIGNMENT_CENTER, 600.0, 16, Color(0.60, 0.70, 0.76))
 
 func _next_step() -> String:
 	_hint_station = -1
@@ -998,17 +1003,11 @@ func _refresh() -> void:
 			card.visible = false
 		for i in range(ui_stations.size()):
 			ui_stations[i].visible = false
-		ui_scene.get_parent().visible = true
-		# the goal has to be the goal of THIS lock. Lock 2 has two chambers
-		# and stage 1's line ("fill the chamber") describes neither of them.
-		var want := ""
-		if run.puzzle.solved():
-			want = "the way out is open"
-		elif run.puzzle.stage == 2:
-			want = "The way out sits above chamber A. Fill A to the line; B must end dry."
-		else:
-			want = "The way out is above the waterline. Fill the chamber to the line."
-		ui_scene.text = want
+		# No bottom card on the lock. It said what the yellow step line and
+		# the door's own "fill to this line" label already say, so the one
+		# screen built to be read as a PICTURE carried the same sentence
+		# three times (JOE, Aug 8: read no text, there was too much).
+		ui_scene.get_parent().visible = false
 		var vk := ["1", "2", "3", "4"]
 		var labels: Array = []
 		for i in range(run.puzzle.valves()):
@@ -1704,8 +1703,14 @@ func _valve_pos(i: int) -> Vector2:
 	# water covers it, not floating unattached in the middle of the chamber
 	return Vector2(x + wide1 + 26.0, top + tall - 26.0)
 
-func _draw_rig() -> void:
-	var f: Font = ThemeDB.fallback_font
+# The rig tableau, shared by the opening interludes AND the ending. The
+# interludes ARE the cutscenes this prototype gets, so the tableau earns
+# it: a full-width deck, gantry, davit, the pump, deck lamps that pool
+# light under the cast, and the squad at close to combat scale. The one
+# thing that changes with the story is the PUMP: it blinks red and
+# failing every boat scene, and burns steady once the part is in --
+# the same screen, bookended, is the ending's reward (JOE, Aug 8).
+func _draw_tableau(pump_fixed: bool) -> void:
 	var w: Vector2 = size.max(DESIGN)
 	var surf: float = 232.0
 	# the surface: everything above it is air and rain-coloured
@@ -1716,10 +1721,6 @@ func _draw_rig() -> void:
 		var bob: float = sin(_clock * 1.1 + float(i) * 0.6) * 3.0
 		draw_line(Vector2(x, surf + bob), Vector2(x + w.x / 46.0, surf - bob),
 			Color(0.55, 0.76, 0.84, 0.30), 2.0)
-	# the rig: a deck on legs, wide enough to be a stage. The interludes
-	# ARE the cutscenes this prototype gets, so the tableau earns it: a
-	# full-width deck, gantry, davit, the blinking pump, deck lamps that
-	# pool light under the cast, and the squad at close to combat scale.
 	var dx: float = w.x * 0.5 - 300.0
 	draw_rect(Rect2(Vector2(dx, surf - 54), Vector2(600, 30)), Color(0.20, 0.22, 0.24))
 	draw_rect(Rect2(Vector2(dx, surf - 60), Vector2(600, 6)), Color(0.28, 0.30, 0.32))
@@ -1729,10 +1730,14 @@ func _draw_rig() -> void:
 	draw_line(Vector2(dx + 520, surf - 58), Vector2(dx + 520, surf - 150), Color(0.26, 0.28, 0.30), 8.0)
 	draw_line(Vector2(dx + 516, surf - 148), Vector2(dx + 600, surf - 120), Color(0.26, 0.28, 0.30), 6.0)
 	draw_line(Vector2(dx + 598, surf - 122), Vector2(dx + 598, surf - 30), Color(0.40, 0.44, 0.46, 0.8), 2.0)
-	# the failing pump, blinking on its own housing
-	var lit: float = 0.35 + 0.65 * abs(sin(_clock * 2.3))
+	# the pump: failing it blinks; fixed it holds
 	draw_rect(Rect2(Vector2(dx + 428, surf - 96), Vector2(56, 42)), Color(0.24, 0.26, 0.28))
-	draw_circle(Vector2(dx + 456, surf - 104), 6.0, Color(0.92, 0.44, 0.30, lit))
+	if pump_fixed:
+		draw_circle(Vector2(dx + 456, surf - 104), 6.0, Color(0.55, 0.92, 0.62, 0.95))
+		draw_circle(Vector2(dx + 456, surf - 104), 11.0, Color(0.55, 0.92, 0.62, 0.18))
+	else:
+		var lit: float = 0.35 + 0.65 * abs(sin(_clock * 2.3))
+		draw_circle(Vector2(dx + 456, surf - 104), 6.0, Color(0.92, 0.44, 0.30, lit))
 	for lx in [dx + 30.0, dx + 210.0, dx + 390.0, dx + 560.0]:
 		draw_line(Vector2(lx, surf - 26), Vector2(lx + 12.0, surf + 110.0), Color(0.18, 0.20, 0.22), 8.0)
 	# deck lamps pooling light on the cast
@@ -1745,7 +1750,24 @@ func _draw_rig() -> void:
 	# the squad at stage scale, spaced like a poster, not a chess row
 	for i in range(3):
 		_draw_baked(i, Vector2(dx + 152.0 + float(i) * 148.0, surf - 52.0) + fx.idle(i), 0.26)
+
+func _draw_rig() -> void:
+	var f: Font = ThemeDB.fallback_font
+	var w: Vector2 = size.max(DESIGN)
+	var surf: float = 232.0
+	_draw_tableau(false)
 	var b: Dictionary = run.current()
+	# the thing they are standing over, on the FIRST screen only: a shape
+	# in the water that says the city below is not empty. Four readers in
+	# a row skipped the words; the threat has to be visible instead.
+	if String(b.get("id", "")) == "opening":
+		# left of the title, under the rig's shadow: the one patch of
+		# water the text card never covers
+		Art.kind = "lurker"
+		Art.tint = Color(0.34, 0.46, 0.54, 0.60)
+		Art.draw_crab(self, Vector2(235.0 + sin(_clock * 0.37) * 14.0,
+			surf + 118.0 + sin(_clock * 0.61) * 7.0), 80.0, [])
+		Art.tint = Color(1, 1, 1)
 	if _dive > 0.0:
 		return
 	var title := String(b.get("title", "")).to_upper()

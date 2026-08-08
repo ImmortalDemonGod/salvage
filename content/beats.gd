@@ -29,10 +29,14 @@ static var LADDER := [
 		# a scene that forgets to say what you want is the exact failure
 		# the last prototype shipped.
 		# ALL TEXT PLACEHOLDER, for Marc.
+		# Cut to one line per role, Aug 8: four readers in a row skipped the
+		# long version, so the words that survive are the ones that fit in
+		# a glance. The lurker drawn under the rig now carries "whatever
+		# got there first is still down there" instead of a sentence.
 		"lines": [
-			{"role": "obstacle", "text": "(placeholder) Every diver wants the same thing: to come back up. In four days there will be nothing to come back up to. The pump on this rig dies then, the rig floods, and we are standing on it."},
-			{"role": "who", "text": "(placeholder) There are three of us. Two borrowed suits, one set of scuba gear, and nobody left who is qualified."},
-			{"role": "want", "text": "(placeholder) The part that fixes it is in the city underneath us. The city has been under water for eleven years, and whatever got there first is still down there.\n\nWe go down. We come back up. That is the whole plan."},
+			{"role": "obstacle", "text": "(placeholder) The pump dies in four days. When it goes, the rig goes under."},
+			{"role": "who", "text": "(placeholder) Three of us, two borrowed suits, one set of scuba gear."},
+			{"role": "want", "text": "(placeholder) The part that fixes it is in the drowned city below. We go down; we come back up."},
 			# controls for THIS beat only. Combat keys are taught in `descent`,
 			# which is the beat that teaches the combat frame: telling a player
 			# how to end a turn before turns exist is the teach ladder broken
