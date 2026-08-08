@@ -1407,3 +1407,36 @@ given to a skeptic instructed to refute. All five survived:
 
 None of these are fixed yet; rulings and the last dev day govern what
 lands. The repro scripts live in the session scratchpad, not the repo.
+
+### The Aug 8 closing state: found, fixed, photographed, live
+
+All five audit findings fixed the same day, each with its repro rerun
+green (the two sim bugs), its gate extended (fuzz occupancy sweep, the
+steer-aware telegraph check, 4-of-4 encounter rosters, STRAIN reached
+16 of 16), and fast fully green with the bands unmoved
+(65.2 / 87.0 / 76.1 / 72.7).
+
+JOE's pass, built and cold-read twice: the opening cut to one line per
+role with the lurker drawn instead of described and the game's name on
+its first screen; the lock screen down from three copies of its sentence
+to one, labels uncrossed, target line findable; the ending rebuilt as
+the opening bookended (same rig, squad home, pump steady) with "Dive
+again" a real door - ENTER or click - that mouserun now exercises after
+every full run and requires beat=opening back. Confirmation round:
+opening works, ending works, both lock blockers fixed and photographed.
+
+The stale Pages copy at the old team link is retired: Pages flipped to
+legacy-branch serving (workflow deploys are billing-locked anyway), and
+gh-pages force-pushed to a redirect at the verified Vercel URL. The
+pages.yml workflow is deleted, so a billing unlock cannot silently
+resume publishing unverified builds.
+
+Deep pass 59 on the final commit: dry, streak 7 of 3, taught line 1.77,
+0 of 12 actions never-optimal, 0 of 10 beats skippable - the first deep
+verdict computed on clone-corruption-free states.
+
+    live: https://salvage-chi.vercel.app serves 0f67528, hash-verified
+
+Open as before: G5-HUMAN, the masher doctrine ruling, Glass_Goat's
+clips, Marc's copy, icons (F-008). Post-jam directions from JOE on the
+record: pipe-mania-class puzzles, the strip-to-zero text methodology.
