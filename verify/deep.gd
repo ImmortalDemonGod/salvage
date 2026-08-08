@@ -39,6 +39,12 @@ func state_key(c: Combat) -> String:
 	var parts: Array = [c.enc_id, str(c.air), str(c.turn % 2), str(c.limb_hp), str(c.limb_broken), str(c.limb_stun)]
 	for d in c.divers:
 		parts.append("%d@%d%s" % [d.hp, d.station, "x" if d.down else ""])
+	# a steered telegraph is a DIFFERENT state: two positions equal in hp
+	# and stations diverge the moment their locked intents differ (Axe
+	# Kick re-aims one), and a memo blind to that returned one value for
+	# both (Aug 8 audit)
+	for a in c.locked:
+		parts.append("%d>%s%s" % [int(a.limb), str(a.stations), "h" if bool(a.get("hunts", false)) else ""])
 	return "|".join(parts)
 
 # depth-limited minimax-ish value: the player maximises, the enemy is

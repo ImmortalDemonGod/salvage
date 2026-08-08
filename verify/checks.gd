@@ -216,7 +216,11 @@ func check_telegraph(n: int) -> void:
 			var guard := 0
 			while c.outcome == "ongoing" and guard < 30:
 				guard += 1
-				var announced: Array = c.intents().duplicate()
+				# duplicate(true): the shallow capture aliased the intent
+				# dicts hit_shove once mutated in place, so this check
+				# FOLLOWED the steer instead of testing it (Aug 8 audit).
+				var announced: Array = c.intents().duplicate(true)
+				var log0: int = c.log_lines.size()
 				var inner := 0
 				while inner < 8:
 					inner += 1
@@ -225,6 +229,20 @@ func check_telegraph(n: int) -> void:
 						break
 				if c.outcome != "ongoing":
 					break
+				# A steer (Axe Kick on a read limb) legitimately re-aims an
+				# announced swing mid-turn -- but only if it SAYS so. Adopt
+				# the new aim exactly when its "knocked around" line printed
+				# this turn; a re-aim with no line stays a telegraph lie.
+				for cur in c.intents():
+					for an0 in announced:
+						if int(an0.limb) != int(cur.limb) or an0.stations == cur.stations:
+							continue
+						var steer_line := "the %s is knocked around" % c.LIMB_NAMES[int(cur.limb)]
+						for li in range(log0, c.log_lines.size()):
+							if String(c.log_lines[li]).find(steer_line) >= 0:
+								an0.stations = (cur.stations as Array).duplicate()
+								an0.hunts = bool(cur.get("hunts", false))
+								break
 				var before: Array = []
 				for d in c.divers:
 					before.append(d.hp)

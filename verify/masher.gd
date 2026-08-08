@@ -10,7 +10,9 @@ extends SceneTree
 #
 # The sim has no RNG, so each policy is a single deterministic trajectory.
 
-const ENCS := ["crab", "spitter", "dredge"]
+# every non-teaching encounter. This was a hand-list of three that
+# predated the barnacle, so the barnacle shipped un-mashed (Aug 8 audit).
+const ENCS := ["crab", "spitter", "barnacle", "dredge"]
 var findings := 0
 
 func fail(msg: String) -> void:

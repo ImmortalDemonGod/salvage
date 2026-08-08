@@ -287,7 +287,9 @@ func _lock_intent() -> void:
 	# hunt's reach; standing back is the point of the back line.
 	locked = []
 	for a in live_attacks():
-		var b: Dictionary = a.duplicate()
+		# duplicate(true): a shallow copy shared the stations array with
+		# the content template, and shared inner state with every clone
+		var b: Dictionary = a.duplicate(true)
 		if bool(b.get("hunts", false)):
 			b.stations = [_hunt_station(int(b.limb))]
 		var bonus := int(_ramp.get(int(b.limb), 0))
@@ -494,12 +496,21 @@ func act_ability(i: int, slot: int) -> bool:
 			# do not understand. (The masher gate's honest answer: the
 			# policy that never reads loses its free defense.)
 			if known(limb):
-				for a2 in locked:
+				# REPLACE the intent, never mutate it in place: the dicts
+				# inside locked were shared with every clone of this state,
+				# so an in-place steer here re-aimed the LIVE telegraph
+				# whenever action_legal() probed a clone to draw a button
+				# (Aug 8 audit; the repro steered a real swing into empty
+				# water with no player input).
+				for idx in range(locked.size()):
+					var a2: Dictionary = locked[idx]
 					if int(a2.limb) == limb and not limb_broken[limb]:
 						var home := int((enc.limbs[limb] as Dictionary).station)
 						if a2.stations != [home]:
-							a2.stations = [home]
-							a2.hunts = false
+							var re: Dictionary = a2.duplicate(true)
+							re.stations = [home]
+							re.hunts = false
+							locked[idx] = re
 							log_lines.append("the %s is knocked around: its swing re-aims at %s" % [
 								LIMB_NAMES[limb], STATION_NAMES[home]])
 		"shut":
@@ -509,10 +520,13 @@ func act_ability(i: int, slot: int) -> bool:
 			elif not limb_broken[limb]:
 				log_lines.append("the drum cannot grip the %s again so soon" % LIMB_NAMES[limb])
 		"hit_and_step":
-			var n: Array = neighbours(d.station)
-			if not n.is_empty():
-				d.station = int(n[0])
-				log_lines.append("%s steps to %s" % [d.dname, STATION_NAMES[d.station]])
+			# the step obeys the same legality as a move: no stacking onto
+			# an occupied station, no stepping onto an unbroken squatter
+			for st in neighbours(d.station):
+				if station_free(int(st)):
+					d.station = int(st)
+					log_lines.append("%s steps to %s" % [d.dname, STATION_NAMES[d.station]])
+					break
 		"hit_wide":
 			for st in neighbours(d.station):
 				var lb2: int = STATION_LIMB[int(st)]
@@ -611,6 +625,22 @@ func can_shut(limb: int) -> bool:
 func can_move_now(i: int) -> bool:
 	return move_cost(i) == 0 or afford(MOVE_COST)
 
+# One diver per station and no unbroken squatter. The sim never enforced
+# what every other layer assumed: the halos skip busy stations, the hints
+# never name them, the station checks count occupancy singly, and yet a
+# slip could legally stack two divers under one swing. This predicate is
+# the SINGLE gate every path that PLACES a diver must pass -- act_move
+# and the Double Knee step. The step went around it for a day (Aug 8
+# audit): one keypress restacked the divers act_move had just unstacked.
+func station_free(station: int) -> bool:
+	for o in divers:
+		if not o.down and int(o.station) == station:
+			return false
+	var bl: int = STATION_LIMB[station]
+	if bl >= 0 and not limb_broken[bl] and bool((enc.limbs[bl] as Dictionary).get("blocks", false)):
+		return false
+	return true
+
 func act_move(i: int, station: int) -> bool:
 	# Validate BEFORE spending anything. The fuzz bot proved act_move(0, 5)
 	# put a diver on station 5, off a five-station board, and that a caller
@@ -622,16 +652,7 @@ func act_move(i: int, station: int) -> bool:
 	var d = divers[i]
 	if outcome != "ongoing" or d.down or d.station == station:
 		return false
-	# one diver per station. The sim never enforced what every other
-	# layer assumed: the halos skip busy stations, the hints never name
-	# them, the station checks count occupancy singly, and yet a slip
-	# could legally stack two divers under one swing. The artist's
-	# select-versus-move confusion made it reachable in one mis-click.
-	for o in divers:
-		if not o.down and int(o.station) == station:
-			return false
-	var bl: int = STATION_LIMB[station]
-	if bl >= 0 and not limb_broken[bl] and bool((enc.limbs[bl] as Dictionary).get("blocks", false)):
+	if not station_free(station):
 		return false
 	var cost := move_cost(i)
 	if cost > 0 and not afford(cost):
@@ -756,7 +777,10 @@ func clone() -> Combat:
 	c.limb_stun = limb_stun.duplicate()
 	c.air = air; c.air_penalty = air_penalty; c.turn = turn
 	c.outcome = outcome; c._rotation = _rotation
-	c.overdrafted = overdrafted; c.locked = locked.duplicate()
+	# duplicate(true): the shallow copy shared the intent dicts, so an
+	# action searched ON A CLONE (deep.gd, action_legal) corrupted the
+	# parent's live telegraph (Aug 8 audit)
+	c.overdrafted = overdrafted; c.locked = locked.duplicate(true)
 	c._moved = _moved.duplicate()
 	c._desperate = _desperate.duplicate()
 	c._ramp = _ramp.duplicate()

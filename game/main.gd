@@ -581,7 +581,7 @@ func _rig_react(ev: int, line: String, who: int) -> void:
 				if line.find(String(ab)) >= 0:
 					_rig_play(who, String(RIG_BY_ABILITY[ab]))
 					return
-		SfxEvents.Kind.TAKE, SfxEvents.Kind.DOWN:
+		SfxEvents.Kind.TAKE, SfxEvents.Kind.DOWN, SfxEvents.Kind.STRAIN:
 			if RIG_CLIPS.has(who):
 				_rig_play(who, String(RIG_CLIPS[who].hurt))
 
@@ -674,6 +674,20 @@ func _motion(lines: Array, from: int) -> void:
 					_strike(line, src, dst)
 					fx.add("float", 1.30, dst + Vector2(0, -70), Vector2.ZERO, "-%d" % n, HURT)
 					fx.kick(0.40 + 0.05 * n)
+			SfxEvents.Kind.STRAIN:
+				# a cost the diver CHOSE: no bolt from the creature's side
+				# (this line wore the enemy-hit dressing for a day, red
+				# streak and all, for damage no enemy dealt -- Aug 8 audit).
+				# The line reads "takes N for it"; _amount sees "it" and
+				# says 0, so parse the N it actually names.
+				if who >= 0:
+					var dsv: Vector2 = diver_foot(combat.divers[who])
+					var tk := line.rfind(" takes ")
+					var paid := int(line.substr(tk + 7).strip_edges()) if tk >= 0 else 0
+					fx.add("recoil", 0.42, dsv + Vector2(0, -40), dsv, "", HURT, who)
+					fx.add("float", 1.30, dsv + Vector2(0, -70), Vector2.ZERO,
+						"-%d  past the empty tank" % paid, HURT)
+					fx.kick(0.30)
 			SfxEvents.Kind.BREAK:
 				if lb >= 0:
 					fx.add("burst", 0.55, _limb_at(lb), Vector2.ZERO, "BROKEN", DEALT, -1, lb)

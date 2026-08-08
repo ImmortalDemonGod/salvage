@@ -25,6 +25,7 @@ const VOICE := {
 	# the ramp: a rising two-note warning, pitched between the shutdown
 	# chime and the payoff blowout so it reads as "trouble building"
 	SfxEvents.Kind.RAMP:     [560.0, 0.20, 0.30],
+	SfxEvents.Kind.STRAIN:   [230.0, 0.14, 0.30],
 }
 
 # One player meant a batch of events overwrote itself and only the LAST

@@ -172,6 +172,24 @@ func check(c: Combat, pre: Dictionary, kind: String) -> void:
 			fail("down-revived", "A DOWNED DIVER CAME BACK: %s was down and is not, after %s"
 				% [d2.dname, kind])
 
+	# one diver per station, and no diver on an unbroken squatter's
+	# station. This sweep validated station RANGE for a day while the
+	# Double Knee step put two divers under one swing (Aug 8 audit): a
+	# rule the sim enforces in one path must hold after EVERY path.
+	var seen_st: Dictionary = {}
+	for d3 in c.divers:
+		if d3.down:
+			continue
+		var st := int(d3.station)
+		if seen_st.has(st):
+			fail("station-stacked", "TWO DIVERS ON ONE STATION: %s and %s both at %s, after %s"
+				% [seen_st[st], d3.dname, c.STATION_NAMES[st], kind])
+		seen_st[st] = d3.dname
+		var bl := int(c.STATION_LIMB[st])
+		if bl >= 0 and not bool(c.limb_broken[bl]) and bool((c.enc.limbs[bl] as Dictionary).get("blocks", false)):
+			fail("station-squatted", "DIVER ON A SQUATTED STATION: %s stands on %s while the unbroken %s blocks it, after %s"
+				% [d3.dname, c.STATION_NAMES[st], c.LIMB_NAMES[bl], kind])
+
 	if c.air < 0 or c.air > air_max:
 		fail("air-range", "AIR OUT OF RANGE: air %d, bounds 0..%d (%d per turn plus at most one overdraft), after %s"
 			% [c.air, air_max, air_max - 1, kind])

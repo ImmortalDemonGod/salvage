@@ -38,7 +38,8 @@ func _init() -> void:
 	root.add_child(scene)
 	await process_frame
 
-	for enc_id in ["crab", "spitter", "dredge"]:
+	# hand-list predated the barnacle; it went unmeasured (Aug 8 audit)
+	for enc_id in ["crab", "spitter", "barnacle", "dredge"]:
 		var c := Combat.new(String(enc_id))
 		scene.combat = c
 		scene.selected = 0

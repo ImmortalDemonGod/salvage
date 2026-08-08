@@ -8,7 +8,7 @@
 class_name SfxEvents
 extends RefCounted
 
-enum Kind { NONE, HIT, BREAK, SHUTDOWN, TAKE, DOWN, WIN, LOSE, MOVE, REFUSE, VALVE, LOCK, CUT, PAYOFF, READ, RAMP }
+enum Kind { NONE, HIT, BREAK, SHUTDOWN, TAKE, DOWN, WIN, LOSE, MOVE, REFUSE, VALVE, LOCK, CUT, PAYOFF, READ, RAMP, STRAIN }
 
 static func classify(line: String) -> int:
 	# the trait payoffs, and the reading that unlocks them
@@ -47,6 +47,14 @@ static func classify(line: String) -> int:
 		return Kind.VALVE
 	if line.find(" moves to ") >= 0:
 		return Kind.MOVE
+	# player-caused lines that also say " for ": both fell through to the
+	# enemy-hit TAKE rule, so attacking sounded like being hit and a
+	# desperate swing drew the monster's bolt (Aug 8 audit). Order matters:
+	# these must run BEFORE the " for " fallback.
+	if line.find("spills onto the") >= 0:
+		return Kind.HIT
+	if line.find("pushes past the empty tank") >= 0:
+		return Kind.STRAIN
 	# an enemy line names its limb and a target; a player line says "hits the"
 	if line.find(" hits the ") >= 0:
 		return Kind.HIT
@@ -55,4 +63,4 @@ static func classify(line: String) -> int:
 	return Kind.NONE
 
 static func name_of(k: int) -> String:
-	return ["none", "hit", "break", "shutdown", "take", "down", "win", "lose", "move", "refuse", "valve", "lock", "cut", "payoff", "read", "ramp"][k]
+	return ["none", "hit", "break", "shutdown", "take", "down", "win", "lose", "move", "refuse", "valve", "lock", "cut", "payoff", "read", "ramp", "strain"][k]

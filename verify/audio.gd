@@ -36,6 +36,21 @@ func _init() -> void:
 					var k: int = SfxEvents.classify(String(l))
 					if k != SfxEvents.Kind.NONE:
 						seen[k] = String(l)
+	# desperation is a PLAYER choice the judges never make, so bot play
+	# never emits its line. Provoke it with legal calls only: the Drum
+	# shuts the tail, walks to the claw on a paid move, and pushes past
+	# the empty tank (cost 2 against air 1 is the DESPERATE tier).
+	var cd := Combat.new("crab")
+	cd.act_move(1, Combat.REAR)
+	cd.act_ability(1, 0)
+	cd.act_move(1, Combat.FLANK)
+	cd.act_ability(1, 0)
+	for l in cd.log_lines:
+		lines += 1
+		var kd: int = SfxEvents.classify(String(l))
+		if kd != SfxEvents.Kind.NONE:
+			seen[kd] = String(l)
+
 	# the lock, played to open
 	# Provoke the refusal BEFORE solving: toggle() returns early once the
 	# lock is open, so asking afterwards produced no line at all. The probe
