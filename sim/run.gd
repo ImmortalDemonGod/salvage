@@ -12,7 +12,9 @@ const Puzzle := preload("res://sim/puzzle.gd")
 
 var beat := 0
 var combat: Combat = null
-var puzzle: Puzzle = null
+# untyped: holds a Puzzle (valve lock) or a Pipes (pipe lock); both
+# answer solved()/toggle()/valves()/log_lines, which is all a beat needs
+var puzzle = null
 var carried_hp: Dictionary = {}    # diver name -> hp, carried across a dive
 var log_lines: Array = []
 var finished := false
@@ -73,8 +75,11 @@ func _enter() -> void:
 		carried_hp.clear()
 		log_lines.append("back on the rig: the squad patches up")
 	if String(b.get("kind", "scene")) == "puzzle":
-		puzzle = Puzzle.new()
-		puzzle.stage = int(b.get("stage", 1))
+		if bool(b.get("pipes", false)):
+			puzzle = Pipes.new()
+		else:
+			puzzle = Puzzle.new()
+			puzzle.stage = int(b.get("stage", 1))
 		combat = null
 		log_lines.append("%s" % String(b.title))
 		return

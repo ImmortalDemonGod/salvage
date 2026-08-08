@@ -216,6 +216,11 @@ static func greedy(c: Combat, _rng: RandomNumberGenerator) -> Dictionary:
 static func solve_step(p) -> int:
 	if p.solved():
 		return -1
+	# the pipe lock: turn the first cell not yet at its declared route.
+	# The declaration is machine-checked (verify/checks.gd floods it), so
+	# the naive policy here is honest, not omniscient.
+	if p is Pipes:
+		return p.needs_turn()
 	if p.stage == 2:
 		# open the crossover FIRST while B is dry, then everything else.
 		# A naive order locks itself out, which is the point of the lock;

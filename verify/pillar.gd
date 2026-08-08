@@ -53,8 +53,21 @@ func _init() -> void:
 	# Puzzles escalate too, and until this ran the second lock's "harder"
 	# was an author's claim rather than a measurement.
 	var locks: Array = []
+	var pipe_beats := 0
 	for b3 in Beats.LADDER:
 		if b3.get("built", false) and String(b3.get("kind", "scene")) == "puzzle":
+			# the pipe lock is a different grammar, censused as itself --
+			# this loop once wrapped it in Puzzle.new() and measured a
+			# stage-1 valve lock that does not exist (Aug 8)
+			if bool(b3.get("pipes", false)):
+				pipe_beats += 1
+				var pp := Pipes.new()
+				var route := 0
+				for c in pp.cells:
+					if int(c.solution) >= 0:
+						route += 1
+				print("  lock %-9s pipe grid, %d cells, %d on the route" % [String(b3.id), pp.valves(), route])
+				continue
 			var st: int = int(b3.get("stage", 1))
 			var pz := Puzzle.new()
 			pz.stage = st

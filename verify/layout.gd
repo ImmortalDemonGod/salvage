@@ -83,7 +83,7 @@ func advance_to_next_beat() -> bool:
 		r.combat.outcome = "victory"
 	elif r.puzzle != null:
 		if not Bots.solve_puzzle(r.puzzle):
-			push_error("THE LOCK CANNOT BE SOLVED by the naive policy at stage %d" % r.puzzle.stage)
+			push_error("THE LOCK CANNOT BE SOLVED by the naive policy at %s" % ("the pipe lock" if r.puzzle is Pipes else "stage %d" % r.puzzle.stage))
 	if not r.advance():
 		return false
 	scene.combat = r.combat

@@ -368,6 +368,31 @@ func check_run(n: int) -> void:
 	if cleared < n:
 		fail("G2 NOT WINNABLE: %d of %d runs failed to reach the end of the built ladder" % [n - cleared, n])
 
+# ---- the pipe lock is provably solvable, provably not pre-solved ------
+# The grid ships with its solution declared in content. This floods that
+# declaration to prove the lock opens, floods the start state to prove it
+# does not open on arrival, walks the naive policy to prove the declared
+# route is REACHABLE by turns, and bounds the cell count to the digit
+# row, because a cell no key reaches is a G14 hole.
+func check_pipes() -> void:
+	var p := Pipes.new()
+	if p.solved():
+		fail("PIPES PRE-SOLVED: the lock is open before anyone touches it")
+	if p.valves() > 10:
+		fail("PIPES OVERFLOW THE KEY MAP: %d cells and the digit row has 10" % p.valves())
+	var guard := 0
+	while not p.solved() and guard < 80:
+		guard += 1
+		var i: int = Bots.solve_step(p)
+		if i < 0:
+			fail("PIPES UNSOLVABLE: the naive policy is stuck %d turns in" % guard)
+			return
+		p.toggle(i)
+	if not p.solved():
+		fail("PIPES UNSOLVABLE: the declared solution never opens the door (80-turn guard)")
+	else:
+		print("pipes      %d cells, opens in %d turns by the naive policy, not pre-solved" % [p.valves(), guard])
+
 func _init() -> void:
 	var t := Time.get_ticks_usec()
 	check_station_design()
@@ -378,6 +403,7 @@ func _init() -> void:
 	for k in Encounters.ALL.keys():
 		check_stations(300, String(k))
 	check_telegraph(300)
+	check_pipes()
 	print("ran in %.0f ms" % ((Time.get_ticks_usec() - t) / 1000.0))
 	if findings.is_empty():
 		print("VERIFY: clean")

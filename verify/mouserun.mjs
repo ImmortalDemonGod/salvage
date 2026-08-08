@@ -50,7 +50,7 @@ const T0 = Date.now();
 //   (4, then 1, 2, 3) -- sim/puzzle.gd level_a needs valve3 AND the
 //   crossover open, and B drains through, ending dry.
 const ORDER = ["opening", "descent", "fight1", "boat1", "puzzle1",
-  "fight2", "reef1", "puzzle2", "boat2", "deep1", "ending"];
+  "fight2", "pipes1", "reef1", "puzzle2", "boat2", "deep1", "ending"];
 // per fight: plate positions BY STATION INDEX (sparse: only open ones),
 // and per limb the stations that can attack it (own station, or the
 // squat's neighbours). Station indices are the sim's own 0..4.
@@ -76,6 +76,11 @@ const FIGHTS = {
 const PUZZLES = {
   puzzle1: [[876, 482], [500, 592], [580, 592]],
   puzzle2: [[620, 482], [360, 568], [470, 568], [810, 568]],
+  // the pipe lock: cells via main.gd _pipe_pos (PIPE_AT 400,380 cell 96).
+  // Turn counts from sim/pipes.gd start rots vs solutions: cell2(idx1) x2,
+  // cells 3-5 x1, cell6(idx5) x1, cell7(idx6) x2. Any order opens it.
+  pipes1: [[544, 428], [544, 428], [640, 428], [736, 428], [832, 428],
+    [448, 524], [544, 524], [544, 524]],
 };
 const CARD = (i) => [24 + i * 334 + 160, 584 + 46];
 const BTN = (i) => [24 + 119, 330 + i * 48 + 21];

@@ -105,6 +105,20 @@ static var LADDER := [
 		"expect": {"encounter": "spitter", "divers": 2, "open_stations": 4, "limbs": 3},
 	},
 	{
+		# JOE's pipe lock (Aug 8), placed so the team judges the puzzle-
+		# after-each-level rhythm he proposed with both lock types in one
+		# run. Deliberately interlock-free -- every turn is reversible --
+		# so it reads a route where the valve locks sequence an order:
+		# two different muscles, and the team picks which (or both) grows.
+		"id": "pipes1",
+		"kind": "puzzle",
+		"pipes": true,
+		"title": "the feed line",
+		"teaches": "routing",
+		"uses": ["goal", "routing"],
+		"built": true,
+	},
+	{
 		"id": "reef1",
 		"kind": "combat",
 		"encounter": "barnacle",
@@ -161,4 +175,5 @@ static var REQUIRED_OPENING_ROLES := ["who", "obstacle", "want", "controls"]
 
 static var MECHANICS := ["goal", "combat_frame", "stations", "air", "limbs",
 	"telegraph", "cost_tiers", "heavy_tier", "water_level", "conditions", "backline",
-	"overdraft", "umbilical", "analyze", "hunts", "ramp", "salvage", "blocks"]
+	"overdraft", "umbilical", "analyze", "hunts", "ramp", "salvage", "blocks",
+	"routing"]

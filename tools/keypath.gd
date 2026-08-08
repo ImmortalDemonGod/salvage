@@ -18,7 +18,8 @@ const Beats = preload("res://content/beats.gd")
 
 
 const MOVE_KEY := ["KeyQ", "KeyW", "KeyE", "KeyR", "KeyT"]
-const VALVE_KEY := ["Digit1", "Digit2", "Digit3", "Digit4"]
+const VALVE_KEY := ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5",
+	"Digit6", "Digit7", "Digit8", "Digit9", "Digit0"]
 const DIVER_KEY := ["Digit1", "Digit2", "Digit3"]
 
 var keys: Array = []

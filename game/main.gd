@@ -955,9 +955,62 @@ func _escape_line(d) -> String:
 				return "%s  ·  about to be hit, no safe plate. Take it, or kick its swing back home (SPACE)." % _incoming(d)
 	return "%s  ·  about to be hit, no safe plate to stand on. Take it, and break what you can." % _incoming(d)
 
+# ---- the pipe lock (JOE, Aug 8) ---------------------------------------
+# One geometry, read by the drawing AND the click test, because the valve
+# lock already paid for two copies drifting 72px apart.
+const PIPE_CELL := 96.0
+const PIPE_AT := Vector2(400.0, 380.0)
+
+func _pipe_pos(i: int) -> Vector2:
+	return PIPE_AT + Vector2(
+		(float(i % Pipes.COLS) + 0.5) * PIPE_CELL,
+		(float(int(i / Pipes.COLS)) + 0.5) * PIPE_CELL)
+
+func _draw_pipes(p) -> void:
+	var f: Font = ThemeDB.fallback_font
+	var wet: Dictionary = p.flooded()
+	var gw: float = float(Pipes.COLS) * PIPE_CELL
+	var gh: float = float(Pipes.ROWS) * PIPE_CELL
+	# the way out, above the grid like every lock's
+	_door(PIPE_AT + Vector2(0, -60), gw, p.solved(), "send the water here")
+	# steel housing behind the cells
+	draw_rect(Rect2(PIPE_AT - Vector2(9, 9), Vector2(gw + 18, gh + 18)), Color(0.115, 0.130, 0.145))
+	draw_rect(Rect2(PIPE_AT, Vector2(gw, gh)), STEEL)
+	# the source: water waiting at the inlet, always
+	var src: Vector2 = _pipe_pos(Pipes.SOURCE_CELL) + Vector2(-PIPE_CELL * 0.5, 0)
+	draw_line(src + Vector2(-46, 0), src, WATER, 14.0)
+	draw_string(f, src + Vector2(-52, 34), "the feed", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0.62, 0.80, 0.88))
+	# the drain: from the top-right cell's east edge up into the door
+	var dr: Vector2 = _pipe_pos(Pipes.DRAIN_CELL) + Vector2(PIPE_CELL * 0.5, 0)
+	var dcol: Color = WATER if p.solved() else Color(0.42, 0.48, 0.55)
+	draw_line(dr, dr + Vector2(28, 0), dcol, 14.0)
+	draw_line(dr + Vector2(28, 7), dr + Vector2(28, -104), dcol, 14.0)
+	for i in range(p.valves()):
+		var c: Vector2 = _pipe_pos(i)
+		var half: float = PIPE_CELL * 0.5
+		draw_rect(Rect2(c - Vector2(half - 3, half - 3), Vector2(PIPE_CELL - 6, PIPE_CELL - 6)),
+			Color(0.155, 0.175, 0.195))
+		draw_rect(Rect2(c - Vector2(half - 3, half - 3), Vector2(PIPE_CELL - 6, PIPE_CELL - 6)),
+			Color(0.30, 0.36, 0.42), false, 1.5)
+		var col: Color = WATER if wet.has(i) else Color(0.52, 0.58, 0.64)
+		for d in p.arms(i):
+			var to: Vector2 = c
+			match int(d):
+				0: to = c + Vector2(0, -half + 3)
+				1: to = c + Vector2(half - 3, 0)
+				2: to = c + Vector2(0, half - 3)
+				3: to = c + Vector2(-half + 3, 0)
+			draw_line(c, to, col, 13.0)
+		draw_circle(c, 8.5, col)
+		# the key that turns this cell, same affordance as the valves
+		draw_string(f, c + Vector2(-half + 9, half - 9), str((i + 1) % 10),
+			HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.55, 0.62, 0.68))
+
 func _lock_step(p) -> String:
 	if p.solved():
 		return "The way out is open. Press ENTER to go through."
+	if p is Pipes:
+		return "Turn the pipes until the water reaches the way out."
 	if p.stage == 2:
 		if not p.reachable(p.CROSS) and not p.valve[p.CROSS]:
 			# the recovery line: a naive order locks itself out, and being
@@ -1022,11 +1075,7 @@ func _refresh() -> void:
 		# screen built to be read as a PICTURE carried the same sentence
 		# three times (JOE, Aug 8: read no text, there was too much).
 		ui_scene.get_parent().visible = false
-		var vk := ["1", "2", "3", "4"]
-		var labels: Array = []
-		for i in range(run.puzzle.valves()):
-			labels.append("%s=%s" % [vk[i], "crossover" if (run.puzzle.stage == 2 and i == run.puzzle.CROSS) else "valve %d" % (i + 1)])
-		ui_help.text = "click a valve to turn it  ·  ENTER when the way is open"
+		ui_help.text = ("click a pipe to turn it" if run.puzzle is Pipes else "click a valve to turn it") + "  ·  ENTER when the way is open"
 		queue_redraw()
 		return
 	if combat == null:
@@ -1568,6 +1617,14 @@ func _unhandled_input(e: InputEvent) -> void:
 		KEY_4:
 			if run.puzzle != null and run.puzzle.valves() > 3: run.puzzle.toggle(3)
 			_refresh()
+		KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0:
+			# the pipe lock has ten cells; the digit row is its whole key
+			# map (0 is cell ten), same one-key-one-thing rule as the valves
+			if run.puzzle != null:
+				var cell: int = 9 if k == KEY_0 else (k - KEY_5 + 4)
+				if run.puzzle.valves() > cell:
+					run.puzzle.toggle(cell)
+				_refresh()
 		KEY_Q: player_move(Combat.FRONT)
 		KEY_W: player_move(Combat.FLANK)
 		KEY_E: player_move(Combat.UNDER)
@@ -1677,7 +1734,7 @@ func _chamber(at: Vector2, wide: float, tall: float, filled: int, cap: int, name
 	draw_string(f, at + Vector2(10, 26), "%s  %d of %d" % [name, filled, cap],
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 19, Color(0.80, 0.86, 0.90))
 
-func _door(at: Vector2, wide: float, is_open: bool) -> void:
+func _door(at: Vector2, wide: float, is_open: bool, hint: String = "fill to this line") -> void:
 	var f: Font = ThemeDB.fallback_font
 	draw_rect(Rect2(at, Vector2(wide, 22)), Color(0.155, 0.165, 0.175))
 	draw_rect(Rect2(at, Vector2(wide, 22)), OPEN_C if is_open else BRASS, false, 2.0)
@@ -1685,17 +1742,19 @@ func _door(at: Vector2, wide: float, is_open: bool) -> void:
 		draw_rect(Rect2(at + Vector2(14.0 + float(k) * 46.0, 8), Vector2(5, 5)), RIVET)
 	# a dashed line across the chamber marking the height the water has to
 	# reach, so "fill it to the top" is a picture. Brighter and thicker
-	# after a cold reader could not find "this line" at all (Aug 8).
-	for i in range(16):
-		if i % 2 == 1:
-			continue
-		var x0: float = at.x + wide * float(i) / 16.0
-		draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
-			Color(0.92, 0.82, 0.44, 0.95), 3.0)
+	# after a cold reader could not find "this line" at all (Aug 8). The
+	# pipe lock has no water level, so its door draws no line to fill to.
+	if hint == "fill to this line":
+		for i in range(16):
+			if i % 2 == 1:
+				continue
+			var x0: float = at.x + wide * float(i) / 16.0
+			draw_line(Vector2(x0, at.y + 26), Vector2(x0 + wide / 16.0, at.y + 26),
+				Color(0.92, 0.82, 0.44, 0.95), 3.0)
 	# the label sits ABOVE the door in open sky: below it, it landed on
 	# the chamber's own "0 of 3" label and the two ran together into one
 	# garbled phrase (cold read, Aug 8)
-	draw_string(f, at + Vector2(6, -8), "the way out" + ("  OPEN" if is_open else "  ·  fill to this line"),
+	draw_string(f, at + Vector2(6, -8), "the way out" + ("  OPEN" if is_open else "  ·  " + hint),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, 16, OPEN_C if is_open else Color(0.90, 0.82, 0.48))
 
 func _valve_pos(i: int) -> Vector2:
@@ -2102,11 +2161,18 @@ func _click(at: Vector2) -> void:
 		_restart()
 		return
 	if run.puzzle != null:
-		for i in range(run.puzzle.valves()):
-			if at.distance_to(_valve_pos(i)) < 30.0:
-				run.puzzle.toggle(i)
-				_refresh()
-				return
+		if run.puzzle is Pipes:
+			for i in range(run.puzzle.valves()):
+				if at.distance_to(_pipe_pos(i)) < PIPE_CELL * 0.5 - 2.0:
+					run.puzzle.toggle(i)
+					_refresh()
+					return
+		else:
+			for i in range(run.puzzle.valves()):
+				if at.distance_to(_valve_pos(i)) < 30.0:
+					run.puzzle.toggle(i)
+					_refresh()
+					return
 		# a solved lock opens to a click anywhere, like every other scene:
 		# the mouserun gate proved the door only answered to ENTER
 		if run.puzzle.solved():
@@ -2507,7 +2573,10 @@ func _draw() -> void:
 		return
 
 	if run != null and run.puzzle != null:
-		_draw_lock(run.puzzle)
+		if run.puzzle is Pipes:
+			_draw_pipes(run.puzzle)
+		else:
+			_draw_lock(run.puzzle)
 		_overlay_dive()
 		return
 	if combat == null and run != null and not run.finished:

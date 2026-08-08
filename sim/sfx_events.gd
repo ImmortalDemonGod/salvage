@@ -22,6 +22,9 @@ static func classify(line: String) -> int:
 		return Kind.RAMP
 	if line.find("wound back") >= 0:
 		return Kind.VALVE
+	# the pipe lock's turn is the same hand-on-metal event as a valve
+	if line.find(" wheels around") >= 0:
+		return Kind.VALVE
 	if line.find("knocked around") >= 0:
 		return Kind.SHUTDOWN
 	if line.find("salvage crate for") >= 0 or line.find("salvage is crushed") >= 0:
