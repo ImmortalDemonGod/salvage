@@ -997,6 +997,18 @@ hash-verified the hour it finished:
   escapes can stack, so only the build itself can say where its
   plates are.
 
+### The sprint's bookend
+
+Deep pass 58, on the final sprint build, hands off: DRY. The blocks,
+prying, corpse-release and steering rules, the ferocious flag, and the
+dodge amendment all survive the search; every action is uniquely
+optimal somewhere across five encounters, the taught line sits at 1.83
+against the 2.0 tolerance, and none of the ten beats can be bypassed.
+Every screen holds a cold reader's yes on the same commit. What
+remains belongs to people: Glass_Goat's clips and Scuba's texture (a
+wetsuit tint stands in), Marc's words, the masher doctrine at the
+meeting, and G5-HUMAN, always.
+
 ### The QA question bank (answer with evidence, every block)
 
 Did a fresh eye cold-read every final screen? Is every asset used to
